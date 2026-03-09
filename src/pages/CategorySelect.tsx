@@ -47,14 +47,14 @@ const CategorySelect = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08 }}
               onClick={() => toggle(cat.id)}
-              className={`w-full text-left p-3 rounded-xl border-2 transition-all duration-200 relative ${
+              className={`w-full text-left p-3 pt-4 rounded-xl border-2 transition-all duration-200 relative overflow-visible ${
                 isSelected
                   ? "border-primary bg-accent shadow-card"
                   : "border-border bg-card hover:border-primary/40"
               }`}
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-base bg-muted rounded-lg px-2 py-0.5">{cat.emoji}</span>
+              <span className="absolute -top-2.5 -left-2.5 text-base bg-card border border-border rounded-full w-8 h-8 flex items-center justify-center shadow-sm">{cat.emoji}</span>
+              <div className="flex items-center justify-end mb-1">
                 <AnimatePresence>
                   {isSelected && (
                     <motion.div
