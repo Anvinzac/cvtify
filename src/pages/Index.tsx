@@ -1,47 +1,79 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Compass, ArrowRight } from "lucide-react";
+import { ArrowRight, BookOpen, Filter, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const STEPS = [
+  {
+    icon: BookOpen,
+    title: "Recall your experiences",
+    desc: "Look back at jobs, projects, volunteering & activities — identify the skills and values you already have.",
+  },
+  {
+    icon: Filter,
+    title: "Filter & focus",
+    desc: "Use those skills and values to discover activities, fields, and career paths that truly fit you.",
+  },
+  {
+    icon: Rocket,
+    title: "Build your growth story",
+    desc: "Connect the dots into a clear narrative that shows where you've been and where you're heading.",
+  },
+];
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center px-6 gradient-soft">
+    <div className="flex min-h-[100dvh] flex-col px-6 py-10 gradient-soft">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center max-w-sm mx-auto"
+        transition={{ duration: 0.5 }}
+        className="max-w-sm mx-auto w-full"
       >
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className="w-20 h-20 rounded-2xl gradient-warm flex items-center justify-center mx-auto mb-8 shadow-elevated"
-        >
-          <Compass className="w-10 h-10 text-primary-foreground" />
-        </motion.div>
-
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-3">
-          SkillCompass
-        </h1>
-        <p className="text-muted-foreground text-base leading-relaxed mb-10">
-          Discover your hidden skills, values & strengths from past experiences — 
-          then find activities that grow you toward your dream career.
+        <p className="text-sm font-medium text-primary tracking-wide uppercase mb-2">
+          How it works
         </p>
+        <h1 className="text-2xl font-bold text-foreground leading-tight mb-6">
+          Turn past experiences into your future direction
+        </h1>
+
+        <div className="space-y-4 mb-10">
+          {STEPS.map((step, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 + i * 0.12 }}
+              className="flex gap-4 items-start"
+            >
+              <div className="shrink-0 w-10 h-10 rounded-xl gradient-warm flex items-center justify-center shadow-sm">
+                <step.icon className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm leading-tight">
+                  {step.title}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {step.desc}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
         <Button
           onClick={() => navigate("/categories")}
           className="w-full h-14 text-base font-semibold rounded-xl gradient-warm border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity"
           size="lg"
         >
-          Start Exploring
+          Let's start
           <ArrowRight className="ml-2 w-5 h-5" />
         </Button>
 
-        <p className="text-xs text-muted-foreground mt-6">
-          No account needed — your progress is saved automatically
+        <p className="text-xs text-muted-foreground mt-5 text-center">
+          No account needed — progress is saved automatically
         </p>
       </motion.div>
     </div>
