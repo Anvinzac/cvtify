@@ -37,7 +37,7 @@ const CategorySelect = () => {
         </p>
       </motion.div>
 
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 grid grid-cols-2 gap-3">
         {CATEGORIES.map((cat, i) => {
           const isSelected = selected.includes(cat.id);
           return (
