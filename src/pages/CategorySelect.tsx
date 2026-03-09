@@ -47,37 +47,33 @@ const CategorySelect = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08 }}
               onClick={() => toggle(cat.id)}
-              className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+              className={`w-full text-left p-3 rounded-xl border-2 transition-all duration-200 relative ${
                 isSelected
                   ? "border-primary bg-accent shadow-card"
                   : "border-border bg-card hover:border-primary/40"
               }`}
             >
-              <div className="flex items-start gap-3">
-                <span className="text-2xl mt-0.5">{cat.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground text-sm">
-                      {cat.name}
-                    </h3>
-                    <AnimatePresence>
-                      {isSelected && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          exit={{ scale: 0 }}
-                          className="w-6 h-6 rounded-full gradient-warm flex items-center justify-center flex-shrink-0"
-                        >
-                          <Check className="w-3.5 h-3.5 text-primary-foreground" />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {cat.examples.join(" · ")}
-                  </p>
-                </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-base bg-muted rounded-lg px-2 py-0.5">{cat.emoji}</span>
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="w-5 h-5 rounded-full gradient-warm flex items-center justify-center flex-shrink-0"
+                    >
+                      <Check className="w-3 h-3 text-primary-foreground" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
+              <h3 className="font-semibold text-foreground text-xs leading-tight">
+                {cat.name}
+              </h3>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                {cat.examples.join(" · ")}
+              </p>
             </motion.button>
           );
         })}
