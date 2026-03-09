@@ -38,6 +38,7 @@ const AddActivity = () => {
   const [skills, setSkills] = useState<string[]>([]);
   const [values, setValues] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+  const [isCustomName, setIsCustomName] = useState(false);
 
   const toggleItem = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, item: string) =>
     setArr(arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]);
