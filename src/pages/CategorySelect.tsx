@@ -47,14 +47,14 @@ const CategorySelect = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08 }}
               onClick={() => toggle(cat.id)}
-              className={`w-full text-left p-3 pt-4 rounded-xl border-2 transition-all duration-200 relative overflow-visible ${
+              className={`w-full text-left p-4 pt-5 rounded-xl border-2 transition-all duration-200 relative overflow-visible ${
                 isSelected
                   ? "border-primary bg-accent shadow-card"
                   : "border-border bg-card hover:border-primary/40"
               }`}
             >
-              <span className="absolute -top-2.5 -left-2.5 text-base bg-card border border-border rounded-full w-8 h-8 flex items-center justify-center shadow-sm">{cat.emoji}</span>
-              <div className="flex items-center justify-end mb-1">
+              <span className="absolute -top-3 -left-3 text-lg bg-card border border-border rounded-full w-9 h-9 flex items-center justify-center shadow-sm">{cat.emoji}</span>
+              <div className="flex items-center justify-end mb-2">
                 <AnimatePresence>
                   {isSelected && (
                     <motion.div
@@ -68,10 +68,10 @@ const CategorySelect = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <h3 className="font-semibold text-foreground text-xs leading-tight">
+              <h3 className="font-semibold text-foreground text-sm leading-tight">
                 {cat.name}
               </h3>
-              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+              <p className="text-xs text-muted-foreground mt-1.5 leading-snug">
                 {cat.examples.join(" · ")}
               </p>
             </motion.button>
