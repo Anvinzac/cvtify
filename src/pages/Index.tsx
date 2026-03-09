@@ -2,9 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, Filter, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import stepRecall from "@/assets/step-recall.png";
-import stepFilter from "@/assets/step-filter.png";
-import stepGrowth from "@/assets/step-growth.png";
+import stepRecall from "@/assets/step-recall.jpg";
+import stepFilter from "@/assets/step-filter.jpg";
+import stepGrowth from "@/assets/step-growth.jpg";
 
 const STEPS = [
   {
@@ -54,56 +54,34 @@ const Index = () => {
             className="absolute left-5 top-10 bottom-10 w-0.5 bg-border origin-top z-0"
           />
 
-          <div className="space-y-6 relative z-10">
+          <div className="space-y-5 relative z-10">
             {STEPS.map((step, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + i * 0.25, duration: 0.5, ease: "easeOut" }}
+                className="flex gap-4 items-start"
               >
-                <div className="flex gap-4 items-start">
-                  {/* Step number + icon */}
-                  <div className="shrink-0 relative">
-                    <div className="w-10 h-10 rounded-xl gradient-warm flex items-center justify-center shadow-sm">
-                      <step.icon className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    {/* Arrow between steps */}
-                    {i < STEPS.length - 1 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.6 + i * 0.25 }}
-                        className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-muted-foreground"
-                      >
-                        <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
-                          <path d="M5 0 L5 10 M1 7 L5 12 L9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground text-sm leading-tight">
-                      {step.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      {step.desc}
-                    </p>
-                  </div>
+                <div className="shrink-0 w-10 h-10 rounded-xl gradient-warm flex items-center justify-center shadow-sm">
+                  <step.icon className="w-5 h-5 text-primary-foreground" />
                 </div>
-                {/* Step illustration */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + i * 0.25, duration: 0.4 }}
-                  className="ml-14 mt-3"
-                >
-                  <img
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground text-sm leading-tight">
+                    {step.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {step.desc}
+                  </p>
+                  <motion.img
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + i * 0.25, duration: 0.4 }}
                     src={step.image}
                     alt={step.title}
-                    className="w-full max-w-[180px] h-auto rounded-xl border border-border bg-card/50 shadow-sm"
+                    className="mt-2 w-20 h-14 object-cover rounded-lg border border-border shadow-sm"
                   />
-                </motion.div>
+                </div>
               </motion.div>
             ))}
           </div>
