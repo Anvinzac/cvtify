@@ -111,16 +111,42 @@ const AddActivity = () => {
             {step === 0 && (
               <StepLayout
                 title="What activity were you involved in?"
-                subtitle="Give it a short, descriptive name"
+                subtitle="Pick one or describe your own"
               >
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Summer marketing internship"
-                  className="h-14 text-base rounded-xl bg-card border-border"
-                  maxLength={100}
-                  autoFocus
-                />
+                <div className="space-y-2">
+                  {category.examples.map((ex) => (
+                    <OptionButton
+                      key={ex}
+                      label={ex}
+                      selected={name === ex}
+                      onClick={() => { setName(ex); setIsCustomName(false); }}
+                    />
+                  ))}
+                  <OptionButton
+                    label="Other…"
+                    selected={isCustomName}
+                    onClick={() => { setIsCustomName(true); setName(""); }}
+                  />
+                </div>
+                <AnimatePresence>
+                  {isCustomName && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Describe your activity"
+                        className="h-14 text-base rounded-xl bg-card border-border mt-3"
+                        maxLength={100}
+                        autoFocus
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </StepLayout>
             )}
 
