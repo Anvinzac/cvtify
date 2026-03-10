@@ -119,7 +119,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
               <StepLayout title="What activity were you involved in?" subtitle="Pick one or describe your own">
                 <div className="space-y-2">
                   {category.examples.map((ex) => (
-                    <OptionButton key={ex} label={ex} selected={name === ex} onClick={() => { setName(ex); setIsCustomName(false); }} />
+                    <OptionButton key={ex} label={ex} selected={name === ex} onClick={() => { setName(ex); setIsCustomName(false); autoAdvance(1); }} />
                   ))}
                   <OptionButton label="Other…" selected={isCustomName} onClick={() => { setIsCustomName(true); setName(""); }} />
                 </div>
