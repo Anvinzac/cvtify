@@ -74,7 +74,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 flex items-center gap-3">
         <button
