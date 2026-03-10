@@ -137,7 +137,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
               <StepLayout title="How big was the team?" subtitle="The group you worked with">
                 <div className="space-y-2">
                   {GROUP_SIZES.map((size) => (
-                    <OptionButton key={size} label={size} selected={groupSize === size} onClick={() => setGroupSize(size)} />
+                    <OptionButton key={size} label={size} selected={groupSize === size} onClick={() => { setGroupSize(size); autoAdvance(2); }} />
                   ))}
                 </div>
               </StepLayout>
