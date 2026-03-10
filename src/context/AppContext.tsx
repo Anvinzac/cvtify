@@ -23,7 +23,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, selectedCategories: cats }));
 
   const addActivity = (activity: Activity) =>
-    setData((d) => ({ ...d, activities: [...d.activities, activity] }));
+    setData((d) => ({
+      ...d,
+      activities: [...d.activities, activity],
+      selectedCategories: d.selectedCategories.includes(activity.categoryId)
+        ? d.selectedCategories
+        : [...d.selectedCategories, activity.categoryId],
+    }));
 
   const removeActivity = (id: string) =>
     setData((d) => ({ ...d, activities: d.activities.filter((a) => a.id !== id) }));
