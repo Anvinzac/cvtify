@@ -1,6 +1,6 @@
 import { Activity, DreamJob } from "./data";
 
-const STORAGE_KEY = "skillcompass_draft";
+const STORAGE_KEY = "skillcompass_draft_v2";
 
 export interface DraftData {
   selectedCategories: string[];
