@@ -39,6 +39,10 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
   const [notes, setNotes] = useState("");
   const [isCustomName, setIsCustomName] = useState(false);
 
+  const autoAdvance = useCallback((nextStep: number) => {
+    setTimeout(() => setStep(nextStep), 350);
+  }, []);
+
   const toggleItem = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, item: string) =>
     setArr(arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]);
 
