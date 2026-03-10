@@ -168,11 +168,33 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
 
             {step === 4 && (
               <StepLayout title="What did you discover?" subtitle="Skills & values you realized">
+                {/* Explain mode toggle */}
+                <label className="flex items-center gap-2 mb-4 cursor-pointer select-none">
+                  <div className={`w-9 h-5 rounded-full transition-colors relative ${explainMode ? 'bg-primary' : 'bg-muted'}`} onClick={() => setExplainMode(!explainMode)}>
+                    <motion.div className="absolute top-0.5 w-4 h-4 rounded-full bg-primary-foreground shadow-sm" animate={{ left: explainMode ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
+                  </div>
+                  <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Explain mode — tap any item to learn what it means</span>
+                </label>
+
                 <div className="mb-5">
                   <p className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide">Skills</p>
                   <div className="flex flex-wrap gap-1.5">
                     {SKILLS_OPTIONS.map((s) => (
-                      <ChipButton key={s} label={s} selected={skills.includes(s)} onClick={() => toggleItem(skills, setSkills, s)} />
+                      <ChipButton
+                        key={s}
+                        label={s}
+                        selected={skills.includes(s)}
+                        onClick={() => {
+                          if (explainMode) {
+                            const info = SKILL_EXPLANATIONS[s];
+                            if (info) setExplainItem({ label: s, ...info });
+                          } else {
+                            toggleItem(skills, setSkills, s);
+                          }
+                        }}
+                        explainMode={explainMode}
+                      />
                     ))}
                   </div>
                 </div>
@@ -180,7 +202,20 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
                   <p className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide">Life Values</p>
                   <div className="flex flex-wrap gap-1.5">
                     {VALUES_OPTIONS.map((v) => (
-                      <ChipButton key={v} label={v} selected={values.includes(v)} onClick={() => toggleItem(values, setValues, v)} />
+                      <ChipButton
+                        key={v}
+                        label={v}
+                        selected={values.includes(v)}
+                        onClick={() => {
+                          if (explainMode) {
+                            const info = VALUE_EXPLANATIONS[v];
+                            if (info) setExplainItem({ label: v, ...info });
+                          } else {
+                            toggleItem(values, setValues, v);
+                          }
+                        }}
+                        explainMode={explainMode}
+                      />
                     ))}
                   </div>
                 </div>
