@@ -282,16 +282,19 @@ function OptionButton({ label, selected, onClick }: { label: string; selected: b
   );
 }
 
-function ChipButton({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function ChipButton({ label, selected, onClick, explainMode }: { label: string; selected: boolean; onClick: () => void; explainMode?: boolean }) {
   return (
     <button
       onClick={onClick}
       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
         selected
           ? "gradient-warm text-primary-foreground border-transparent"
-          : "bg-card text-foreground border-border hover:border-primary/40"
+          : explainMode
+            ? "bg-card text-primary border-primary/40 hover:border-primary"
+            : "bg-card text-foreground border-border hover:border-primary/40"
       }`}
     >
+      {explainMode && <HelpCircle className="w-3 h-3 inline mr-1 -mt-0.5" />}
       {label}
     </button>
   );
