@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,10 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
   const [values, setValues] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [isCustomName, setIsCustomName] = useState(false);
+
+  const autoAdvance = useCallback((nextStep: number) => {
+    setTimeout(() => setStep(nextStep), 350);
+  }, []);
 
   const toggleItem = (arr: string[], setArr: React.Dispatch<React.SetStateAction<string[]>>, item: string) =>
     setArr(arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]);
@@ -115,7 +119,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
               <StepLayout title="What activity were you involved in?" subtitle="Pick one or describe your own">
                 <div className="space-y-2">
                   {category.examples.map((ex) => (
-                    <OptionButton key={ex} label={ex} selected={name === ex} onClick={() => { setName(ex); setIsCustomName(false); }} />
+                    <OptionButton key={ex} label={ex} selected={name === ex} onClick={() => { setName(ex); setIsCustomName(false); autoAdvance(1); }} />
                   ))}
                   <OptionButton label="Other…" selected={isCustomName} onClick={() => { setIsCustomName(true); setName(""); }} />
                 </div>
@@ -133,7 +137,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
               <StepLayout title="How big was the team?" subtitle="The group you worked with">
                 <div className="space-y-2">
                   {GROUP_SIZES.map((size) => (
-                    <OptionButton key={size} label={size} selected={groupSize === size} onClick={() => setGroupSize(size)} />
+                    <OptionButton key={size} label={size} selected={groupSize === size} onClick={() => { setGroupSize(size); autoAdvance(2); }} />
                   ))}
                 </div>
               </StepLayout>
@@ -143,7 +147,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
               <StepLayout title="How long were you involved?" subtitle="Total duration of this experience">
                 <div className="space-y-2">
                   {DURATION_OPTIONS.map((d) => (
-                    <OptionButton key={d} label={d} selected={duration === d} onClick={() => setDuration(d)} />
+                    <OptionButton key={d} label={d} selected={duration === d} onClick={() => { setDuration(d); autoAdvance(3); }} />
                   ))}
                 </div>
               </StepLayout>
@@ -187,21 +191,23 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
         </AnimatePresence>
       </div>
 
-      {/* Bottom button */}
-      <div className="px-5 py-4 mt-auto">
-        <Button
-          onClick={step === STEPS.length - 1 ? handleFinish : () => setStep(step + 1)}
-          disabled={!canNext()}
-          className="w-full h-12 text-sm font-semibold rounded-xl gradient-warm border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity disabled:opacity-30"
-          size="lg"
-        >
-          {step === STEPS.length - 1 ? (
-            <>Done <Check className="ml-2 w-4 h-4" /></>
-          ) : (
-            <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>
-          )}
-        </Button>
-      </div>
+      {/* Bottom button — only show on multi-select steps (3, 4) or custom name on step 0 */}
+      {(step >= 3 || (step === 0 && isCustomName)) && (
+        <div className="px-5 py-4 mt-auto">
+          <Button
+            onClick={step === STEPS.length - 1 ? handleFinish : () => setStep(step + 1)}
+            disabled={!canNext()}
+            className="w-full h-12 text-sm font-semibold rounded-xl gradient-warm border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity disabled:opacity-30"
+            size="lg"
+          >
+            {step === STEPS.length - 1 ? (
+              <>Done <Check className="ml-2 w-4 h-4" /></>
+            ) : (
+              <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
