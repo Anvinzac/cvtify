@@ -191,21 +191,23 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
         </AnimatePresence>
       </div>
 
-      {/* Bottom button */}
-      <div className="px-5 py-4 mt-auto">
-        <Button
-          onClick={step === STEPS.length - 1 ? handleFinish : () => setStep(step + 1)}
-          disabled={!canNext()}
-          className="w-full h-12 text-sm font-semibold rounded-xl gradient-warm border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity disabled:opacity-30"
-          size="lg"
-        >
-          {step === STEPS.length - 1 ? (
-            <>Done <Check className="ml-2 w-4 h-4" /></>
-          ) : (
-            <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>
-          )}
-        </Button>
-      </div>
+      {/* Bottom button — only show on multi-select steps (3, 4) or custom name on step 0 */}
+      {(step >= 3 || (step === 0 && isCustomName)) && (
+        <div className="px-5 py-4 mt-auto">
+          <Button
+            onClick={step === STEPS.length - 1 ? handleFinish : () => setStep(step + 1)}
+            disabled={!canNext()}
+            className="w-full h-12 text-sm font-semibold rounded-xl gradient-warm border-0 text-primary-foreground shadow-elevated hover:opacity-90 transition-opacity disabled:opacity-30"
+            size="lg"
+          >
+            {step === STEPS.length - 1 ? (
+              <>Done <Check className="ml-2 w-4 h-4" /></>
+            ) : (
+              <>Continue <ArrowRight className="ml-2 w-4 h-4" /></>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
