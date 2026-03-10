@@ -39,6 +39,8 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
   const [values, setValues] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [isCustomName, setIsCustomName] = useState(false);
+  const [explainMode, setExplainMode] = useState(false);
+  const [explainItem, setExplainItem] = useState<{ label: string; short: string; example: string } | null>(null);
 
   const autoAdvance = useCallback((nextStep: number) => {
     setTimeout(() => setStep(nextStep), 350);
