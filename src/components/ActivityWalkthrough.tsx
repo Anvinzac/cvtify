@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X, HelpCircle } from "lucide-react";
+import { SKILL_EXPLANATIONS, VALUE_EXPLANATIONS } from "@/lib/explanations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +39,8 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
   const [values, setValues] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [isCustomName, setIsCustomName] = useState(false);
+  const [explainMode, setExplainMode] = useState(false);
+  const [explainItem, setExplainItem] = useState<{ label: string; short: string; example: string } | null>(null);
 
   const autoAdvance = useCallback((nextStep: number) => {
     setTimeout(() => setStep(nextStep), 350);
@@ -71,7 +74,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 flex items-center gap-3">
         <button
@@ -165,11 +168,33 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
 
             {step === 4 && (
               <StepLayout title="What did you discover?" subtitle="Skills & values you realized">
+                {/* Explain mode toggle */}
+                <label className="flex items-center gap-2 mb-4 cursor-pointer select-none">
+                  <div className={`w-9 h-5 rounded-full transition-colors relative ${explainMode ? 'bg-primary' : 'bg-muted'}`} onClick={() => setExplainMode(!explainMode)}>
+                    <motion.div className="absolute top-0.5 w-4 h-4 rounded-full bg-primary-foreground shadow-sm" animate={{ left: explainMode ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
+                  </div>
+                  <HelpCircle className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Explain mode — tap any item to learn what it means</span>
+                </label>
+
                 <div className="mb-5">
                   <p className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide">Skills</p>
                   <div className="flex flex-wrap gap-1.5">
                     {SKILLS_OPTIONS.map((s) => (
-                      <ChipButton key={s} label={s} selected={skills.includes(s)} onClick={() => toggleItem(skills, setSkills, s)} />
+                      <ChipButton
+                        key={s}
+                        label={s}
+                        selected={skills.includes(s)}
+                        onClick={() => {
+                          if (explainMode) {
+                            const info = SKILL_EXPLANATIONS[s];
+                            if (info) setExplainItem({ label: s, ...info });
+                          } else {
+                            toggleItem(skills, setSkills, s);
+                          }
+                        }}
+                        explainMode={explainMode}
+                      />
                     ))}
                   </div>
                 </div>
@@ -177,7 +202,20 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
                   <p className="text-xs font-semibold text-foreground mb-2 uppercase tracking-wide">Life Values</p>
                   <div className="flex flex-wrap gap-1.5">
                     {VALUES_OPTIONS.map((v) => (
-                      <ChipButton key={v} label={v} selected={values.includes(v)} onClick={() => toggleItem(values, setValues, v)} />
+                      <ChipButton
+                        key={v}
+                        label={v}
+                        selected={values.includes(v)}
+                        onClick={() => {
+                          if (explainMode) {
+                            const info = VALUE_EXPLANATIONS[v];
+                            if (info) setExplainItem({ label: v, ...info });
+                          } else {
+                            toggleItem(values, setValues, v);
+                          }
+                        }}
+                        explainMode={explainMode}
+                      />
                     ))}
                   </div>
                 </div>
@@ -208,6 +246,52 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
           </Button>
         </div>
       )}
+
+      {/* Explain popup */}
+      <AnimatePresence>
+        {explainItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+            onClick={() => setExplainItem(null)}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className="w-full mx-3 mb-4 bg-card rounded-2xl border border-border shadow-elevated p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-base font-bold text-foreground">{explainItem.label}</h3>
+                <button onClick={() => setExplainItem(null)} className="text-muted-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-sm text-foreground mb-2">{explainItem.short}</p>
+              <div className="bg-accent rounded-xl p-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Example for students</p>
+                <p className="text-sm text-accent-foreground">{explainItem.example}</p>
+              </div>
+              <button
+                onClick={() => {
+                  const label = explainItem.label;
+                  // Also select the item when tapping "Got it"
+                  if (SKILLS_OPTIONS.includes(label)) toggleItem(skills, setSkills, label);
+                  else if (VALUES_OPTIONS.includes(label)) toggleItem(values, setValues, label);
+                  setExplainItem(null);
+                }}
+                className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold gradient-warm text-primary-foreground"
+              >
+                Got it — select this
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -244,16 +328,19 @@ function OptionButton({ label, selected, onClick }: { label: string; selected: b
   );
 }
 
-function ChipButton({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function ChipButton({ label, selected, onClick, explainMode }: { label: string; selected: boolean; onClick: () => void; explainMode?: boolean }) {
   return (
     <button
       onClick={onClick}
       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
         selected
           ? "gradient-warm text-primary-foreground border-transparent"
-          : "bg-card text-foreground border-border hover:border-primary/40"
+          : explainMode
+            ? "bg-card text-primary border-primary/40 hover:border-primary"
+            : "bg-card text-foreground border-border hover:border-primary/40"
       }`}
     >
+      {explainMode && <HelpCircle className="w-3 h-3 inline mr-1 -mt-0.5" />}
       {label}
     </button>
   );
