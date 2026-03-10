@@ -147,7 +147,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
               <StepLayout title="How long were you involved?" subtitle="Total duration of this experience">
                 <div className="space-y-2">
                   {DURATION_OPTIONS.map((d) => (
-                    <OptionButton key={d} label={d} selected={duration === d} onClick={() => setDuration(d)} />
+                    <OptionButton key={d} label={d} selected={duration === d} onClick={() => { setDuration(d); autoAdvance(3); }} />
                   ))}
                 </div>
               </StepLayout>
