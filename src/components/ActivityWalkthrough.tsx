@@ -246,6 +246,52 @@ export default function ActivityWalkthrough({ category, onComplete, onClose }: A
           </Button>
         </div>
       )}
+
+      {/* Explain popup */}
+      <AnimatePresence>
+        {explainItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+            onClick={() => setExplainItem(null)}
+          >
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className="w-full mx-3 mb-4 bg-card rounded-2xl border border-border shadow-elevated p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="text-base font-bold text-foreground">{explainItem.label}</h3>
+                <button onClick={() => setExplainItem(null)} className="text-muted-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-sm text-foreground mb-2">{explainItem.short}</p>
+              <div className="bg-accent rounded-xl p-3">
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Example for students</p>
+                <p className="text-sm text-accent-foreground">{explainItem.example}</p>
+              </div>
+              <button
+                onClick={() => {
+                  const label = explainItem.label;
+                  // Also select the item when tapping "Got it"
+                  if (SKILLS_OPTIONS.includes(label)) toggleItem(skills, setSkills, label);
+                  else if (VALUES_OPTIONS.includes(label)) toggleItem(values, setValues, label);
+                  setExplainItem(null);
+                }}
+                className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold gradient-warm text-primary-foreground"
+              >
+                Got it — select this
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
