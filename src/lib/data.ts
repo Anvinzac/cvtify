@@ -65,6 +65,15 @@ export const CATEGORIES: Category[] = [
     examples: ["Office assistant", "Corporate intern", "Lab technician", "Teaching assistant"],
     color: "from-slate-400 to-gray-600",
   },
+  {
+    id: "supplemental-education",
+    name: "Supplemental Education",
+    icon: Lightbulb,
+    emoji: "📚",
+    description: "Classes, certificates, and courses",
+    examples: ["Online course", "Certification program", "Workshop", "Language class"],
+    color: "from-indigo-400 to-blue-600",
+  },
 ];
 
 export const GROUP_SIZES = [

@@ -14,7 +14,7 @@ const AddActivity = () => {
 
   const handleComplete = (activity: Activity) => {
     addActivity(activity);
-    navigate("/dashboard");
+    navigate("/categories");
   };
 
   return (
