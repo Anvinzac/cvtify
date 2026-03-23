@@ -66,25 +66,25 @@ const CategorySelect = () => {
               className="w-full text-left p-3 rounded-xl border-2 border-border bg-card hover:border-primary/40 transition-all duration-200 relative overflow-visible cursor-pointer shadow-card"
             >
               <div className="flex items-start gap-2">
-                <span className="text-base leading-none mt-0.5">{cat.emoji}</span>
-                <h3 className="font-semibold text-foreground text-xs leading-tight flex-1">
+                <span className="text-lg leading-none mt-0.5">{cat.emoji}</span>
+                <h3 className="font-semibold text-foreground text-sm leading-tight flex-1">
                   {cat.name}
                 </h3>
               </div>
 
               {catActivities.length === 0 ? (
-                <p className="text-[10px] text-muted-foreground mt-1.5 leading-snug pl-6">
+                <p className="text-xs text-muted-foreground mt-2 leading-snug pl-7">
                   {cat.examples.slice(0, 2).join(" · ")}
                 </p>
               ) : (
-                <div className="mt-1.5 space-y-0.5 pl-6">
+                <div className="mt-2 space-y-1 pl-7">
                   {catActivities.map((act) => (
                     <div
                       key={act.id}
-                      className="flex items-center gap-1 bg-accent rounded-md px-1.5 py-0.5"
+                      className="flex items-center gap-1.5 bg-accent rounded-md px-2 py-1"
                     >
-                      <Check className="w-2.5 h-2.5 text-primary flex-shrink-0" />
-                      <span className="text-[9px] text-accent-foreground font-medium truncate flex-1">
+                      <Check className="w-3 h-3 text-primary flex-shrink-0" />
+                      <span className="text-[11px] text-accent-foreground font-medium truncate flex-1">
                         {act.name}
                       </span>
                       <button
@@ -94,11 +94,11 @@ const CategorySelect = () => {
                         }}
                         className="text-muted-foreground hover:text-destructive flex-shrink-0"
                       >
-                        <X className="w-2.5 h-2.5" />
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
-                  <p className="text-[9px] text-primary font-medium">+ Add more</p>
+                  <p className="text-[11px] text-primary font-medium pt-0.5">+ Add more</p>
                 </div>
               )}
             </motion.div>
