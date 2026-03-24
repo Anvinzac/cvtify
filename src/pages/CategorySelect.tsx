@@ -181,6 +181,7 @@ const CategorySelect = () => {
                 category={expandedCategory}
                 onComplete={handleActivityComplete}
                 onClose={handleClose}
+                initialActivity={editingActivity ?? undefined}
               />
             </motion.div>
           </motion.div>
