@@ -27,6 +27,7 @@ interface ActivityWalkthroughProps {
   category: Category;
   onComplete: (activity: Activity) => void;
   onClose: () => void;
+  initialActivity?: Activity;
 }
 
 export default function ActivityWalkthrough({ category, onComplete, onClose }: ActivityWalkthroughProps) {
