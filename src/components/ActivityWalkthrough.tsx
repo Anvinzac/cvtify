@@ -86,7 +86,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose, ini
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div className="flex-1">
-          <p className="text-xs text-muted-foreground">{category.emoji} {category.name}</p>
+          <p className="text-xs text-muted-foreground">{category.emoji} {category.name}{isEditing ? ` · Editing` : ""}</p>
           <p className="text-sm font-semibold text-foreground">
             Step {step + 1} of {STEPS.length}
           </p>
