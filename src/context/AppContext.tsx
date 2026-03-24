@@ -32,6 +32,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : [...d.selectedCategories, activity.categoryId],
     }));
 
+  const updateActivity = (activity: Activity) =>
+    setData((d) => ({ ...d, activities: d.activities.map((a) => a.id === activity.id ? activity : a) }));
+
   const removeActivity = (id: string) =>
     setData((d) => ({ ...d, activities: d.activities.filter((a) => a.id !== id) }));
 
