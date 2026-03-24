@@ -51,7 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ ...data, setSelectedCategories, addActivity, removeActivity, setHobbies, toggleFavoriteJob }}
+      value={{ ...data, setSelectedCategories, addActivity, updateActivity, removeActivity, setHobbies, toggleFavoriteJob }}
     >
       {children}
     </AppContext.Provider>
