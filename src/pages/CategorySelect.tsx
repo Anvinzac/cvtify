@@ -94,7 +94,8 @@ const CategorySelect = () => {
                   {catActivities.map((act) => (
                     <div
                       key={act.id}
-                      className="flex items-center gap-1.5 bg-accent rounded-md px-2 py-1"
+                      className="flex items-center gap-1.5 bg-accent rounded-md px-2 py-1 cursor-pointer hover:bg-accent/80 transition-colors"
+                      onClick={(e) => handleEditActivity(act, e)}
                     >
                       <Check className="w-3 h-3 text-primary flex-shrink-0" />
                       <span className="text-[11px] text-accent-foreground font-medium truncate flex-1">
