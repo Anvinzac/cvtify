@@ -62,7 +62,7 @@ export default function ActivityWalkthrough({ category, onComplete, onClose, ini
 
   const handleFinish = () => {
     const activity: Activity = {
-      id: Date.now().toString(),
+      id: initialActivity?.id ?? Date.now().toString(),
       categoryId: category.id,
       name: name.trim(),
       groupSize,
