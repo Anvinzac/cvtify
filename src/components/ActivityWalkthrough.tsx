@@ -30,16 +30,17 @@ interface ActivityWalkthroughProps {
   initialActivity?: Activity;
 }
 
-export default function ActivityWalkthrough({ category, onComplete, onClose }: ActivityWalkthroughProps) {
+export default function ActivityWalkthrough({ category, onComplete, onClose, initialActivity }: ActivityWalkthroughProps) {
+  const isEditing = !!initialActivity;
   const [step, setStep] = useState(0);
-  const [name, setName] = useState("");
-  const [groupSize, setGroupSize] = useState("");
-  const [duration, setDuration] = useState("");
-  const [taskTypes, setTaskTypes] = useState<string[]>([]);
-  const [skills, setSkills] = useState<string[]>([]);
-  const [values, setValues] = useState<string[]>([]);
-  const [notes, setNotes] = useState("");
-  const [isCustomName, setIsCustomName] = useState(false);
+  const [name, setName] = useState(initialActivity?.name ?? "");
+  const [groupSize, setGroupSize] = useState(initialActivity?.groupSize ?? "");
+  const [duration, setDuration] = useState(initialActivity?.duration ?? "");
+  const [taskTypes, setTaskTypes] = useState<string[]>(initialActivity?.taskTypes ?? []);
+  const [skills, setSkills] = useState<string[]>(initialActivity?.skills ?? []);
+  const [values, setValues] = useState<string[]>(initialActivity?.values ?? []);
+  const [notes, setNotes] = useState(initialActivity?.personalNotes ?? "");
+  const [isCustomName, setIsCustomName] = useState(initialActivity ? !category.examples.includes(initialActivity.name) : false);
   const [explainMode, setExplainMode] = useState(false);
   const [explainItem, setExplainItem] = useState<{ label: string; short: string; example: string } | null>(null);
 
