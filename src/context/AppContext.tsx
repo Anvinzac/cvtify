@@ -5,6 +5,7 @@ import { DraftData, loadDraft, saveDraft } from "@/lib/storage";
 interface AppState extends DraftData {
   setSelectedCategories: (cats: string[]) => void;
   addActivity: (activity: Activity) => void;
+  updateActivity: (activity: Activity) => void;
   removeActivity: (id: string) => void;
   setHobbies: (hobbies: string[]) => void;
   toggleFavoriteJob: (jobId: string) => void;
@@ -31,6 +32,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : [...d.selectedCategories, activity.categoryId],
     }));
 
+  const updateActivity = (activity: Activity) =>
+    setData((d) => ({ ...d, activities: d.activities.map((a) => a.id === activity.id ? activity : a) }));
+
   const removeActivity = (id: string) =>
     setData((d) => ({ ...d, activities: d.activities.filter((a) => a.id !== id) }));
 
@@ -47,7 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ ...data, setSelectedCategories, addActivity, removeActivity, setHobbies, toggleFavoriteJob }}
+      value={{ ...data, setSelectedCategories, addActivity, updateActivity, removeActivity, setHobbies, toggleFavoriteJob }}
     >
       {children}
     </AppContext.Provider>

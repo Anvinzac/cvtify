@@ -8,8 +8,9 @@ import ActivityWalkthrough from "@/components/ActivityWalkthrough";
 
 const CategorySelect = () => {
   const navigate = useNavigate();
-  const { activities, addActivity, removeActivity } = useAppState();
+  const { activities, addActivity, updateActivity, removeActivity } = useAppState();
   const [expandedCatId, setExpandedCatId] = useState<string | null>(null);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const cardRefs = useRef<Record<string, DOMRect | null>>({});
 
   const expandedCategory = CATEGORIES.find((c) => c.id === expandedCatId);
@@ -21,12 +22,24 @@ const CategorySelect = () => {
   };
 
   const handleActivityComplete = (activity: Activity) => {
-    addActivity(activity);
+    if (editingActivity) {
+      updateActivity(activity);
+    } else {
+      addActivity(activity);
+    }
     setExpandedCatId(null);
+    setEditingActivity(null);
   };
 
   const handleClose = () => {
     setExpandedCatId(null);
+    setEditingActivity(null);
+  };
+
+  const handleEditActivity = (act: Activity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingActivity(act);
+    setExpandedCatId(act.categoryId);
   };
 
   const hasActivities = activities.length > 0;
@@ -81,7 +94,8 @@ const CategorySelect = () => {
                   {catActivities.map((act) => (
                     <div
                       key={act.id}
-                      className="flex items-center gap-1.5 bg-accent rounded-md px-2 py-1"
+                      className="flex items-center gap-1.5 bg-accent rounded-md px-2 py-1 cursor-pointer hover:bg-accent/80 transition-colors"
+                      onClick={(e) => handleEditActivity(act, e)}
                     >
                       <Check className="w-3 h-3 text-primary flex-shrink-0" />
                       <span className="text-[11px] text-accent-foreground font-medium truncate flex-1">
@@ -167,6 +181,7 @@ const CategorySelect = () => {
                 category={expandedCategory}
                 onComplete={handleActivityComplete}
                 onClose={handleClose}
+                initialActivity={editingActivity ?? undefined}
               />
             </motion.div>
           </motion.div>
