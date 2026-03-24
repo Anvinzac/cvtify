@@ -22,12 +22,24 @@ const CategorySelect = () => {
   };
 
   const handleActivityComplete = (activity: Activity) => {
-    addActivity(activity);
+    if (editingActivity) {
+      updateActivity(activity);
+    } else {
+      addActivity(activity);
+    }
     setExpandedCatId(null);
+    setEditingActivity(null);
   };
 
   const handleClose = () => {
     setExpandedCatId(null);
+    setEditingActivity(null);
+  };
+
+  const handleEditActivity = (act: Activity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingActivity(act);
+    setExpandedCatId(act.categoryId);
   };
 
   const hasActivities = activities.length > 0;
