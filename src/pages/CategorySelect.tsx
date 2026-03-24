@@ -8,8 +8,9 @@ import ActivityWalkthrough from "@/components/ActivityWalkthrough";
 
 const CategorySelect = () => {
   const navigate = useNavigate();
-  const { activities, addActivity, removeActivity } = useAppState();
+  const { activities, addActivity, updateActivity, removeActivity } = useAppState();
   const [expandedCatId, setExpandedCatId] = useState<string | null>(null);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const cardRefs = useRef<Record<string, DOMRect | null>>({});
 
   const expandedCategory = CATEGORIES.find((c) => c.id === expandedCatId);
