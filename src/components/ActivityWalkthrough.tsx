@@ -1,10 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, MouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, X, HelpCircle, Sparkles } from "lucide-react";
 import { SKILL_EXPLANATIONS, VALUE_EXPLANATIONS } from "@/lib/explanations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import Confetti from "@/components/fx/Confetti";
+import SparkleBurst from "@/components/fx/SparkleBurst";
 import {
   Category,
   GROUP_SIZES,
@@ -19,9 +21,13 @@ const STEPS = [
   { label: "Name", icon: "📝" },
   { label: "Team", icon: "👥" },
   { label: "Duration", icon: "⏱" },
+  { label: "When", icon: "📅" },
   { label: "Tasks", icon: "🔧" },
   { label: "Discovery", icon: "✨" },
 ];
+
+const CURRENT_YEAR = new Date().getFullYear();
+const PICKER_YEARS = [CURRENT_YEAR - 2, CURRENT_YEAR - 1, CURRENT_YEAR];
 
 interface ActivityWalkthroughProps {
   category: Category;
@@ -45,6 +51,18 @@ export default function ActivityWalkthrough({
   const [skills, setSkills] = useState<string[]>(initialActivity?.skills ?? []);
   const [values, setValues] = useState<string[]>(initialActivity?.values ?? []);
   const [notes, setNotes] = useState(initialActivity?.personalNotes ?? "");
+  const [occurredAt, setOccurredAt] = useState<number | undefined>(
+    initialActivity?.occurredAt
+  );
+  const initialDate = initialActivity?.occurredAt
+    ? new Date(initialActivity.occurredAt)
+    : null;
+  const [whenYear, setWhenYear] = useState<number | null>(
+    initialDate ? initialDate.getFullYear() : null
+  );
+  const [whenMonth, setWhenMonth] = useState<number | null>(
+    initialDate ? initialDate.getMonth() : null
+  );
   const [isCustomName, setIsCustomName] = useState(
     initialActivity ? !category.examples.includes(initialActivity.name) : false
   );
@@ -55,6 +73,14 @@ export default function ActivityWalkthrough({
     example: string;
   } | null>(null);
   const [celebrating, setCelebrating] = useState(false);
+  const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
+
+  const emitBurst = (e: MouseEvent) => {
+    const id = Date.now() + Math.random();
+    setBursts((b) => [...b, { id, x: e.clientX, y: e.clientY }]);
+  };
+  const settleBurst = (id: number) =>
+    setBursts((b) => b.filter((bx) => bx.id !== id));
 
   const autoAdvance = useCallback(
     (nextStep: number) => {
@@ -73,8 +99,9 @@ export default function ActivityWalkthrough({
     if (step === 0) return name.trim().length > 0;
     if (step === 1) return groupSize.length > 0;
     if (step === 2) return duration.length > 0;
-    if (step === 3) return taskTypes.length > 0;
-    if (step === 4) return skills.length > 0;
+    if (step === 3) return true; // "When" is optional
+    if (step === 4) return taskTypes.length > 0;
+    if (step === 5) return skills.length > 0;
     return true;
   };
 
@@ -90,6 +117,7 @@ export default function ActivityWalkthrough({
       skills,
       values,
       personalNotes: notes,
+      occurredAt,
     };
     setTimeout(() => {
       onComplete(activity);
@@ -264,6 +292,82 @@ export default function ActivityWalkthrough({
 
             {step === 3 && (
               <StepLayout
+                title="When did this happen?"
+                subtitle="Helps place it on your timeline (optional)"
+              >
+                <div className="mb-5">
+                  <p className="text-xs font-bold text-foreground mb-2.5 uppercase tracking-wider">
+                    Year
+                  </p>
+                  <div className="flex gap-2">
+                    {PICKER_YEARS.map((y) => (
+                      <button
+                        key={y}
+                        onClick={() => {
+                          setWhenYear(y);
+                          if (whenMonth !== null) {
+                            setOccurredAt(new Date(y, whenMonth, 1).getTime());
+                          }
+                        }}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+                          whenYear === y
+                            ? "border-primary bg-accent/60 text-accent-foreground"
+                            : "border-border bg-card text-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {whenYear !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-5"
+                  >
+                    <p className="text-xs font-bold text-foreground mb-2.5 uppercase tracking-wider">
+                      Month
+                    </p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            setWhenMonth(i);
+                            setOccurredAt(new Date(whenYear, i, 1).getTime());
+                            autoAdvance(4);
+                          }}
+                          className={`py-2 rounded-lg text-xs font-semibold border transition-all duration-200 ${
+                            whenMonth === i
+                              ? "gradient-warm text-primary-foreground border-transparent shadow-sm"
+                              : "bg-card text-foreground border-border hover:border-primary/30"
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                <button
+                  onClick={() => {
+                    setWhenYear(null);
+                    setWhenMonth(null);
+                    setOccurredAt(undefined);
+                    autoAdvance(4);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline"
+                >
+                  Skip — I'm not sure
+                </button>
+              </StepLayout>
+            )}
+
+            {step === 4 && (
+              <StepLayout
                 title="What kinds of tasks did you do?"
                 subtitle="Select all that apply"
               >
@@ -280,7 +384,7 @@ export default function ActivityWalkthrough({
               </StepLayout>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <StepLayout
                 title="What did you discover about yourself?"
                 subtitle="Skills you practiced and values you realized"
@@ -317,11 +421,12 @@ export default function ActivityWalkthrough({
                         key={s}
                         label={s}
                         selected={skills.includes(s)}
-                        onClick={() => {
+                        onClick={(e) => {
                           if (explainMode) {
                             const info = SKILL_EXPLANATIONS[s];
                             if (info) setExplainItem({ label: s, ...info });
                           } else {
+                            if (!skills.includes(s)) emitBurst(e);
                             toggleItem(skills, setSkills, s);
                           }
                         }}
@@ -341,11 +446,12 @@ export default function ActivityWalkthrough({
                         key={v}
                         label={v}
                         selected={values.includes(v)}
-                        onClick={() => {
+                        onClick={(e) => {
                           if (explainMode) {
                             const info = VALUE_EXPLANATIONS[v];
                             if (info) setExplainItem({ label: v, ...info });
                           } else {
+                            if (!values.includes(v)) emitBurst(e);
                             toggleItem(values, setValues, v);
                           }
                         }}
@@ -374,7 +480,7 @@ export default function ActivityWalkthrough({
       </div>
 
       {/* Bottom button */}
-      {(step >= 3 || (step === 0 && isCustomName)) && (
+      {(step >= 4 || (step === 0 && isCustomName)) && (
         <div className="px-5 py-4 mt-auto">
           <Button
             onClick={step === STEPS.length - 1 ? handleFinish : () => setStep(step + 1)}
@@ -462,31 +568,56 @@ export default function ActivityWalkthrough({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-sm overflow-hidden"
           >
+            {/* Expanding ring */}
+            <motion.span
+              initial={{ scale: 0, opacity: 0.6 }}
+              animate={{ scale: 6, opacity: 0 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              className="absolute w-32 h-32 rounded-full border-2 border-primary/40"
+            />
             <motion.div
               initial={{ scale: 0, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="text-center"
+              className="text-center relative z-10"
             >
               <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.6, repeat: Infinity }}
+                animate={{ scale: [1, 1.18, 1], rotate: [0, 6, -4, 0] }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
                 className="w-20 h-20 rounded-2xl gradient-warm flex items-center justify-center mx-auto mb-4 shadow-glow"
               >
                 <Sparkles className="w-10 h-10 text-primary-foreground" />
               </motion.div>
-              <p className="text-lg font-bold text-foreground">
+              <motion.p
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.15 }}
+                className="text-lg font-bold text-foreground"
+              >
                 {isEditing ? "Updated!" : "Experience captured!"}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
+              </motion.p>
+              <motion.p
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.25 }}
+                className="text-sm text-muted-foreground mt-1"
+              >
                 {isEditing ? "Changes saved" : "Adding to your profile..."}
-              </p>
+              </motion.p>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Confetti on completion (not on edit) */}
+      {celebrating && !isEditing && (
+        <Confetti count={56} />
+      )}
+
+      {/* Sparkle bursts for chip selections */}
+      <SparkleBurst bursts={bursts} onSettle={settleBurst} />
     </div>
   );
 }
@@ -560,12 +691,12 @@ function ChipButton({
 }: {
   label: string;
   selected: boolean;
-  onClick: () => void;
+  onClick: (e: MouseEvent) => void;
   explainMode?: boolean;
 }) {
   return (
     <motion.button
-      onClick={onClick}
+      onClick={(e) => onClick(e as unknown as MouseEvent)}
       whileTap={{ scale: 0.94 }}
       className={`px-3.5 py-2 rounded-full text-xs font-medium border transition-all duration-200 ${
         selected

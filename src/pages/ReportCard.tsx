@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, BarChart3, Sparkles, ChevronRight, Star, Heart, Zap, Palette } from "lucide-react";
+import { ArrowLeft, BarChart3, Sparkles, ChevronRight, Star, Heart, Zap, Palette, CalendarClock, ClipboardList } from "lucide-react";
 import { useAppState } from "@/context/AppContext";
 import { HOBBY_OPTIONS } from "@/lib/data";
+import CountUp from "@/components/fx/CountUp";
+import ScrollProgress from "@/components/fx/ScrollProgress";
 
 const ReportCard = () => {
   const navigate = useNavigate();
@@ -59,6 +61,7 @@ const ReportCard = () => {
 
   return (
     <div className="min-h-[100dvh] flex flex-col gradient-soft">
+      <ScrollProgress />
       {/* Header */}
       <div className="px-5 pt-6 pb-4 flex items-center gap-3">
         <button
@@ -93,22 +96,46 @@ const ReportCard = () => {
             </div>
           </div>
           <div className="space-y-3">
-            {topSkills.map(([skill, count], i) => (
-              <div key={skill}>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="text-foreground font-semibold">{skill}</span>
-                  <span className="text-muted-foreground font-medium">{count}x</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((count / activities.length) * 100, 100)}%` }}
-                    transition={{ duration: 0.7, delay: 0.1 + i * 0.08, ease: "easeOut" }}
-                    className="h-full gradient-warm rounded-full"
-                  />
-                </div>
-              </div>
-            ))}
+            {topSkills.map(([skill, count], i) => {
+              const pct = Math.min((count / activities.length) * 100, 100);
+              const isTop = i === 0;
+              return (
+                <motion.div
+                  key={skill}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.05 + i * 0.06 }}
+                  whileHover={{ x: 2 }}
+                  className="group/skill"
+                >
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className={`font-semibold flex items-center gap-1.5 ${isTop ? "text-primary" : "text-foreground"}`}>
+                      {isTop && <Sparkles className="w-3 h-3 text-primary" />}
+                      {skill}
+                    </span>
+                    <span className="text-muted-foreground font-medium">
+                      <CountUp to={count} duration={900} delay={300 + i * 80} />x
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden relative">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.9, delay: 0.15 + i * 0.08, ease: [0.22, 0.7, 0.35, 1] }}
+                      className="h-full gradient-warm rounded-full relative overflow-hidden"
+                    >
+                      {isTop && (
+                        <motion.div
+                          animate={{ x: ["-100%", "200%"] }}
+                          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                          className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent"
+                        />
+                      )}
+                    </motion.div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -129,15 +156,19 @@ const ReportCard = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {topValues.map(([value, count]) => (
+            {topValues.map(([value, count], i) => (
               <motion.span
                 key={value}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="px-3.5 py-2 rounded-full text-xs font-semibold gradient-teal text-secondary-foreground shadow-sm"
+                initial={{ opacity: 0, scale: 0.9, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ delay: 0.15 + i * 0.06, type: "spring", stiffness: 300, damping: 22 }}
+                whileHover={{ y: -2, scale: 1.04 }}
+                className="px-3.5 py-2 rounded-full text-xs font-semibold gradient-teal text-secondary-foreground shadow-sm cursor-default"
               >
                 {value}
-                <span className="ml-1 opacity-70">{count}</span>
+                <span className="ml-1 opacity-70">
+                  <CountUp to={count} duration={700} delay={400 + i * 60} />
+                </span>
               </motion.span>
             ))}
           </div>
@@ -220,12 +251,18 @@ export function BottomNav({
   active: string;
 }) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/85 backdrop-blur-xl border-t border-border/60 px-2 py-1.5 flex justify-around z-40">
+    <div className="fixed bottom-0 left-0 right-0 bg-card/85 backdrop-blur-xl border-t border-border/60 px-1 py-1.5 flex justify-around z-40">
       <NavBtn
-        icon={<span className="text-lg">📋</span>}
+        icon={<ClipboardList className="w-5 h-5" />}
         label="Activities"
         active={active === "dashboard"}
         onClick={() => navigate("/categories")}
+      />
+      <NavBtn
+        icon={<CalendarClock className="w-5 h-5" />}
+        label="Timeline"
+        active={active === "timeline"}
+        onClick={() => navigate("/timeline")}
       />
       <NavBtn
         icon={<BarChart3 className="w-5 h-5" />}
@@ -263,7 +300,7 @@ function NavBtn({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200 ${
+      className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all duration-200 ${
         active ? "text-primary" : "text-muted-foreground hover:text-foreground"
       }`}
     >

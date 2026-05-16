@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, BarChart3, Sparkles, ChevronRight, X, ArrowRight } from "lucide-react";
+import { Plus, BarChart3, Sparkles, ChevronRight, X, ArrowRight, ClipboardList } from "lucide-react";
 import { CATEGORIES } from "@/lib/data";
 import { useAppState } from "@/context/AppContext";
 
@@ -129,7 +129,7 @@ const Dashboard = () => {
       {/* Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-card/85 backdrop-blur-xl border-t border-border/60 px-2 py-1.5 flex justify-around z-40">
         <NavBtn
-          icon={<span className="text-lg">📋</span>}
+          icon={<ClipboardList className="w-5 h-5" />}
           label="Activities"
           active
           onClick={() => {}}

@@ -149,6 +149,8 @@ export interface Activity {
   skills: string[];
   values: string[];
   personalNotes: string;
+  /** Unix timestamp (ms) of when the activity took place. Optional — falls back to id. */
+  occurredAt?: number;
 }
 
 export interface DreamJob {

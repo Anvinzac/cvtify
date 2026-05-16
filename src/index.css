@@ -195,4 +195,123 @@
   .animate-soft-bounce { animation: soft-bounce 0.4s ease-out; }
   .animate-slide-up { animation: slide-up-fade 0.5s ease-out forwards; }
   .animate-scale-in { animation: scale-in-center 0.35s ease-out forwards; }
+
+  /* Aurora background blobs */
+  @keyframes aurora-drift-a {
+    0%   { transform: translate3d(-8%, -4%, 0) rotate(0deg) scale(1); }
+    50%  { transform: translate3d(6%, 8%, 0) rotate(20deg) scale(1.15); }
+    100% { transform: translate3d(-8%, -4%, 0) rotate(0deg) scale(1); }
+  }
+  @keyframes aurora-drift-b {
+    0%   { transform: translate3d(4%, 6%, 0) rotate(0deg) scale(1.05); }
+    50%  { transform: translate3d(-10%, -6%, 0) rotate(-25deg) scale(0.95); }
+    100% { transform: translate3d(4%, 6%, 0) rotate(0deg) scale(1.05); }
+  }
+  @keyframes aurora-drift-c {
+    0%   { transform: translate3d(0%, 4%, 0) rotate(0deg) scale(1); }
+    50%  { transform: translate3d(8%, -8%, 0) rotate(30deg) scale(1.1); }
+    100% { transform: translate3d(0%, 4%, 0) rotate(0deg) scale(1); }
+  }
+  .aurora-blob {
+    filter: blur(70px);
+    will-change: transform;
+    border-radius: 50%;
+  }
+  .aurora-blob-a {
+    background: radial-gradient(closest-side, hsl(32 95% 60% / 0.35), transparent 70%);
+    animation: aurora-drift-a 18s ease-in-out infinite;
+  }
+  .aurora-blob-b {
+    background: radial-gradient(closest-side, hsl(174 65% 50% / 0.28), transparent 70%);
+    animation: aurora-drift-b 22s ease-in-out infinite;
+  }
+  .aurora-blob-c {
+    background: radial-gradient(closest-side, hsl(22 92% 56% / 0.32), transparent 70%);
+    animation: aurora-drift-c 26s ease-in-out infinite;
+  }
+  .grain-overlay {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* Ripple from MagneticButton */
+  @keyframes ripple {
+    0%   { transform: translate(-50%,-50%) scale(0); opacity: 0.55; }
+    100% { transform: translate(-50%,-50%) scale(28); opacity: 0; }
+  }
+  .animate-ripple { animation: ripple 0.7s cubic-bezier(0.22,0.7,0.35,1) forwards; }
+
+  /* Spotlight card layer */
+  .spotlight-card {
+    position: relative;
+    transform-style: preserve-3d;
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 200ms cubic-bezier(0.22, 0.7, 0.35, 1);
+    --sx: -200px;
+    --sy: -200px;
+  }
+  .spotlight-layer {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      var(--spot-r, 220px) circle at var(--sx) var(--sy),
+      hsl(32 95% 60% / 0.18),
+      hsl(32 95% 60% / 0.04) 35%,
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 200ms ease;
+    z-index: 1;
+  }
+  .spotlight-card:hover .spotlight-layer { opacity: 1; }
+  .spotlight-card > *:not(.spotlight-layer) { position: relative; z-index: 2; }
+
+  /* Cursor follower */
+  .cursor-glow {
+    background: radial-gradient(
+      260px circle at var(--cx, -200px) var(--cy, -200px),
+      hsl(32 95% 60% / 0.12),
+      hsl(32 95% 60% / 0.03) 30%,
+      transparent 60%
+    );
+  }
+
+  /* Gradient text breathing */
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .text-gradient-warm-anim {
+    background: linear-gradient(120deg, hsl(32 95% 52%), hsl(22 90% 46%), hsl(38 95% 60%), hsl(32 95% 52%));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 6s ease-in-out infinite;
+  }
+
+  /* Marquee / shimmer line under section headers */
+  @keyframes underline-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .underline-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, hsl(32 95% 60% / 0.5), transparent);
+    animation: underline-sweep 2.2s ease-in-out infinite;
+  }
+
+  /* Reduce-motion respect */
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-blob,
+    .text-gradient-warm-anim,
+    .underline-sweep::after {
+      animation: none !important;
+    }
+  }
 }

@@ -1,19 +1,37 @@
+import { useState, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Heart, MapPin, DollarSign, CheckCircle2, Circle, Target } from "lucide-react";
 import { useAppState } from "@/context/AppContext";
 import { SAMPLE_JOBS } from "@/lib/data";
 import { BottomNav } from "./ReportCard";
+import ScrollProgress from "@/components/fx/ScrollProgress";
+import CountUp from "@/components/fx/CountUp";
+import SparkleBurst from "@/components/fx/SparkleBurst";
 
 const DreamJobs = () => {
   const navigate = useNavigate();
   const { activities, favoritedJobs, toggleFavoriteJob } = useAppState();
+  const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
+
+  const handleHeart = (e: MouseEvent, id: string, isFav: boolean) => {
+    if (!isFav) {
+      const burstId = Date.now() + Math.random();
+      setBursts((b) => [...b, { id: burstId, x: e.clientX, y: e.clientY }]);
+    }
+    toggleFavoriteJob(id);
+  };
 
   const userSkills = new Set<string>();
   activities.forEach((a) => a.skills.forEach((s) => userSkills.add(s)));
 
   return (
     <div className="min-h-[100dvh] flex flex-col gradient-soft">
+      <ScrollProgress />
+      <SparkleBurst
+        bursts={bursts}
+        onSettle={(id) => setBursts((b) => b.filter((bx) => bx.id !== id))}
+      />
       <div className="px-5 pt-6 pb-4 flex items-center gap-3">
         <button
           onClick={() => navigate("/categories")}
@@ -51,16 +69,19 @@ const DreamJobs = () => {
                   <p className="text-xs text-muted-foreground mt-0.5">{job.company}</p>
                 </div>
                 <motion.button
-                  onClick={() => toggleFavoriteJob(job.id)}
-                  whileTap={{ scale: 0.9 }}
-                  className={`p-2 rounded-xl transition-all duration-200 ${
+                  onClick={(e) => handleHeart(e, job.id, isFav)}
+                  whileTap={{ scale: 0.85 }}
+                  whileHover={{ scale: 1.08 }}
+                  animate={isFav ? { scale: [1, 1.25, 1] } : undefined}
+                  transition={{ duration: 0.35, ease: [0.34, 1.56, 0.64, 1] }}
+                  className={`p-2 rounded-xl transition-colors duration-200 ${
                     isFav
                       ? "text-rose-500 bg-rose-50"
                       : "text-muted-foreground hover:text-rose-400 hover:bg-rose-50/50"
                   }`}
                 >
                   <Heart
-                    className={`w-4.5 h-4.5 transition-all ${isFav ? "fill-current scale-110" : ""}`}
+                    className={`w-4.5 h-4.5 transition-all ${isFav ? "fill-current" : ""}`}
                   />
                 </motion.button>
               </div>
@@ -85,7 +106,7 @@ const DreamJobs = () => {
                     animate={{ scale: 1 }}
                     className="text-xs font-bold text-primary"
                   >
-                    {matchPercent}%
+                    <CountUp to={matchPercent} duration={900} delay={150 + i * 60} suffix="%" />
                   </motion.span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
