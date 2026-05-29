@@ -88,7 +88,7 @@
 @media print {
   @page {
     size: A4;
-    margin: 0;
+    margin: 14mm 16mm;
   }
 
   body {
@@ -101,10 +101,10 @@
 
   .cv-paper {
     box-shadow: none !important;
-    width: 100% !important;
+    width: auto !important;
     max-width: 100% !important;
-    min-height: 100vh;
-    padding: 15mm;
+    min-height: auto !important;
+    padding: 0 !important;
   }
 
   .cv-section {
@@ -161,6 +161,13 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 

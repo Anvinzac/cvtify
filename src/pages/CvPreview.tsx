@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Printer } from "lucide-react";
 import { useAppState } from "@/context/AppContext";
-import { CvEntry } from "@/lib/storage";
+import { CvEntry, SKILL_CATEGORIES } from "@/lib/storage";
 
 function formatDate(entry: CvEntry): string {
   const fmt = (d: string) => {
@@ -36,7 +36,7 @@ export default function CvPreview() {
   const hasAnyData =
     personalInfo.fullName || cv.professionalSummary ||
     cv.workExperience.length > 0 || cv.education.length > 0 ||
-    cv.skills.length > 0 || cv.certifications.length > 0 ||
+    cv.skills.some((g) => g.skills.length > 0) || cv.certifications.length > 0 ||
     cv.languages.length > 0;
 
   const contactParts = [
@@ -78,7 +78,7 @@ export default function CvPreview() {
         </div>
 
         {/* CV Paper */}
-        <div className="cv-paper bg-white shadow-xl rounded-none">
+        <div className="cv-paper bg-white shadow-xl rounded-none min-h-[297mm] px-6 py-8 sm:px-[18mm] sm:py-[16mm] md:px-[22mm] md:py-[18mm]">
           {!hasAnyData ? (
             <div className="flex flex-col items-center justify-center py-32 text-center">
               <p className="text-slate-400 text-lg mb-2">No CV data yet</p>
@@ -181,11 +181,22 @@ export default function CvPreview() {
                 </CvBlock>
               )}
 
-              {cv.skills.length > 0 && (
+              {cv.skills.some((g) => g.skills.length > 0) && (
                 <CvBlock title="Skills">
-                  <p className="text-sm text-slate-700 leading-relaxed">
-                    {cv.skills.join(", ")}
-                  </p>
+                  <div className="space-y-1.5">
+                    {cv.skills
+                      .filter((g) => g.skills.length > 0)
+                      .map((group) => {
+                        const cat = SKILL_CATEGORIES.find((c) => c.id === group.category);
+                        const label = cat?.label ?? group.category;
+                        return (
+                          <p key={group.id} className="text-sm text-slate-700 leading-relaxed">
+                            <span className="font-bold">{label}:</span>{" "}
+                            {group.skills.join(", ")}
+                          </p>
+                        );
+                      })}
+                  </div>
                 </CvBlock>
               )}
 
