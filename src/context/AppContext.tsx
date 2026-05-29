@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Activity } from "@/lib/data";
-import { DraftData, loadDraft, saveDraft } from "@/lib/storage";
+import { DraftData, loadDraft, saveDraft, CvData } from "@/lib/storage";
 
 /**
  * Backfill `occurredAt` for any legacy activities that don't have one.
@@ -57,6 +57,7 @@ interface AppState extends DraftData {
   removeActivity: (id: string) => void;
   setHobbies: (hobbies: string[]) => void;
   toggleFavoriteJob: (jobId: string) => void;
+  setCvData: (cv: CvData) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -100,9 +101,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : [...d.favoritedJobs, jobId],
     }));
 
+  const setCvData = (cv: CvData) =>
+    setData((d) => ({ ...d, cv }));
+
   return (
     <AppContext.Provider
-      value={{ ...data, setSelectedCategories, addActivity, updateActivity, removeActivity, setHobbies, toggleFavoriteJob }}
+      value={{ ...data, setSelectedCategories, addActivity, updateActivity, removeActivity, setHobbies, toggleFavoriteJob, setCvData }}
     >
       {children}
     </AppContext.Provider>

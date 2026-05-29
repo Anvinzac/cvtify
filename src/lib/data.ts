@@ -151,6 +151,12 @@ export interface Activity {
   personalNotes: string;
   /** Unix timestamp (ms) of when the activity took place. Optional — falls back to id. */
   occurredAt?: number;
+  /**
+   * How precise the occurredAt date is. 'month' is the default when set via
+   * the month picker. 'year' means the user picked a year but not a month.
+   * Treated as 'month' when undefined.
+   */
+  datePrecision?: "year" | "month";
 }
 
 export interface DreamJob {

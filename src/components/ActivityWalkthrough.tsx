@@ -1,6 +1,6 @@
 import { useState, useCallback, MouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, X, HelpCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X, HelpCircle, Sparkles, ChevronDown } from "lucide-react";
 import { SKILL_EXPLANATIONS, VALUE_EXPLANATIONS } from "@/lib/explanations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,15 @@ const STEPS = [
   { label: "Discovery", icon: "✨" },
 ];
 
-const CURRENT_YEAR = new Date().getFullYear();
-const PICKER_YEARS = [CURRENT_YEAR - 2, CURRENT_YEAR - 1, CURRENT_YEAR];
+const NOW = new Date();
+const CURRENT_YEAR = NOW.getFullYear();
+const CURRENT_MONTH = NOW.getMonth();
+/** 20 years back, newest first. Covers school years through present. */
+const PICKER_YEARS = Array.from({ length: 20 }, (_, i) => CURRENT_YEAR - i);
+const MONTH_LABELS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 interface ActivityWalkthroughProps {
   category: Category;
@@ -54,6 +61,9 @@ export default function ActivityWalkthrough({
   const [occurredAt, setOccurredAt] = useState<number | undefined>(
     initialActivity?.occurredAt
   );
+  const [datePrecision, setDatePrecision] = useState<"year" | "month" | undefined>(
+    initialActivity?.datePrecision
+  );
   const initialDate = initialActivity?.occurredAt
     ? new Date(initialActivity.occurredAt)
     : null;
@@ -61,7 +71,9 @@ export default function ActivityWalkthrough({
     initialDate ? initialDate.getFullYear() : null
   );
   const [whenMonth, setWhenMonth] = useState<number | null>(
-    initialDate ? initialDate.getMonth() : null
+    initialDate && initialActivity?.datePrecision !== "year"
+      ? initialDate.getMonth()
+      : null
   );
   const [isCustomName, setIsCustomName] = useState(
     initialActivity ? !category.examples.includes(initialActivity.name) : false
@@ -118,6 +130,7 @@ export default function ActivityWalkthrough({
       values,
       personalNotes: notes,
       occurredAt,
+      datePrecision,
     };
     setTimeout(() => {
       onComplete(activity);
@@ -293,75 +306,120 @@ export default function ActivityWalkthrough({
             {step === 3 && (
               <StepLayout
                 title="When did this happen?"
-                subtitle="Helps place it on your timeline (optional)"
+                subtitle="Tap a year to pick a month — optional"
               >
-                <div className="mb-5">
-                  <p className="text-xs font-bold text-foreground mb-2.5 uppercase tracking-wider">
-                    Year
-                  </p>
-                  <div className="flex gap-2">
-                    {PICKER_YEARS.map((y) => (
-                      <button
-                        key={y}
-                        onClick={() => {
-                          setWhenYear(y);
-                          if (whenMonth !== null) {
-                            setOccurredAt(new Date(y, whenMonth, 1).getTime());
-                          }
-                        }}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
-                          whenYear === y
-                            ? "border-primary bg-accent/60 text-accent-foreground"
-                            : "border-border bg-card text-foreground hover:border-primary/30"
-                        }`}
-                      >
-                        {y}
-                      </button>
-                    ))}
+                <div className="rounded-2xl border border-border bg-card overflow-hidden mb-4">
+                  <div className="max-h-[58vh] overflow-y-auto divide-y divide-border/60">
+                    {PICKER_YEARS.map((y) => {
+                      const expanded = whenYear === y;
+                      const maxMonth = y === CURRENT_YEAR ? CURRENT_MONTH : 11;
+                      return (
+                        <div key={y}>
+                          <button
+                            onClick={() => {
+                              if (expanded) {
+                                setWhenYear(null);
+                              } else {
+                                setWhenYear(y);
+                                if (whenMonth !== null && whenMonth <= maxMonth) {
+                                  setOccurredAt(new Date(y, whenMonth, 1).getTime());
+                                } else {
+                                  setWhenMonth(null);
+                                }
+                              }
+                            }}
+                            className={`w-full flex items-center justify-between px-4 py-3 transition-colors ${
+                              expanded
+                                ? "bg-accent/40"
+                                : "hover:bg-accent/20"
+                            }`}
+                          >
+                            <span className={`text-base font-bold tracking-tight ${
+                              expanded ? "text-primary" : "text-foreground"
+                            }`}>
+                              {y}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              {y === CURRENT_YEAR && (
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                  This year
+                                </span>
+                              )}
+                              <motion.span
+                                animate={{ rotate: expanded ? 180 : 0 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className="text-muted-foreground"
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </motion.span>
+                            </span>
+                          </button>
+                          <AnimatePresence initial={false}>
+                            {expanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.22, ease: [0.22, 0.7, 0.35, 1] }}
+                                className="overflow-hidden"
+                              >
+                                <div className="grid grid-cols-4 gap-1.5 px-3 pb-3 pt-1">
+                                  {MONTH_LABELS.map((m, i) => {
+                                    const disabled = i > maxMonth;
+                                    const selected = whenMonth === i;
+                                    return (
+                                      <button
+                                        key={m}
+                                        disabled={disabled}
+                                        onClick={() => {
+                                          setWhenMonth(i);
+                                          setOccurredAt(new Date(y, i, 1).getTime());
+                                          setDatePrecision("month");
+                                          autoAdvance(4);
+                                        }}
+                                        className={`py-2 rounded-lg text-xs font-semibold border transition-all duration-200 ${
+                                          disabled
+                                            ? "bg-muted/30 text-muted-foreground/40 border-transparent cursor-not-allowed"
+                                            : selected
+                                            ? "gradient-warm text-primary-foreground border-transparent shadow-sm"
+                                            : "bg-card text-foreground border-border hover:border-primary/40 hover:bg-accent/30"
+                                        }`}
+                                      >
+                                        {m}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {whenYear !== null && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-5"
-                  >
-                    <p className="text-xs font-bold text-foreground mb-2.5 uppercase tracking-wider">
-                      Month
-                    </p>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
-                        <button
-                          key={m}
-                          onClick={() => {
-                            setWhenMonth(i);
-                            setOccurredAt(new Date(whenYear, i, 1).getTime());
-                            autoAdvance(4);
-                          }}
-                          className={`py-2 rounded-lg text-xs font-semibold border transition-all duration-200 ${
-                            whenMonth === i
-                              ? "gradient-warm text-primary-foreground border-transparent shadow-sm"
-                              : "bg-card text-foreground border-border hover:border-primary/30"
-                          }`}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-
                 <button
                   onClick={() => {
-                    setWhenYear(null);
-                    setWhenMonth(null);
-                    setOccurredAt(undefined);
+                    if (whenYear !== null) {
+                      // Save year-only: place at Dec 31 so it sorts to the
+                      // top of its year section on the timeline.
+                      setWhenMonth(null);
+                      setOccurredAt(new Date(whenYear, 11, 31).getTime());
+                      setDatePrecision("year");
+                    } else {
+                      setWhenYear(null);
+                      setWhenMonth(null);
+                      setOccurredAt(undefined);
+                      setDatePrecision(undefined);
+                    }
                     autoAdvance(4);
                   }}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline"
                 >
-                  Skip — I'm not sure
+                  {whenYear !== null
+                    ? `Just "${whenYear}" — skip month`
+                    : "Skip — I'm not sure"}
                 </button>
               </StepLayout>
             )}

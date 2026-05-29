@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, BarChart3, Sparkles, ChevronRight, Plus, LayoutGrid, CalendarClock, ClipboardList } from "lucide-react";
+import { X, Check, BarChart3, Sparkles, ChevronRight, Plus, LayoutGrid, CalendarClock, ClipboardList, FileText } from "lucide-react";
 import { CATEGORIES, Activity } from "@/lib/data";
 import { useAppState } from "@/context/AppContext";
 import ActivityWalkthrough from "@/components/ActivityWalkthrough";
@@ -75,12 +75,23 @@ export default function CategorySelect() {
         transition={{ duration: 0.5 }}
         className="mb-5"
       >
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
-          Your experiences
-        </p>
-        <h1 className="text-2xl font-bold text-foreground leading-tight mb-1">
-          {hasActivities ? "Your journey" : "What have you done?"}
-        </h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
+              Your experiences
+            </p>
+            <h1 className="text-2xl font-bold text-foreground leading-tight mb-1">
+              {hasActivities ? "Your journey" : "What have you done?"}
+            </h1>
+          </div>
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-card border border-border text-xs text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors shadow-sm"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            CV
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground leading-relaxed">
           {hasActivities
             ? `${activities.length} ${activities.length === 1 ? "experience" : "experiences"} captured. ${viewMode === "timeline" ? "Scroll back to see your story." : "Tap any category to add more."}`

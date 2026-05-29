@@ -18,7 +18,8 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 interface TimelineBand {
   key: string;
   year: number;
-  month: number;
+  /** Month index 0-11, or null for "year only" bands. */
+  month: number | null;
   monthLabel: string;
   items: Activity[];
 }
@@ -37,14 +38,14 @@ function groupByMonth(activities: Activity[]): TimelineBand[] {
   for (const act of sorted) {
     const d = getActivityDate(act);
     const y = d.getFullYear();
-    const m = d.getMonth();
-    const key = `${y}-${m}`;
+    const yearOnly = act.datePrecision === "year";
+    const key = yearOnly ? `year-${y}` : `${y}-${d.getMonth()}`;
     if (!map.has(key)) {
       map.set(key, {
         key,
         year: y,
-        month: m,
-        monthLabel: `${MONTHS[m]} ${y}`,
+        month: yearOnly ? null : d.getMonth(),
+        monthLabel: yearOnly ? `Sometime in ${y}` : `${MONTHS[d.getMonth()]} ${y}`,
         items: [],
       });
     }
@@ -232,7 +233,9 @@ function TimelineCard({
   const colors = CATEGORY_COLORS[activity.categoryId] ?? CATEGORY_COLORS.professional;
   const date = getActivityDate(activity);
   const dayLabel = activity.occurredAt
-    ? `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
+    ? activity.datePrecision === "year"
+      ? `${date.getFullYear()}`
+      : `${MONTHS[date.getMonth()]} ${date.getFullYear()}`
     : `${MONTHS[date.getMonth()]} ${date.getDate()}`;
   const spanWeight = DURATION_WEIGHT[activity.duration] ?? 0.4;
 

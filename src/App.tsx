@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AppProvider } from "@/context/AppContext";
 import Index from "./pages/Index";
+import CvBuilder from "./pages/CvBuilder";
+import CvPreview from "./pages/CvPreview";
 import CategorySelect from "./pages/CategorySelect";
 import Dashboard from "./pages/Dashboard";
 import AddActivity from "./pages/AddActivity";
@@ -25,7 +27,8 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait" initial={false}>
       <PageTransition routeKey={location.pathname}>
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<CvBuilder />} />
+          <Route path="/cv-preview" element={<CvPreview />} />
           <Route path="/categories" element={<CategorySelect />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-activity/:categoryId" element={<AddActivity />} />
