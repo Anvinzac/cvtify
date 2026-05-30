@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, ArrowRight, Plus, X, Pencil,
-  User, FileText, Briefcase, GraduationCap, Wrench, Award, Globe, Eye
+  User, FileText, Briefcase, GraduationCap, Wrench, Award, Globe, Eye,
+  Sparkles, Mail, Phone, MapPin, Link2, Building2, Calendar, Wand2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,73 +138,124 @@ export default function CvBuilder() {
     cv.workExperience.length > 0 || cv.education.length > 0 ||
     cv.skills.some((g) => g.skills.length > 0) || cv.certifications.length > 0 ||
     cv.languages.length > 0;
+  const completedSections = [
+    !!cv.personalInfo.fullName,
+    !!cv.professionalSummary,
+    cv.workExperience.length > 0,
+    cv.education.length > 0,
+    cv.skills.some((g) => g.skills.length > 0),
+  ].filter(Boolean).length;
+  const progressPct = Math.round((completedSections / 5) * 100);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col gradient-soft relative">
+    <div className="min-h-[100dvh] flex flex-col gradient-soft relative overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-64 pointer-events-none bg-gradient-to-b from-secondary/10 via-primary/5 to-transparent" />
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="px-4 pt-6 pb-2"
+        className="relative px-4 pt-6 pb-3"
       >
-        <div className="flex items-center justify-between mb-1">
-          <div>
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
-              CV Builder
-            </p>
-            <h1 className="text-2xl font-bold text-foreground leading-tight">
-              {hasAnyData ? "Your CV" : "Build Your CV"}
-            </h1>
+        <div className="rounded-[1.65rem] border border-white/70 bg-white/70 p-4 shadow-elevated backdrop-blur-xl">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
+                <Sparkles className="h-3 w-3" />
+                Guided CV studio
+              </div>
+              <h1 className="text-3xl font-bold leading-tight text-foreground">
+                {hasAnyData ? "Shape your story" : "Build a CV that feels like you"}
+              </h1>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                Move through one inviting chapter at a time. Each prompt is tuned to help you sound specific, capable, and ready.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/cv-preview")}
+              className="shrink-0 inline-flex h-11 items-center gap-2 rounded-2xl border border-primary/20 bg-white px-3.5 text-xs font-bold text-primary shadow-sm transition-transform active:scale-[0.98]"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Preview
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/cv-preview")}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl gradient-warm text-primary-foreground text-xs font-semibold shadow-sm hover:opacity-95 transition-opacity"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            Preview
-          </button>
+
+          <div className="mt-5 rounded-2xl border border-border/70 bg-background/80 p-3">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className="font-bold text-foreground">Onboarding momentum</span>
+              <span className="font-bold text-primary">{progressPct}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPct}%` }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="h-full rounded-full gradient-warm"
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-5 gap-1.5">
+              {["Identity", "Voice", "Proof", "School", "Skills"].map((item, i) => (
+                <div
+                  key={item}
+                  className={`rounded-xl px-2 py-1.5 text-center text-[10px] font-bold ${
+                    i < completedSections
+                      ? "bg-primary/10 text-primary"
+                      : "bg-card text-muted-foreground"
+                  }`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Fill in your details to create a professional CV. Your data is saved automatically.
-        </p>
       </motion.div>
 
-      <div className="flex-1 px-4 pt-3 pb-6 space-y-3">
+      <div className="relative flex-1 px-4 pt-2 pb-6 space-y-3">
         <SectionCard
           icon={<User className="w-4 h-4 text-muted-foreground" />}
-          title="Personal Info"
+          title="Identity"
+          subtitle="Set the first impression"
+          prompt="Start with the details a recruiter needs to remember and reach you."
           count={cv.personalInfo.fullName ? 1 : 0}
           expanded={personalExpanded}
           onToggle={() => setPersonalExpanded(!personalExpanded)}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <InputField
-              label="Full Name"
+              icon={<User className="h-4 w-4" />}
+              label="Your headline name"
               value={cv.personalInfo.fullName}
               onChange={(v) => updatePersonal("fullName", v)}
-              placeholder="John Smith"
+              placeholder="Alex Chen"
+              guide="Use the name you want at the top of the page."
               required
               error={cv.personalInfo.fullName.length > 0 && cv.personalInfo.fullName.length < 2 ? "Min 2 characters" : ""}
             />
             <InputField
+              icon={<Mail className="h-4 w-4" />}
               label="Email"
               value={cv.personalInfo.email}
               onChange={(v) => updatePersonal("email", v)}
-              placeholder="john@email.com"
+              placeholder="alex@email.com"
+              guide="Choose the inbox you actually check."
               type="email"
               error={cv.personalInfo.email.length > 0 && !emailValid(cv.personalInfo.email) ? "Invalid email" : ""}
             />
             <InputField
+              icon={<Phone className="h-4 w-4" />}
               label="Phone"
               value={cv.personalInfo.phone}
               onChange={(v) => updatePersonal("phone", v)}
               placeholder="+1 (555) 123-4567"
+              guide="Optional, but useful for fast follow-ups."
             />
             <InputField
+              icon={<MapPin className="h-4 w-4" />}
               label="Location"
               value={cv.personalInfo.location}
               onChange={(v) => updatePersonal("location", v)}
-              placeholder="City, State"
+              placeholder="San Francisco, CA"
+              guide="City and country/state is enough."
             />
           </div>
 
@@ -228,16 +280,20 @@ export default function CvBuilder() {
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <InputField
+                    icon={<Link2 className="h-4 w-4" />}
                     label="LinkedIn"
                     value={cv.personalInfo.linkedin ?? ""}
                     onChange={(v) => updatePersonal("linkedin", v)}
                     placeholder="linkedin.com/in/you"
+                    guide="A polished profile can carry extra proof."
                   />
                   <InputField
+                    icon={<Sparkles className="h-4 w-4" />}
                     label="Website"
                     value={cv.personalInfo.website ?? ""}
                     onChange={(v) => updatePersonal("website", v)}
                     placeholder="yourportfolio.com"
+                    guide="Portfolio, GitHub, Behance, writing, or personal site."
                   />
                 </div>
                 <button
@@ -257,17 +313,22 @@ export default function CvBuilder() {
 
         <SectionCard
           icon={<FileText className="w-4 h-4 text-muted-foreground" />}
-          title="Professional Summary"
+          title="Opening Story"
+          subtitle="Write the 10-second version of you"
+          prompt="Blend your strengths, experience, and direction into a confident introduction."
           count={cv.professionalSummary ? 1 : 0}
           expanded={summaryExpanded}
           onToggle={() => setSummaryExpanded(!summaryExpanded)}
         >
-          <Textarea
+          <GuidedTextarea
+            icon={<Wand2 className="h-4 w-4" />}
+            label="Professional summary"
             value={cv.professionalSummary}
-            onChange={(e) => setCvData({ ...cv, professionalSummary: e.target.value })}
-            placeholder="Brief overview of your background, skills, and career goals..."
-            className="rounded-xl bg-background border-border min-h-[100px] text-sm focus:ring-2 focus:ring-primary/20 transition-shadow resize-none"
+            onChange={(value) => setCvData({ ...cv, professionalSummary: value })}
+            placeholder="Curious computer science student with hands-on experience in customer service, community projects, and React dashboards. I enjoy turning messy problems into clear, useful tools."
+            guide="Try: who you are, what you have done, what kind of work energizes you."
             maxLength={600}
+            minHeight="min-h-[132px]"
           />
           <p className="text-[11px] text-muted-foreground mt-1.5">
             {cv.professionalSummary.length}/600 characters
@@ -276,7 +337,9 @@ export default function CvBuilder() {
 
         <EntryListSection
           icon={<Briefcase className="w-4 h-4 text-muted-foreground" />}
-          title="Work Experience"
+          title="Experience Proof"
+          subtitle="Turn roles into evidence"
+          prompt="Add jobs, internships, projects, volunteering, or leadership work."
           entries={cv.workExperience}
           sectionKey="workExperience"
           expanded={experienceExpanded}
@@ -294,6 +357,8 @@ export default function CvBuilder() {
         <EntryListSection
           icon={<GraduationCap className="w-4 h-4 text-muted-foreground" />}
           title="Education"
+          subtitle="Show your learning path"
+          prompt="Include degrees, schools, courses, bootcamps, or programs that shaped your direction."
           entries={cv.education}
           sectionKey="education"
           expanded={educationExpanded}
@@ -310,7 +375,9 @@ export default function CvBuilder() {
 
         <SectionCard
           icon={<Wrench className="w-4 h-4 text-muted-foreground" />}
-          title="Skills"
+          title="Skill Palette"
+          subtitle="Choose what you can bring"
+          prompt="Browse fields, tap chips, and build a skill profile that feels specific."
           count={cv.skills.reduce((sum, g) => sum + g.skills.length, 0)}
           expanded={skillsExpanded}
           onToggle={() => setSkillsExpanded(!skillsExpanded)}
@@ -327,6 +394,8 @@ export default function CvBuilder() {
         <EntryListSection
           icon={<Award className="w-4 h-4 text-muted-foreground" />}
           title="Certifications"
+          subtitle="Add extra signals"
+          prompt="Certificates, licenses, workshops, and awards all help your CV feel credible."
           entries={cv.certifications}
           sectionKey="certifications"
           expanded={certsExpanded}
@@ -344,6 +413,8 @@ export default function CvBuilder() {
         <SectionCard
           icon={<Globe className="w-4 h-4 text-muted-foreground" />}
           title="Languages"
+          subtitle="Add communication range"
+          prompt="Show the languages and fluency levels you can work with."
           count={cv.languages.length}
           expanded={languagesExpanded}
           onToggle={() => setLanguagesExpanded(!languagesExpanded)}
@@ -379,30 +450,63 @@ export default function CvBuilder() {
 }
 
 function SectionCard({
-  icon, title, count, expanded, onToggle, children,
+  icon, title, subtitle, prompt, count, expanded, onToggle, children,
 }: {
   icon: React.ReactNode;
   title: string;
+  subtitle?: string;
+  prompt?: string;
   count: number;
   expanded: boolean;
   onToggle: () => void;
   children: React.ReactNode;
 }) {
   return (
-    <motion.div className="bg-card border border-border rounded-2xl shadow-card overflow-hidden">
-      <button onClick={onToggle} className="w-full flex items-center justify-between p-4">
-        <div className="flex items-center gap-2.5">
-          {icon}
-          <span className="text-sm font-semibold">{title}</span>
-          {count > 0 && (
-            <span className="min-w-[20px] h-5 rounded-full bg-primary flex items-center justify-center px-1.5 text-[10px] font-bold text-primary-foreground">
-              {count}
-            </span>
-          )}
+    <motion.div
+      layout
+      className={`overflow-hidden rounded-[1.35rem] border shadow-card transition-colors ${
+        expanded ? "border-primary/30 bg-white" : "border-border bg-card/90"
+      }`}
+    >
+      <button onClick={onToggle} className="w-full p-4 text-left">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 gap-3">
+            <div
+              className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border ${
+                expanded ? "border-primary/20 bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground"
+              }`}
+            >
+              {icon}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold text-foreground">{title}</span>
+                {count > 0 && (
+                  <span className="min-w-[22px] h-5 rounded-full bg-primary flex items-center justify-center px-1.5 text-[10px] font-bold text-primary-foreground">
+                    {count}
+                  </span>
+                )}
+              </div>
+              {subtitle && (
+                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                  {subtitle}
+                </p>
+              )}
+              {prompt && (
+                <p className="mt-2 max-w-md text-xs leading-relaxed text-muted-foreground">
+                  {prompt}
+                </p>
+              )}
+            </div>
+          </div>
+          <motion.span
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="mt-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </motion.span>
         </div>
-        <motion.span animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </motion.span>
       </button>
       <AnimatePresence initial={false}>
         {expanded && (
@@ -422,27 +526,41 @@ function SectionCard({
 }
 
 function InputField({
-  label, value, onChange, placeholder, type = "text", required, error,
+  icon, label, value, onChange, placeholder, guide, type = "text", required, error,
 }: {
+  icon?: React.ReactNode;
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  guide?: string;
   type?: string;
   required?: boolean;
   error?: string;
 }) {
   return (
-    <label className="block">
-      <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">
-        {label}{required ? " *" : ""}
+    <label className="group block rounded-2xl border border-border bg-background/70 p-3 transition-colors focus-within:border-primary/45 focus-within:bg-white">
+      <span className="mb-2 flex items-center gap-2 text-xs font-bold text-foreground">
+        {icon && (
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-accent text-primary">
+            {icon}
+          </span>
+        )}
+        <span>{label}{required ? " *" : ""}</span>
       </span>
+      {guide && (
+        <span className="mb-2 block text-[11px] leading-relaxed text-muted-foreground">
+          {guide}
+        </span>
+      )}
       <Input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`h-10 text-sm rounded-xl bg-background ${error ? "border-destructive focus:ring-destructive/20" : "border-border focus:ring-primary/20"} transition-shadow`}
+        className={`h-11 rounded-xl bg-white text-sm shadow-sm placeholder:text-muted-foreground/55 ${
+          error ? "border-destructive focus:ring-destructive/20" : "border-border focus:ring-primary/20"
+        } transition-shadow`}
       />
       {error && (
         <p className="text-[11px] text-destructive mt-1">{error}</p>
@@ -451,13 +569,60 @@ function InputField({
   );
 }
 
+function GuidedTextarea({
+  icon,
+  label,
+  value,
+  onChange,
+  placeholder,
+  guide,
+  maxLength,
+  minHeight = "min-h-[96px]",
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  guide?: string;
+  maxLength?: number;
+  minHeight?: string;
+}) {
+  return (
+    <label className="group block rounded-2xl border border-border bg-background/70 p-3 transition-colors focus-within:border-primary/45 focus-within:bg-white">
+      <span className="mb-2 flex items-center gap-2 text-xs font-bold text-foreground">
+        {icon && (
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-accent text-primary">
+            {icon}
+          </span>
+        )}
+        <span>{label}</span>
+      </span>
+      {guide && (
+        <span className="mb-2 block text-[11px] leading-relaxed text-muted-foreground">
+          {guide}
+        </span>
+      )}
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`rounded-xl bg-white text-sm shadow-sm placeholder:text-muted-foreground/55 focus:ring-2 focus:ring-primary/20 transition-shadow resize-none ${minHeight}`}
+        maxLength={maxLength}
+      />
+    </label>
+  );
+}
+
 function EntryListSection({
-  icon, title, entries, sectionKey, expanded, onToggle,
+  icon, title, subtitle, prompt, entries, sectionKey, expanded, onToggle,
   editingId, editingSection,
   onAdd, onEdit, onRemove, onUpdateEntry, onSaveEdit, onCancelEdit,
 }: {
   icon: React.ReactNode;
   title: string;
+  subtitle?: string;
+  prompt?: string;
   entries: CvEntry[];
   sectionKey: "workExperience" | "education" | "certifications";
   expanded: boolean;
@@ -471,8 +636,23 @@ function EntryListSection({
   onSaveEdit: () => void;
   onCancelEdit: () => void;
 }) {
+  const addLabel =
+    sectionKey === "workExperience"
+      ? "Add experience"
+      : sectionKey === "education"
+      ? "Add education"
+      : "Add certification";
+
   return (
-    <SectionCard icon={icon} title={title} count={entries.length} expanded={expanded} onToggle={onToggle}>
+    <SectionCard
+      icon={icon}
+      title={title}
+      subtitle={subtitle}
+      prompt={prompt}
+      count={entries.length}
+      expanded={expanded}
+      onToggle={onToggle}
+    >
       <div className="space-y-2">
         <AnimatePresence>
           {entries.map((entry) => (
@@ -503,7 +683,7 @@ function EntryListSection({
           className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold text-muted-foreground hover:text-primary border border-dashed border-border hover:border-primary/40 rounded-xl transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add {title.replace(/s$/, "")}
+          {addLabel}
         </button>
       </div>
     </SectionCard>
@@ -560,94 +740,131 @@ function EntryForm({
   const isCert = sectionKey === "certifications";
   const titleLabel = isCert ? "Certification Name" : sectionKey === "education" ? "Degree / Field" : "Job Title";
   const orgLabel = isCert ? "Issuer" : sectionKey === "education" ? "School" : "Company";
+  const titlePlaceholder = isCert
+    ? "Google Data Analytics Certificate"
+    : sectionKey === "education"
+    ? "B.S. Computer Science"
+    : "Customer Experience Associate";
+  const orgPlaceholder = isCert
+    ? "Coursera / Google"
+    : sectionKey === "education"
+    ? "University of California, Berkeley"
+    : "Campus Coffee Co.";
+  const titleGuide = isCert
+    ? "Name the credential exactly as it should appear."
+    : sectionKey === "education"
+    ? "Use the degree, major, program, or course name."
+    : "Use the role title that best represents what you did.";
+  const orgGuide = isCert
+    ? "Who issued or hosted it?"
+    : sectionKey === "education"
+    ? "Where did you study or train?"
+    : "Where did this work happen?";
 
   return (
-    <div className="p-3.5 rounded-xl bg-accent/30 border border-primary/30 space-y-3">
-      <div className="space-y-2.5">
-        <Input
-          value={entry.title}
-          onChange={(e) => onUpdate({ ...entry, title: e.target.value })}
-          placeholder={titleLabel}
-          className="h-10 text-sm rounded-xl bg-background border-border focus:ring-2 focus:ring-primary/20"
-        />
-        <Input
-          value={entry.organization}
-          onChange={(e) => onUpdate({ ...entry, organization: e.target.value })}
-          placeholder={orgLabel}
-          className="h-10 text-sm rounded-xl bg-background border-border focus:ring-2 focus:ring-primary/20"
-        />
-        {!isCert && (
-          <Input
-            value={entry.location ?? ""}
-            onChange={(e) => onUpdate({ ...entry, location: e.target.value || undefined })}
-            placeholder="Location (optional)"
-            className="h-10 text-sm rounded-xl bg-background border-border focus:ring-2 focus:ring-primary/20"
-          />
-        )}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">
-              {isCert ? "Year" : "Start"} *
-            </span>
-            <Input
-              value={entry.startDate}
-              onChange={(e) => onUpdate({ ...entry, startDate: e.target.value })}
-              placeholder={isCert ? "2024" : "YYYY-MM"}
-              maxLength={7}
-              className="h-10 text-sm rounded-xl bg-background border-border focus:ring-2 focus:ring-primary/20"
-            />
+    <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3.5 space-y-3">
+      <div className="rounded-2xl border border-primary/20 bg-white/75 p-3">
+        <div className="mb-3 flex items-start gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl gradient-warm text-primary-foreground">
+            <Sparkles className="h-4 w-4" />
           </div>
-          {isCert ? (
-            <div />
-          ) : !entry.isCurrent ? (
-            <div>
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">
-                End
-              </span>
-              <Input
+          <div>
+            <p className="text-sm font-bold text-foreground">Capture this chapter</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Keep it concrete: what you did, where it happened, and the result or skill it proves.
+            </p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <InputField
+            icon={isCert ? <Award className="h-4 w-4" /> : sectionKey === "education" ? <GraduationCap className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
+            label={titleLabel}
+            value={entry.title}
+            onChange={(value) => onUpdate({ ...entry, title: value })}
+            placeholder={titlePlaceholder}
+            guide={titleGuide}
+            required
+          />
+          <InputField
+            icon={<Building2 className="h-4 w-4" />}
+            label={orgLabel}
+            value={entry.organization}
+            onChange={(value) => onUpdate({ ...entry, organization: value })}
+            placeholder={orgPlaceholder}
+            guide={orgGuide}
+            required
+          />
+          {!isCert && (
+            <InputField
+              icon={<MapPin className="h-4 w-4" />}
+              label="Place"
+              value={entry.location ?? ""}
+              onChange={(value) => onUpdate({ ...entry, location: value || undefined })}
+              placeholder="Berkeley, CA"
+              guide="Optional. City, remote, hybrid, or campus is enough."
+            />
+          )}
+          <div className="grid grid-cols-2 gap-2.5">
+            <InputField
+              icon={<Calendar className="h-4 w-4" />}
+              label={isCert ? "Year earned" : "Started"}
+              value={entry.startDate}
+              onChange={(value) => onUpdate({ ...entry, startDate: value })}
+              placeholder={isCert ? "2024" : "2024-06"}
+              guide={isCert ? "Just the year works." : "Use YYYY-MM for clean sorting."}
+              required
+            />
+            {isCert ? (
+              <div />
+            ) : !entry.isCurrent ? (
+              <InputField
+                icon={<Calendar className="h-4 w-4" />}
+                label="Ended"
                 value={entry.endDate ?? ""}
-                onChange={(e) => onUpdate({ ...entry, endDate: e.target.value || undefined })}
-                placeholder="YYYY-MM"
-                maxLength={7}
-                className="h-10 text-sm rounded-xl bg-background border-border focus:ring-2 focus:ring-primary/20"
+                onChange={(value) => onUpdate({ ...entry, endDate: value || undefined })}
+                placeholder="2024-12"
+                guide="Leave empty if the timing is open."
               />
-            </div>
-          ) : (
-            <div />
+            ) : (
+              <div />
+            )}
+          </div>
+          {!isCert && (
+            <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-2xl border border-border bg-background/70 p-3">
+              <div
+                className={`relative w-9 h-5 rounded-full transition-colors duration-300 ${
+                  entry.isCurrent ? "bg-primary" : "bg-muted"
+                }`}
+                onClick={() => onUpdate({
+                  ...entry,
+                  isCurrent: !entry.isCurrent,
+                  endDate: entry.isCurrent ? undefined : entry.endDate,
+                })}
+              >
+                <motion.div
+                  className="absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-sm"
+                  animate={{ left: entry.isCurrent ? 18 : 2 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">
+                I currently {sectionKey === "education" ? "study" : "work"} here
+              </span>
+            </label>
+          )}
+          {!isCert && (
+            <GuidedTextarea
+              icon={<FileText className="h-4 w-4" />}
+              label="Proof notes"
+              value={entry.description ?? ""}
+              onChange={(value) => onUpdate({ ...entry, description: value || undefined })}
+              placeholder="Prepared drinks during busy shifts, trained new team members, and improved inventory handoff notes so weekend stockouts happened less often."
+              guide="Use action verbs. Mention tools, people, pressure, outcomes, or what changed because of you."
+              maxLength={500}
+              minHeight="min-h-[104px]"
+            />
           )}
         </div>
-        {!isCert && (
-          <label className="flex items-center gap-2.5 cursor-pointer select-none">
-            <div
-              className={`relative w-9 h-5 rounded-full transition-colors duration-300 ${
-                entry.isCurrent ? "bg-primary" : "bg-muted"
-              }`}
-              onClick={() => onUpdate({
-                ...entry,
-                isCurrent: !entry.isCurrent,
-                endDate: entry.isCurrent ? undefined : entry.endDate,
-              })}
-            >
-              <motion.div
-                className="absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-sm"
-                animate={{ left: entry.isCurrent ? 18 : 2 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            </div>
-            <span className="text-xs text-muted-foreground font-medium">
-              I currently {sectionKey === "education" ? "study" : "work"} here
-            </span>
-          </label>
-        )}
-        {!isCert && (
-          <Textarea
-            value={entry.description ?? ""}
-            onChange={(e) => onUpdate({ ...entry, description: e.target.value || undefined })}
-            placeholder="Brief description of your role and achievements..."
-            className="rounded-xl bg-background border-border min-h-[64px] text-sm focus:ring-2 focus:ring-primary/20 transition-shadow resize-none"
-            maxLength={500}
-          />
-        )}
       </div>
       <div className="flex gap-2">
         <button
@@ -709,13 +926,24 @@ function SkillsEditor({
 
   return (
     <div>
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={`Add a skill to ${activeCategory.label}...`}
-        className="h-10 text-sm rounded-xl bg-background border-border mb-3 focus:ring-2 focus:ring-primary/20"
-      />
+      <label className="mb-3 block rounded-2xl border border-border bg-background/70 p-3 focus-within:border-primary/45 focus-within:bg-white">
+        <span className="mb-1.5 flex items-center gap-2 text-xs font-bold text-foreground">
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-accent text-primary">
+            <Wand2 className="h-4 w-4" />
+          </span>
+          Add your own skill
+        </span>
+        <span className="mb-2 block text-[11px] leading-relaxed text-muted-foreground">
+          Type a skill that is missing from the chips, then press Enter.
+        </span>
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={`Example: ${activeCategory.skills[0] ?? activeCategory.label}`}
+          className="h-11 rounded-xl bg-white text-sm shadow-sm placeholder:text-muted-foreground/55 focus:ring-2 focus:ring-primary/20"
+        />
+      </label>
 
       <div className="mb-3 space-y-2">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-0.5">
@@ -901,13 +1129,24 @@ function TagInput({
 
   return (
     <div>
-      <Input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder ?? "Type and press Enter..."}
-        className="h-10 text-sm rounded-xl bg-background border-border mb-3 focus:ring-2 focus:ring-primary/20"
-      />
+      <label className="mb-3 block rounded-2xl border border-border bg-background/70 p-3 focus-within:border-primary/45 focus-within:bg-white">
+        <span className="mb-1.5 flex items-center gap-2 text-xs font-bold text-foreground">
+          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-accent text-primary">
+            <Globe className="h-4 w-4" />
+          </span>
+          Add one at a time
+        </span>
+        <span className="mb-2 block text-[11px] leading-relaxed text-muted-foreground">
+          Include the fluency level if it helps your story.
+        </span>
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder ?? "English (Native), Spanish (Intermediate)..."}
+          className="h-11 rounded-xl bg-white text-sm shadow-sm placeholder:text-muted-foreground/55 focus:ring-2 focus:ring-primary/20"
+        />
+      </label>
       {suggestions && suggestions.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {suggestions
