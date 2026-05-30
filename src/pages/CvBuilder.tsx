@@ -4,12 +4,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown, ArrowRight, Plus, X, Pencil,
   User, FileText, Briefcase, GraduationCap, Wrench, Award, Globe, Eye,
-  Sparkles, Mail, Phone, MapPin, Link2, Building2, Calendar, Wand2,
+  Sparkles, Mail, Phone, MapPin, Link2, Building2, Wand2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useAppState } from "@/context/AppContext";
 import { CvEntry, CvPersonalInfo, SKILL_CATEGORIES, SkillGroup } from "@/lib/storage";
+import { ImmersiveField } from "@/components/fx/ImmersiveField";
+import { StoryTextarea } from "@/components/fx/StoryTextarea";
+import { MonthYearField } from "@/components/fx/MonthYearField";
+import ActivityImportSheet from "@/components/cv/ActivityImportSheet";
+import AutoBuildHero from "@/components/cv/AutoBuildHero";
+import CvOverview from "@/components/cv/CvOverview";
+import {
+  activityToCvEntry,
+  deriveSkillGroupsFromActivities,
+  draftSummary,
+} from "@/lib/cvAutofill";
 
 function formatDateRange(entry: CvEntry): string {
   const fmt = (d: string) => {
@@ -28,11 +38,57 @@ function emailValid(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+const SUMMARY_PLACEHOLDERS = [
+  "Curious computer-science student turning messy problems into clean React tools…",
+  "Designer-marketer hybrid who ships fast and ships kind…",
+  "Operations lead with eight years of building calm systems out of busy ones…",
+  "Career-changer trading legal research for product work — empathetic, exacting, and shipping…",
+];
+
+const PROOF_PLACEHOLDERS = [
+  "Trained 4 new baristas, rewrote the closing checklist, and cut weekend stockouts by half…",
+  "Led a 6-person design sprint that shipped the v2 onboarding — engagement up 22%…",
+  "Built a small Python script that saved the team ~3 hours a week on reporting…",
+];
+
+const SUMMARY_TONES = [
+  {
+    id: "confident",
+    label: "Confident",
+    emoji: "🔥",
+    template:
+      "Results-driven professional with proven experience delivering impact across teams. I combine sharp execution with clear communication to help organizations move faster on what matters most.",
+  },
+  {
+    id: "curious",
+    label: "Curious",
+    emoji: "🌱",
+    template:
+      "Curious learner energized by hard problems and new tools. I enjoy building things that are useful end-to-end — from research to shipping — and asking why one more time than feels comfortable.",
+  },
+  {
+    id: "concise",
+    label: "Concise",
+    emoji: "✂️",
+    template:
+      "Generalist who ships. Strong at communication, decision-making, and turning unclear briefs into useful work.",
+  },
+  {
+    id: "story",
+    label: "Story",
+    emoji: "📖",
+    template:
+      "Started in customer support, fell in love with the systems behind the conversations, and have been building them ever since. Today I help teams turn chaotic data into decisions people actually use.",
+  },
+];
+
 export default function CvBuilder() {
   const navigate = useNavigate();
-  const { cv, setCvData } = useAppState();
+  const { cv, setCvData, activities } = useAppState();
+  const [importOpen, setImportOpen] = useState(false);
+  const [customizing, setCustomizing] = useState(false);
 
-  const [personalExpanded, setPersonalExpanded] = useState(true);
+  const [personalExpanded, setPersonalExpanded] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [experienceExpanded, setExperienceExpanded] = useState(false);
   const [educationExpanded, setEducationExpanded] = useState(false);
@@ -48,6 +104,101 @@ export default function CvBuilder() {
 
   const updatePersonal = (field: keyof CvPersonalInfo, value: string) => {
     setCvData({ ...cv, personalInfo: { ...cv.personalInfo, [field]: value } });
+  };
+
+  const applyQuickFill = (patch: Partial<CvPersonalInfo>) => {
+    // Only fill empty fields — don't clobber what's already there.
+    const merged: CvPersonalInfo = { ...cv.personalInfo };
+    for (const [k, v] of Object.entries(patch)) {
+      const key = k as keyof CvPersonalInfo;
+      if (typeof v !== "string" || !v.trim()) continue;
+      if (!merged[key] || merged[key]?.trim() === "") {
+        merged[key] = v;
+      }
+    }
+    setCvData({ ...cv, personalInfo: merged });
+    if (!personalExpanded) setPersonalExpanded(true);
+  };
+
+  const handleImportActivities = (entries: CvEntry[]) => {
+    if (entries.length === 0) return;
+    setCvData({
+      ...cv,
+      workExperience: [...cv.workExperience, ...entries],
+    });
+    setImportOpen(false);
+    setExperienceExpanded(true);
+  };
+
+  const handleDraftSummary = () => {
+    const draft = draftSummary(activities, {
+      fullName: cv.personalInfo.fullName,
+      location: cv.personalInfo.location,
+    });
+    setCvData({ ...cv, professionalSummary: draft });
+    setSummaryExpanded(true);
+  };
+
+  /**
+   * One-tap "Build it for me": merges a parsed paste, imports every
+   * timeline activity that's not already in the CV, derives skills from
+   * those activities, and drafts a summary if there isn't one.
+   */
+  const handleAutoBuild = (paste: Partial<CvPersonalInfo>) => {
+    // 1. Identity from paste — only fill empties
+    const personalInfo: CvPersonalInfo = { ...cv.personalInfo };
+    for (const [k, v] of Object.entries(paste)) {
+      const key = k as keyof CvPersonalInfo;
+      if (typeof v !== "string" || !v.trim()) continue;
+      if (!personalInfo[key] || personalInfo[key]?.trim() === "") {
+        personalInfo[key] = v;
+      }
+    }
+
+    // 2. Experience from timeline — only add activities not already imported
+    const existingTitles = new Set(
+      cv.workExperience.map((e) => e.title.trim().toLowerCase())
+    );
+    const newEntries = activities
+      .filter((a) => !existingTitles.has(a.name.trim().toLowerCase()))
+      .map(activityToCvEntry);
+
+    // 3. Skills from timeline
+    const newSkills = deriveSkillGroupsFromActivities(activities, cv.skills);
+
+    // 4. Summary draft only if empty
+    const summary = cv.professionalSummary.trim()
+      ? cv.professionalSummary
+      : draftSummary(activities, {
+          fullName: personalInfo.fullName,
+          location: personalInfo.location,
+        });
+
+    setCvData({
+      ...cv,
+      personalInfo,
+      workExperience: [...cv.workExperience, ...newEntries],
+      skills: newSkills,
+      professionalSummary: summary,
+    });
+  };
+
+  const openSection = (
+    section: "identity" | "story" | "experience" | "skills" | "education"
+  ) => {
+    setCustomizing(true);
+    setTimeout(() => {
+      if (section === "identity") setPersonalExpanded(true);
+      if (section === "story") setSummaryExpanded(true);
+      if (section === "experience") setExperienceExpanded(true);
+      if (section === "skills") setSkillsExpanded(true);
+      if (section === "education") setEducationExpanded(true);
+      // Scroll the corresponding header into view on next paint
+      setTimeout(() => {
+        const target = document.getElementById(`cv-section-${section}`);
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    }, 30);
   };
 
   const addEntry = (section: "workExperience" | "education" | "certifications") => {
@@ -134,18 +285,17 @@ export default function CvBuilder() {
     setCvData({ ...cv, skills: newGroups });
   };
 
-  const hasAnyData = cv.personalInfo.fullName || cv.professionalSummary ||
+  const hasAnyData = !!(cv.personalInfo.fullName || cv.professionalSummary ||
     cv.workExperience.length > 0 || cv.education.length > 0 ||
     cv.skills.some((g) => g.skills.length > 0) || cv.certifications.length > 0 ||
-    cv.languages.length > 0;
+    cv.languages.length > 0);
   const completedSections = [
     !!cv.personalInfo.fullName,
-    !!cv.professionalSummary,
+    cv.professionalSummary.trim().length >= 80,
     cv.workExperience.length > 0,
-    cv.education.length > 0,
     cv.skills.some((g) => g.skills.length > 0),
+    cv.education.length > 0,
   ].filter(Boolean).length;
-  const progressPct = Math.round((completedSections / 5) * 100);
 
   return (
     <div className="min-h-[100dvh] flex flex-col gradient-soft relative overflow-hidden">
@@ -156,61 +306,40 @@ export default function CvBuilder() {
         transition={{ duration: 0.5 }}
         className="relative px-4 pt-6 pb-3"
       >
-        <div className="rounded-[1.65rem] border border-white/70 bg-white/70 p-4 shadow-elevated backdrop-blur-xl">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
-                <Sparkles className="h-3 w-3" />
-                Guided CV studio
-              </div>
-              <h1 className="text-3xl font-bold leading-tight text-foreground">
-                {hasAnyData ? "Shape your story" : "Build a CV that feels like you"}
-              </h1>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-                Move through one inviting chapter at a time. Each prompt is tuned to help you sound specific, capable, and ready.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate("/cv-preview")}
-              className="shrink-0 inline-flex h-11 items-center gap-2 rounded-2xl border border-primary/20 bg-white px-3.5 text-xs font-bold text-primary shadow-sm transition-transform active:scale-[0.98]"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              Preview
-            </button>
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-border/70 bg-background/80 p-3">
-            <div className="mb-2 flex items-center justify-between text-xs">
-              <span className="font-bold text-foreground">Onboarding momentum</span>
-              <span className="font-bold text-primary">{progressPct}%</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-                className="h-full rounded-full gradient-warm"
-              />
-            </div>
-            <div className="mt-3 grid grid-cols-5 gap-1.5">
-              {["Identity", "Voice", "Proof", "School", "Skills"].map((item, i) => (
-                <div
-                  key={item}
-                  className={`rounded-xl px-2 py-1.5 text-center text-[10px] font-bold ${
-                    i < completedSections
-                      ? "bg-primary/10 text-primary"
-                      : "bg-card text-muted-foreground"
-                  }`}
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <AutoBuildHero
+          timelineCount={activities.length}
+          filledCount={completedSections}
+          totalCount={5}
+          hasAnyData={hasAnyData}
+          onAutoBuild={handleAutoBuild}
+          onCustomize={() => setCustomizing((c) => !c)}
+          customizing={customizing}
+          onPreview={() => navigate("/cv-preview")}
+        />
       </motion.div>
 
       <div className="relative flex-1 px-4 pt-2 pb-6 space-y-3">
+        {!customizing && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <CvOverview cv={cv} onEditSection={openSection} />
+          </motion.div>
+        )}
+
+        <AnimatePresence initial={false}>
+        {customizing && (
+        <motion.div
+          key="customize"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 0.7, 0.35, 1] }}
+          className="space-y-3"
+        >
+        <div id="cv-section-identity" />
         <SectionCard
           icon={<User className="w-4 h-4 text-muted-foreground" />}
           title="Identity"
@@ -220,18 +349,21 @@ export default function CvBuilder() {
           expanded={personalExpanded}
           onToggle={() => setPersonalExpanded(!personalExpanded)}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <InputField
+          <HeaderPreview info={cv.personalInfo} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2">
+            <ImmersiveField
               icon={<User className="h-4 w-4" />}
               label="Your headline name"
               value={cv.personalInfo.fullName}
               onChange={(v) => updatePersonal("fullName", v)}
               placeholder="Alex Chen"
               guide="Use the name you want at the top of the page."
+              autoComplete="name"
               required
               error={cv.personalInfo.fullName.length > 0 && cv.personalInfo.fullName.length < 2 ? "Min 2 characters" : ""}
             />
-            <InputField
+            <ImmersiveField
               icon={<Mail className="h-4 w-4" />}
               label="Email"
               value={cv.personalInfo.email}
@@ -239,34 +371,41 @@ export default function CvBuilder() {
               placeholder="alex@email.com"
               guide="Choose the inbox you actually check."
               type="email"
-              error={cv.personalInfo.email.length > 0 && !emailValid(cv.personalInfo.email) ? "Invalid email" : ""}
+              inputMode="email"
+              autoComplete="email"
+              error={cv.personalInfo.email.length > 0 && !emailValid(cv.personalInfo.email) ? "Not a valid email" : ""}
             />
-            <InputField
+            <ImmersiveField
               icon={<Phone className="h-4 w-4" />}
               label="Phone"
               value={cv.personalInfo.phone}
               onChange={(v) => updatePersonal("phone", v)}
               placeholder="+1 (555) 123-4567"
               guide="Optional, but useful for fast follow-ups."
+              inputMode="tel"
+              autoComplete="tel"
             />
-            <InputField
+            <ImmersiveField
               icon={<MapPin className="h-4 w-4" />}
               label="Location"
               value={cv.personalInfo.location}
               onChange={(v) => updatePersonal("location", v)}
               placeholder="San Francisco, CA"
               guide="City and country/state is enough."
+              autoComplete="address-level2"
             />
           </div>
 
           {!showLinks && (
-            <button
+            <motion.button
               onClick={() => setShowLinks(true)}
-              className="flex items-center gap-1 mt-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[11px] font-bold text-primary transition-colors hover:bg-primary/10"
             >
-              <Plus className="w-3 h-3" />
-              Add link
-            </button>
+              <Plus className="h-3 w-3" />
+              Add a link · LinkedIn, portfolio…
+            </motion.button>
           )}
 
           <AnimatePresence>
@@ -278,22 +417,24 @@ export default function CvBuilder() {
                 transition={{ duration: 0.22, ease: [0.22, 0.7, 0.35, 1] }}
                 className="overflow-hidden"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                  <InputField
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 mt-3">
+                  <ImmersiveField
                     icon={<Link2 className="h-4 w-4" />}
                     label="LinkedIn"
                     value={cv.personalInfo.linkedin ?? ""}
                     onChange={(v) => updatePersonal("linkedin", v)}
                     placeholder="linkedin.com/in/you"
                     guide="A polished profile can carry extra proof."
+                    inputMode="url"
                   />
-                  <InputField
+                  <ImmersiveField
                     icon={<Sparkles className="h-4 w-4" />}
                     label="Website"
                     value={cv.personalInfo.website ?? ""}
                     onChange={(v) => updatePersonal("website", v)}
                     placeholder="yourportfolio.com"
                     guide="Portfolio, GitHub, Behance, writing, or personal site."
+                    inputMode="url"
                   />
                 </div>
                 <button
@@ -302,7 +443,7 @@ export default function CvBuilder() {
                     updatePersonal("website", "");
                     setShowLinks(false);
                   }}
-                  className="text-[11px] text-muted-foreground hover:text-foreground mt-1.5 transition-colors"
+                  className="text-[11px] text-muted-foreground hover:text-foreground mt-2 transition-colors"
                 >
                   Remove links
                 </button>
@@ -311,6 +452,7 @@ export default function CvBuilder() {
           </AnimatePresence>
         </SectionCard>
 
+        <div id="cv-section-story" />
         <SectionCard
           icon={<FileText className="w-4 h-4 text-muted-foreground" />}
           title="Opening Story"
@@ -320,21 +462,48 @@ export default function CvBuilder() {
           expanded={summaryExpanded}
           onToggle={() => setSummaryExpanded(!summaryExpanded)}
         >
-          <GuidedTextarea
+          {activities.length > 0 && (
+            <motion.button
+              type="button"
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleDraftSummary}
+              className="mb-3 flex w-full items-center gap-3 rounded-2xl border border-secondary/30 bg-secondary/5 p-3 text-left transition-colors hover:bg-secondary/10"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-teal text-secondary-foreground shadow-sm">
+                <Wand2 className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground">
+                  {cv.professionalSummary
+                    ? "Re-draft from your data"
+                    : "Draft from your data"}
+                </p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  We'll write a confident first draft from your {activities.length}{" "}
+                  {activities.length === 1 ? "experience" : "experiences"} — edit
+                  freely afterwards.
+                </p>
+              </div>
+              <Sparkles className="h-4 w-4 shrink-0 text-secondary" />
+            </motion.button>
+          )}
+
+          <StoryTextarea
             icon={<Wand2 className="h-4 w-4" />}
             label="Professional summary"
             value={cv.professionalSummary}
             onChange={(value) => setCvData({ ...cv, professionalSummary: value })}
-            placeholder="Curious computer science student with hands-on experience in customer service, community projects, and React dashboards. I enjoy turning messy problems into clear, useful tools."
-            guide="Try: who you are, what you have done, what kind of work energizes you."
+            rotatingPlaceholders={SUMMARY_PLACEHOLDERS}
+            guide="Try: who you are, what you've done, what kind of work energizes you."
+            tones={SUMMARY_TONES}
+            sweetSpot={{ min: 220, max: 420 }}
             maxLength={600}
-            minHeight="min-h-[132px]"
+            minHeight="min-h-[148px]"
           />
-          <p className="text-[11px] text-muted-foreground mt-1.5">
-            {cv.professionalSummary.length}/600 characters
-          </p>
         </SectionCard>
 
+        <div id="cv-section-experience" />
         <EntryListSection
           icon={<Briefcase className="w-4 h-4 text-muted-foreground" />}
           title="Experience Proof"
@@ -352,8 +521,35 @@ export default function CvBuilder() {
           onUpdateEntry={(e) => updateEntry("workExperience", e)}
           onSaveEdit={saveEditing}
           onCancelEdit={cancelEditing}
+          topAction={
+            activities.length > 0 ? (
+              <motion.button
+                type="button"
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setImportOpen(true)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-secondary/30 bg-secondary/5 p-3 text-left transition-colors hover:bg-secondary/10"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-secondary">
+                  <Sparkles className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-foreground">
+                    Borrow from your timeline
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Promote any of your {activities.length} captured{" "}
+                    {activities.length === 1 ? "experience" : "experiences"} into a
+                    CV entry — one tap.
+                  </p>
+                </div>
+                <span className="text-[11px] font-bold text-secondary">Pick →</span>
+              </motion.button>
+            ) : null
+          }
         />
 
+        <div id="cv-section-education" />
         <EntryListSection
           icon={<GraduationCap className="w-4 h-4 text-muted-foreground" />}
           title="Education"
@@ -373,6 +569,7 @@ export default function CvBuilder() {
           onCancelEdit={cancelEditing}
         />
 
+        <div id="cv-section-skills" />
         <SectionCard
           icon={<Wrench className="w-4 h-4 text-muted-foreground" />}
           title="Skill Palette"
@@ -426,6 +623,9 @@ export default function CvBuilder() {
             placeholder="English (Native), Spanish (Intermediate)..."
           />
         </SectionCard>
+        </motion.div>
+        )}
+        </AnimatePresence>
 
         <div className="pt-4 pb-6 space-y-3">
           <button
@@ -445,6 +645,13 @@ export default function CvBuilder() {
           </button>
         </div>
       </div>
+
+      <ActivityImportSheet
+        open={importOpen}
+        activities={activities}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImportActivities}
+      />
     </div>
   );
 }
@@ -525,92 +732,69 @@ function SectionCard({
   );
 }
 
-function InputField({
-  icon, label, value, onChange, placeholder, guide, type = "text", required, error,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  guide?: string;
-  type?: string;
-  required?: boolean;
-  error?: string;
-}) {
+function HeaderPreview({ info }: { info: CvPersonalInfo }) {
+  const hasName = !!info.fullName;
+  const meta = [info.email, info.phone, info.location].filter(Boolean);
   return (
-    <label className="group block rounded-2xl border border-border bg-background/70 p-3 transition-colors focus-within:border-primary/45 focus-within:bg-white">
-      <span className="mb-2 flex items-center gap-2 text-xs font-bold text-foreground">
-        {icon && (
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-accent text-primary">
-            {icon}
-          </span>
-        )}
-        <span>{label}{required ? " *" : ""}</span>
-      </span>
-      {guide && (
-        <span className="mb-2 block text-[11px] leading-relaxed text-muted-foreground">
-          {guide}
-        </span>
-      )}
-      <Input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`h-11 rounded-xl bg-white text-sm shadow-sm placeholder:text-muted-foreground/55 ${
-          error ? "border-destructive focus:ring-destructive/20" : "border-border focus:ring-primary/20"
-        } transition-shadow`}
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="relative mb-4 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-white via-white to-accent/30 p-4 shadow-card"
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl"
       />
-      {error && (
-        <p className="text-[11px] text-destructive mt-1">{error}</p>
-      )}
-    </label>
-  );
-}
-
-function GuidedTextarea({
-  icon,
-  label,
-  value,
-  onChange,
-  placeholder,
-  guide,
-  maxLength,
-  minHeight = "min-h-[96px]",
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  guide?: string;
-  maxLength?: number;
-  minHeight?: string;
-}) {
-  return (
-    <label className="group block rounded-2xl border border-border bg-background/70 p-3 transition-colors focus-within:border-primary/45 focus-within:bg-white">
-      <span className="mb-2 flex items-center gap-2 text-xs font-bold text-foreground">
-        {icon && (
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-accent text-primary">
-            {icon}
-          </span>
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+        Live header preview
+      </p>
+      <AnimatePresence mode="wait">
+        <motion.h3
+          key={hasName ? info.fullName : "placeholder"}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className={`text-2xl font-bold leading-tight ${
+            hasName ? "text-foreground" : "text-muted-foreground/55"
+          }`}
+        >
+          {hasName ? info.fullName : "Your name appears here"}
+        </motion.h3>
+      </AnimatePresence>
+      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-medium text-muted-foreground">
+        {meta.length > 0 ? (
+          meta.map((m) => (
+            <motion.span
+              key={m}
+              initial={{ opacity: 0, y: 2 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center"
+            >
+              {m}
+            </motion.span>
+          ))
+        ) : (
+          <span className="text-muted-foreground/45">Contact details appear here</span>
         )}
-        <span>{label}</span>
-      </span>
-      {guide && (
-        <span className="mb-2 block text-[11px] leading-relaxed text-muted-foreground">
-          {guide}
-        </span>
+      </div>
+      {(info.linkedin || info.website) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {info.linkedin && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              <Link2 className="h-2.5 w-2.5" /> LinkedIn
+            </span>
+          )}
+          {info.website && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              <Sparkles className="h-2.5 w-2.5" /> Site
+            </span>
+          )}
+        </div>
       )}
-      <Textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={`rounded-xl bg-white text-sm shadow-sm placeholder:text-muted-foreground/55 focus:ring-2 focus:ring-primary/20 transition-shadow resize-none ${minHeight}`}
-        maxLength={maxLength}
-      />
-    </label>
+    </motion.div>
   );
 }
 
@@ -618,6 +802,7 @@ function EntryListSection({
   icon, title, subtitle, prompt, entries, sectionKey, expanded, onToggle,
   editingId, editingSection,
   onAdd, onEdit, onRemove, onUpdateEntry, onSaveEdit, onCancelEdit,
+  topAction,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -635,6 +820,7 @@ function EntryListSection({
   onUpdateEntry: (entry: CvEntry) => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  topAction?: React.ReactNode;
 }) {
   const addLabel =
     sectionKey === "workExperience"
@@ -653,6 +839,7 @@ function EntryListSection({
       expanded={expanded}
       onToggle={onToggle}
     >
+      {topAction && <div className="mb-3">{topAction}</div>}
       <div className="space-y-2">
         <AnimatePresence>
           {entries.map((entry) => (
@@ -775,8 +962,8 @@ function EntryForm({
             </p>
           </div>
         </div>
-        <div className="space-y-3">
-          <InputField
+        <div className="space-y-2">
+          <ImmersiveField
             icon={isCert ? <Award className="h-4 w-4" /> : sectionKey === "education" ? <GraduationCap className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
             label={titleLabel}
             value={entry.title}
@@ -785,7 +972,7 @@ function EntryForm({
             guide={titleGuide}
             required
           />
-          <InputField
+          <ImmersiveField
             icon={<Building2 className="h-4 w-4" />}
             label={orgLabel}
             value={entry.organization}
@@ -795,7 +982,7 @@ function EntryForm({
             required
           />
           {!isCert && (
-            <InputField
+            <ImmersiveField
               icon={<MapPin className="h-4 w-4" />}
               label="Place"
               value={entry.location ?? ""}
@@ -804,64 +991,76 @@ function EntryForm({
               guide="Optional. City, remote, hybrid, or campus is enough."
             />
           )}
-          <div className="grid grid-cols-2 gap-2.5">
-            <InputField
-              icon={<Calendar className="h-4 w-4" />}
+          <div className={`grid gap-2.5 ${isCert || entry.isCurrent ? "grid-cols-1" : "grid-cols-2"}`}>
+            <MonthYearField
               label={isCert ? "Year earned" : "Started"}
               value={entry.startDate}
               onChange={(value) => onUpdate({ ...entry, startDate: value })}
-              placeholder={isCert ? "2024" : "2024-06"}
-              guide={isCert ? "Just the year works." : "Use YYYY-MM for clean sorting."}
+              precision={isCert ? "year" : "month"}
               required
+              guide={isCert ? "Just the year works." : undefined}
             />
-            {isCert ? (
-              <div />
-            ) : !entry.isCurrent ? (
-              <InputField
-                icon={<Calendar className="h-4 w-4" />}
+            {!isCert && !entry.isCurrent && (
+              <MonthYearField
                 label="Ended"
                 value={entry.endDate ?? ""}
                 onChange={(value) => onUpdate({ ...entry, endDate: value || undefined })}
-                placeholder="2024-12"
-                guide="Leave empty if the timing is open."
+                guide="Leave empty if open-ended."
               />
-            ) : (
-              <div />
             )}
           </div>
           {!isCert && (
-            <label className="flex items-center gap-2.5 cursor-pointer select-none rounded-2xl border border-border bg-background/70 p-3">
-              <div
-                className={`relative w-9 h-5 rounded-full transition-colors duration-300 ${
-                  entry.isCurrent ? "bg-primary" : "bg-muted"
-                }`}
-                onClick={() => onUpdate({
+            <button
+              type="button"
+              onClick={() =>
+                onUpdate({
                   ...entry,
                   isCurrent: !entry.isCurrent,
                   endDate: entry.isCurrent ? undefined : entry.endDate,
-                })}
+                })
+              }
+              className={`group flex w-full items-center gap-2.5 rounded-2xl border p-3 text-left transition-colors ${
+                entry.isCurrent
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border bg-background/70 hover:border-primary/25"
+              }`}
+            >
+              <span
+                className={`relative h-5 w-9 rounded-full transition-colors duration-300 ${
+                  entry.isCurrent ? "bg-primary" : "bg-muted"
+                }`}
               >
-                <motion.div
-                  className="absolute top-[2px] w-4 h-4 rounded-full bg-white shadow-sm"
+                <motion.span
+                  className="absolute top-[2px] block h-4 w-4 rounded-full bg-white shadow-sm"
                   animate={{ left: entry.isCurrent ? 18 : 2 }}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
-              </div>
-              <span className="text-xs text-muted-foreground font-medium">
+              </span>
+              <span className={`text-xs font-semibold ${entry.isCurrent ? "text-primary" : "text-foreground"}`}>
                 I currently {sectionKey === "education" ? "study" : "work"} here
               </span>
-            </label>
+              {entry.isCurrent && (
+                <motion.span
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="ml-auto text-[10px] font-bold uppercase tracking-wider text-primary"
+                >
+                  Live
+                </motion.span>
+              )}
+            </button>
           )}
           {!isCert && (
-            <GuidedTextarea
+            <StoryTextarea
               icon={<FileText className="h-4 w-4" />}
               label="Proof notes"
               value={entry.description ?? ""}
               onChange={(value) => onUpdate({ ...entry, description: value || undefined })}
-              placeholder="Prepared drinks during busy shifts, trained new team members, and improved inventory handoff notes so weekend stockouts happened less often."
+              rotatingPlaceholders={PROOF_PLACEHOLDERS}
               guide="Use action verbs. Mention tools, people, pressure, outcomes, or what changed because of you."
+              sweetSpot={{ min: 120, max: 360 }}
               maxLength={500}
-              minHeight="min-h-[104px]"
+              minHeight="min-h-[108px]"
             />
           )}
         </div>
