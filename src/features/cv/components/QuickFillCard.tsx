@@ -1,3 +1,10 @@
+/**
+ * Paste-to-fill card for extracting identity fields from free-form text.
+ *
+ * Exports: QuickFillCard (default)
+ * Depends on: framer-motion, lucide-react, parseQuickFill, @/lib/storage
+ */
+
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,8 +15,8 @@ import {
   ChevronDown,
   X,
 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { parseQuickFill, QuickFillResult } from "@/lib/cvAutofill";
+import { Textarea } from "@/shared/components/ui/textarea";
+import { parseQuickFill, type QuickFillResult } from "@/features/cv/lib/parseQuickFill";
 import { CvPersonalInfo } from "@/lib/storage";
 
 const FIELD_LABELS: Record<keyof CvPersonalInfo, string> = {

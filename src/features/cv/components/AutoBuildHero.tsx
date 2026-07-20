@@ -1,3 +1,10 @@
+/**
+ * Hero banner with one-tap auto-build from pasted identity text.
+ *
+ * Exports: AutoBuildHero (default)
+ * Depends on: framer-motion, lucide-react, parseQuickFill, @/lib/storage
+ */
+
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,8 +16,8 @@ import {
   ArrowRight,
   ClipboardPaste,
 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { parseQuickFill } from "@/lib/cvAutofill";
+import { Textarea } from "@/shared/components/ui/textarea";
+import { parseQuickFill } from "@/features/cv/lib/parseQuickFill";
 import { CvPersonalInfo } from "@/lib/storage";
 
 interface AutoBuildHeroProps {

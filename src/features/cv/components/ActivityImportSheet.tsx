@@ -1,8 +1,15 @@
+/**
+ * Bottom sheet for importing timeline activities as CV experience entries.
+ *
+ * Exports: ActivityImportSheet (default)
+ * Depends on: framer-motion, lucide-react, @/lib/data, activityAutofill, @/lib/storage
+ */
+
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Sparkles, Calendar, Tag } from "lucide-react";
 import { Activity, CATEGORIES } from "@/lib/data";
-import { activityToCvEntry } from "@/lib/cvAutofill";
+import { activityToCvEntry } from "@/features/cv/lib/activityAutofill";
 import { CvEntry } from "@/lib/storage";
 
 interface ActivityImportSheetProps {

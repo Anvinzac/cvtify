@@ -1,3 +1,10 @@
+/**
+ * Compact overview tiles summarizing each CV section at a glance.
+ *
+ * Exports: CvOverview (default)
+ * Depends on: framer-motion, lucide-react, @/lib/storage
+ */
+
 import { motion } from "framer-motion";
 import { User, FileText, Briefcase, Wrench, GraduationCap, Pencil, PlusCircle } from "lucide-react";
 import { CvData } from "@/lib/storage";
