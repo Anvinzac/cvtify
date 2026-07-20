@@ -1,6 +1,9 @@
 # Phase 0 — Structural Refactor Audit
 
-**Verdict: NOT refactored.** The repo still uses type-based folders (`pages/`, `components/`, `lib/`, `context/`), has no `features/` / `routes/` / `shared/` layout, and exceeds the complexity budget in multiple god files.
+**Status (post-refactor on `refactor/feature-structure`): DONE for structure.**  
+Feature-based `features/` + `shared/` + thin `routes/` are in place; god files split under complexity ceilings. Still on **react-router-dom** (TanStack Router not added — new dependency). TanStack Query remains provider-only (local-first app, no remote API).
+
+**Original verdict before work:** NOT refactored — type-based folders, no `features/` / `routes/` / `shared/`, multiple god files.
 
 ## Project context (filled)
 

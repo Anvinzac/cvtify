@@ -2,7 +2,7 @@
  * State and mutation handlers for the CV builder page.
  *
  * Exports: useCvBuilderPage
- * Depends on: @/shared/app-state/AppContext, @/features/cv/types, cvBuilderPageHelpers
+ * Depends on: AppContext, cvBuilderPageHelpers, useCvBuilderExpandState
  */
 
 import { useState } from "react";
@@ -14,25 +14,22 @@ import {
   computeHasAnyData,
   computeCompletedSections,
   buildAutoBuildUpdate,
+  createBlankEntry,
+  addSkillToGroups,
+  removeSkillFromGroups,
+  type CvListSection,
 } from "@/features/cv/lib/cvBuilderPageHelpers";
+import { useCvBuilderExpandState } from "@/features/cv/hooks/useCvBuilderExpandState";
 
 /** All CV builder UI state, derived values, and event handlers. */
 export function useCvBuilderPage() {
   const { cv, setCvData, activities } = useAppState();
   const [importOpen, setImportOpen] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+  const expand = useCvBuilderExpandState();
 
-  const [personalExpanded, setPersonalExpanded] = useState(false);
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const [experienceExpanded, setExperienceExpanded] = useState(false);
-  const [educationExpanded, setEducationExpanded] = useState(false);
-  const [skillsExpanded, setSkillsExpanded] = useState(false);
-  const [certsExpanded, setCertsExpanded] = useState(false);
-  const [languagesExpanded, setLanguagesExpanded] = useState(false);
-
-  const [editingSection, setEditingSection] = useState<"workExperience" | "education" | "certifications" | null>(null);
+  const [editingSection, setEditingSection] = useState<CvListSection | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-
   const [showLinks, setShowLinks] = useState(!!(cv.personalInfo.linkedin || cv.personalInfo.website));
   const [activeCategoryId, setActiveCategoryId] = useState(SKILL_CATEGORIES[0].id);
 
@@ -42,12 +39,9 @@ export function useCvBuilderPage() {
 
   const handleImportActivities = (entries: CvEntry[]) => {
     if (entries.length === 0) return;
-    setCvData({
-      ...cv,
-      workExperience: [...cv.workExperience, ...entries],
-    });
+    setCvData({ ...cv, workExperience: [...cv.workExperience, ...entries] });
     setImportOpen(false);
-    setExperienceExpanded(true);
+    expand.setExperienceExpanded(true);
   };
 
   const updateSummary = (value: string) => {
@@ -55,12 +49,14 @@ export function useCvBuilderPage() {
   };
 
   const handleDraftSummary = () => {
-    const draft = draftSummary(activities, {
-      fullName: cv.personalInfo.fullName,
-      location: cv.personalInfo.location,
+    setCvData({
+      ...cv,
+      professionalSummary: draftSummary(activities, {
+        fullName: cv.personalInfo.fullName,
+        location: cv.personalInfo.location,
+      }),
     });
-    setCvData({ ...cv, professionalSummary: draft });
-    setSummaryExpanded(true);
+    expand.setSummaryExpanded(true);
   };
 
   const handleAutoBuild = (paste: Partial<CvPersonalInfo>) => {
@@ -72,38 +68,35 @@ export function useCvBuilderPage() {
   ) => {
     setCustomizing(true);
     setTimeout(() => {
-      if (section === "identity") setPersonalExpanded(true);
-      if (section === "story") setSummaryExpanded(true);
-      if (section === "experience") setExperienceExpanded(true);
-      if (section === "skills") setSkillsExpanded(true);
-      if (section === "education") setEducationExpanded(true);
+      if (section === "identity") expand.setPersonalExpanded(true);
+      if (section === "story") expand.setSummaryExpanded(true);
+      if (section === "experience") expand.setExperienceExpanded(true);
+      if (section === "skills") expand.setSkillsExpanded(true);
+      if (section === "education") expand.setEducationExpanded(true);
       setTimeout(() => {
-        const target = document.getElementById(`cv-section-${section}`);
-        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById(`cv-section-${section}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       }, 60);
     }, 30);
   };
 
-  const addEntry = (section: "workExperience" | "education" | "certifications") => {
-    const entry: CvEntry = {
-      id: Date.now().toString(),
-      title: "",
-      organization: "",
-      startDate: "",
-    };
+  const addEntry = (section: CvListSection) => {
+    const entry = createBlankEntry();
     setCvData({ ...cv, [section]: [...cv[section], entry] });
     setEditingSection(section);
     setEditingId(entry.id);
   };
 
-  const updateEntry = (section: "workExperience" | "education" | "certifications", entry: CvEntry) => {
+  const updateEntry = (section: CvListSection, entry: CvEntry) => {
     setCvData({
       ...cv,
       [section]: cv[section].map((e) => (e.id === entry.id ? entry : e)),
     });
   };
 
-  const removeEntry = (section: "workExperience" | "education" | "certifications", id: string) => {
+  const removeEntry = (section: CvListSection, id: string) => {
     if (editingId === id) {
       setEditingId(null);
       setEditingSection(null);
@@ -111,7 +104,7 @@ export function useCvBuilderPage() {
     setCvData({ ...cv, [section]: cv[section].filter((e) => e.id !== id) });
   };
 
-  const startEditing = (section: "workExperience" | "education" | "certifications", id: string) => {
+  const startEditing = (section: CvListSection, id: string) => {
     setEditingSection(section);
     setEditingId(id);
   };
@@ -120,7 +113,10 @@ export function useCvBuilderPage() {
     if (editingSection && editingId) {
       const entry = cv[editingSection].find((e) => e.id === editingId);
       if (entry && !entry.title && !entry.organization) {
-        setCvData({ ...cv, [editingSection]: cv[editingSection].filter((e) => e.id !== editingId) });
+        setCvData({
+          ...cv,
+          [editingSection]: cv[editingSection].filter((e) => e.id !== editingId),
+        });
       }
     }
     setEditingId(null);
@@ -144,32 +140,16 @@ export function useCvBuilderPage() {
   };
 
   const addSkill = (categoryId: string, skillName: string) => {
-    const trimmed = skillName.trim();
-    if (!trimmed) return;
-
-    const newGroups = cv.skills.map((g) => ({ ...g, skills: [...g.skills] }));
-    const existingGroup = newGroups.find((g) => g.category === categoryId);
-
-    if (existingGroup) {
-      if (existingGroup.skills.includes(trimmed)) return;
-      existingGroup.skills = [...existingGroup.skills, trimmed];
-    } else {
-      newGroups.push({ id: Date.now().toString(), category: categoryId, skills: [trimmed] });
-    }
-
-    setCvData({ ...cv, skills: newGroups });
+    const next = addSkillToGroups(cv.skills, categoryId, skillName);
+    if (next) setCvData({ ...cv, skills: next });
   };
 
   const removeSkill = (categoryId: string, skillName: string) => {
-    const newGroups = cv.skills
-      .map((g) => (g.category === categoryId ? { ...g, skills: g.skills.filter((s) => s !== skillName) } : g))
-      .filter((g) => g.skills.length > 0);
-
-    setCvData({ ...cv, skills: newGroups });
+    setCvData({
+      ...cv,
+      skills: removeSkillFromGroups(cv.skills, categoryId, skillName),
+    });
   };
-
-  const hasAnyData = computeHasAnyData(cv);
-  const completedSections = computeCompletedSections(cv);
 
   return {
     cv,
@@ -178,20 +158,7 @@ export function useCvBuilderPage() {
     setImportOpen,
     customizing,
     setCustomizing,
-    personalExpanded,
-    setPersonalExpanded,
-    summaryExpanded,
-    setSummaryExpanded,
-    experienceExpanded,
-    setExperienceExpanded,
-    educationExpanded,
-    setEducationExpanded,
-    skillsExpanded,
-    setSkillsExpanded,
-    certsExpanded,
-    setCertsExpanded,
-    languagesExpanded,
-    setLanguagesExpanded,
+    ...expand,
     editingSection,
     editingId,
     showLinks,
@@ -214,7 +181,7 @@ export function useCvBuilderPage() {
     removeTag,
     addSkill,
     removeSkill,
-    hasAnyData,
-    completedSections,
+    hasAnyData: computeHasAnyData(cv),
+    completedSections: computeCompletedSections(cv),
   };
 }

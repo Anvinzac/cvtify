@@ -1,6 +1,14 @@
+/**
+ * Immersive text input with floating label, focus glow, and validity chip.
+ *
+ * Exports: ImmersiveField
+ * Depends on: framer-motion, ImmersiveFieldStatus, ImmersiveFieldGuide
+ */
+
 import { useId, useRef, useState, useEffect, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, AlertCircle } from "lucide-react";
+import { ImmersiveFieldStatus } from "@/shared/components/fx/ImmersiveFieldStatus";
+import { ImmersiveFieldGuide } from "@/shared/components/fx/ImmersiveFieldGuide";
 
 interface ImmersiveFieldProps {
   label: string;
@@ -26,13 +34,7 @@ interface ImmersiveFieldProps {
 }
 
 /**
- * Immersive input field with:
- *   - floating label (rises when focused or has value)
- *   - gradient ring + soft glow on focus
- *   - sliding-in validity / error indicator on the right
- *   - subtle pulse on first character typed
- *
- * Designed to feel hand-crafted rather than generic.
+ * Immersive input with floating label, gradient focus ring, and validity indicator.
  */
 export function ImmersiveField({
   label,
@@ -82,7 +84,6 @@ export function ImmersiveField({
             : "border-border"
         }`}
       >
-        {/* Animated gradient sheen on focus */}
         <AnimatePresence>
           {focused && (
             <motion.span
@@ -163,36 +164,13 @@ export function ImmersiveField({
             />
           </div>
 
-          <div className="relative flex h-10 w-6 shrink-0 items-center justify-end">
-            <AnimatePresence mode="wait">
-              {error ? (
-                <motion.span
-                  key="err"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                  className="flex h-5 w-5 items-center justify-center rounded-full bg-destructive/15 text-destructive"
-                >
-                  <AlertCircle className="h-3 w-3" />
-                </motion.span>
-              ) : isValid && showValidity ? (
-                <motion.span
-                  key="ok"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                  className="flex h-5 w-5 items-center justify-center rounded-full gradient-warm text-primary-foreground shadow-sm"
-                >
-                  <Check className="h-3 w-3" />
-                </motion.span>
-              ) : null}
-            </AnimatePresence>
-          </div>
+          <ImmersiveFieldStatus
+            error={error}
+            isValid={isValid}
+            showValidity={showValidity}
+          />
         </div>
 
-        {/* Animated underline that grows with focus */}
         <motion.div
           aria-hidden
           initial={false}
@@ -201,7 +179,6 @@ export function ImmersiveField({
           className="pointer-events-none absolute left-3 right-3 bottom-[3px] h-[2px] origin-left rounded-full gradient-warm"
         />
 
-        {/* Pulse on first type */}
         <AnimatePresence>
           {justTyped && (
             <motion.span
@@ -215,33 +192,7 @@ export function ImmersiveField({
         </AnimatePresence>
       </motion.div>
 
-      {/* Guide / error */}
-      <div className="mt-1.5 min-h-[14px] flex items-center justify-between px-1">
-        <AnimatePresence mode="wait">
-          {error ? (
-            <motion.p
-              key="err-msg"
-              initial={{ opacity: 0, y: -3 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -3 }}
-              className="text-[11px] font-semibold text-destructive"
-            >
-              {error}
-            </motion.p>
-          ) : guide ? (
-            <motion.p
-              key="guide"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: focused ? 0.95 : 0.7 }}
-              className="text-[11px] leading-relaxed text-muted-foreground"
-            >
-              {guide}
-            </motion.p>
-          ) : (
-            <span />
-          )}
-        </AnimatePresence>
-      </div>
+      <ImmersiveFieldGuide error={error} guide={guide} focused={focused} />
 
       {bottomAccessory}
     </div>

@@ -5,13 +5,69 @@
  * Depends on: @/features/cv/types, activityAutofill
  */
 
-import type { CvData, CvPersonalInfo } from "@/features/cv/types";
-import type { Activity } from "@/lib/data";
+import type { CvData, CvEntry, CvPersonalInfo, SkillGroup } from "@/features/cv/types";
+import type { Activity } from "@/features/activities/types";
 import {
   activityToCvEntry,
   deriveSkillGroupsFromActivities,
   draftSummary,
 } from "@/features/cv/lib/activityAutofill";
+
+export type CvListSection = "workExperience" | "education" | "certifications";
+
+/** Append a blank entry for inline editing. */
+export function createBlankEntry(): CvEntry {
+  return {
+    id: Date.now().toString(),
+    title: "",
+    organization: "",
+    startDate: "",
+  };
+}
+
+/**
+ * Add a skill to a category group, creating the group if needed.
+ * @returns Updated groups, or null if the skill was already present / empty
+ */
+export function addSkillToGroups(
+  skills: SkillGroup[],
+  categoryId: string,
+  skillName: string
+): SkillGroup[] | null {
+  const trimmed = skillName.trim();
+  if (!trimmed) return null;
+
+  const newGroups = skills.map((g) => ({ ...g, skills: [...g.skills] }));
+  const existingGroup = newGroups.find((g) => g.category === categoryId);
+
+  if (existingGroup) {
+    if (existingGroup.skills.includes(trimmed)) return null;
+    existingGroup.skills = [...existingGroup.skills, trimmed];
+  } else {
+    newGroups.push({
+      id: Date.now().toString(),
+      category: categoryId,
+      skills: [trimmed],
+    });
+  }
+
+  return newGroups;
+}
+
+/** Remove a skill from a category group; drops empty groups. */
+export function removeSkillFromGroups(
+  skills: SkillGroup[],
+  categoryId: string,
+  skillName: string
+): SkillGroup[] {
+  return skills
+    .map((g) =>
+      g.category === categoryId
+        ? { ...g, skills: g.skills.filter((s) => s !== skillName) }
+        : g
+    )
+    .filter((g) => g.skills.length > 0);
+}
 
 /** Whether the CV has any meaningful content yet. */
 export function computeHasAnyData(cv: CvData): boolean {
