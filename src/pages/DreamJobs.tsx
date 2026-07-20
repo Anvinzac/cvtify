@@ -2,7 +2,7 @@ import { useState, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Heart, MapPin, DollarSign, CheckCircle2, Circle, Target } from "lucide-react";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 import { SAMPLE_JOBS } from "@/lib/data";
 import { BottomNav } from "./ReportCard";
 import ScrollProgress from "@/shared/components/fx/ScrollProgress";

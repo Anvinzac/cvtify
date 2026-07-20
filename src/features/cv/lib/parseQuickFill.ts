@@ -2,10 +2,10 @@
  * Best-effort parsing of pasted identity text (signatures, LinkedIn About, etc.).
  *
  * Exports: QuickFillResult, parseQuickFill
- * Depends on: @/lib/storage (CvPersonalInfo)
+ * Depends on: @/features/cv/types (CvPersonalInfo)
  */
 
-import type { CvPersonalInfo } from "@/lib/storage";
+import type { CvPersonalInfo } from "@/features/cv/types";
 
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/;
 const PHONE_RE = /(?:\+?\d[\d\s().-]{8,}\d)/;

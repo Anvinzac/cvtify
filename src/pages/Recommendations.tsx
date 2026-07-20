@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Clock, User, Calendar, Sparkles } from "lucide-react";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 import { SAMPLE_JOBS, SAMPLE_EVENTS } from "@/lib/data";
 import { BottomNav } from "./ReportCard";
 

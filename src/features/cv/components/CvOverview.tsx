@@ -7,7 +7,7 @@
 
 import { motion } from "framer-motion";
 import { User, FileText, Briefcase, Wrench, GraduationCap, Pencil, PlusCircle } from "lucide-react";
-import { CvData } from "@/lib/storage";
+import type { CvData } from "@/features/cv/types";
 
 interface CvOverviewProps {
   cv: CvData;

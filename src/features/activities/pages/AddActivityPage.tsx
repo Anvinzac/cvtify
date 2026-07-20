@@ -5,7 +5,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { CATEGORIES } from "@/features/activities/lib/catalog";
 import type { Activity } from "@/features/activities/types";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 import ActivityWalkthrough from "@/features/activities/components/walkthrough/ActivityWalkthrough";
 
 /** Full-page walkthrough for a single category from the URL. */

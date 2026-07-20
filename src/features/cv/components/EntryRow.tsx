@@ -6,7 +6,7 @@
  */
 
 import { Pencil, X } from "lucide-react";
-import type { CvEntry } from "@/lib/storage";
+import type { CvEntry } from "@/features/cv/types";
 import { formatDateRange } from "@/features/cv/lib/formatters";
 
 export interface EntryRowProps {

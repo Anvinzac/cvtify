@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Printer } from "lucide-react";
-import { useAppState } from "@/context/AppContext";
-import { CvEntry, SKILL_CATEGORIES } from "@/lib/storage";
+import { useAppState } from "@/shared/app-state/AppContext";
+import type { CvEntry } from "@/features/cv/types";
+import { SKILL_CATEGORIES } from "@/features/cv/lib/skillCategories";
 
 function formatDate(entry: CvEntry): string {
   const fmt = (d: string) => {

@@ -2,15 +2,12 @@
  * Timeline-to-CV autofill: entries, summary drafts, and skill derivation.
  *
  * Exports: activityToCvEntry, draftSummary, deriveSkillGroupsFromActivities
- * Depends on: @/lib/data, @/lib/storage
+ * Depends on: @/lib/data, @/features/cv/types, @/features/cv/lib/skillCategories
  */
 
 import { Activity, CATEGORIES } from "@/lib/data";
-import {
-  CvEntry,
-  SkillGroup,
-  SKILL_CATEGORIES,
-} from "@/lib/storage";
+import type { CvEntry, SkillGroup } from "@/features/cv/types";
+import { SKILL_CATEGORIES } from "@/features/cv/lib/skillCategories";
 
 const DURATION_MONTHS: Record<string, number> = {
   "Less than a month": 1,

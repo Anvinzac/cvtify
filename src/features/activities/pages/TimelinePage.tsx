@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 import { CATEGORIES } from "@/features/activities/lib/catalog";
 import type { Activity } from "@/features/activities/types";
 import TimelineView from "@/features/activities/components/timeline/TimelineView";

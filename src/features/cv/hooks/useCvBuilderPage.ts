@@ -2,16 +2,13 @@
  * State and mutation handlers for the CV builder page.
  *
  * Exports: useCvBuilderPage
- * Depends on: @/context/AppContext, @/lib/storage, activityAutofill
+ * Depends on: @/shared/app-state/AppContext, @/features/cv/types, activityAutofill
  */
 
 import { useState } from "react";
-import { useAppState } from "@/context/AppContext";
-import {
-  CvEntry,
-  CvPersonalInfo,
-  SKILL_CATEGORIES,
-} from "@/lib/storage";
+import { useAppState } from "@/shared/app-state/AppContext";
+import type { CvEntry, CvPersonalInfo } from "@/features/cv/types";
+import { SKILL_CATEGORIES } from "@/features/cv/lib/skillCategories";
 import {
   activityToCvEntry,
   deriveSkillGroupsFromActivities,

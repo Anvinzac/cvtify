@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   Briefcase, GraduationCap, Wrench, Award, Globe, Sparkles,
 } from "lucide-react";
-import type { CvData, CvEntry } from "@/lib/storage";
+import type { CvData, CvEntry } from "@/features/cv/types";
 import { EntryListSection } from "@/features/cv/components/EntryListSection";
 import { SectionCard } from "@/features/cv/components/SectionCard";
 import { SkillsEditor } from "@/features/cv/components/SkillsEditor";

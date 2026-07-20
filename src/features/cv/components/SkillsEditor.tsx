@@ -9,7 +9,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, X } from "lucide-react";
 import { Input } from "@/shared/components/ui/input";
-import { SKILL_CATEGORIES, type SkillGroup } from "@/lib/storage";
+import { SKILL_CATEGORIES, type SkillGroup } from "@/features/cv/lib/skillCategories";
 import { SKILL_FIELD_SECTIONS } from "@/features/cv/lib/constants";
 
 export interface SkillsEditorProps {

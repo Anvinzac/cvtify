@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, BarChart3, Sparkles, ChevronRight, Star, Heart, Zap, Palette, CalendarClock, ClipboardList } from "lucide-react";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 import { HOBBY_OPTIONS } from "@/lib/data";
 import CountUp from "@/shared/components/fx/CountUp";
 import ScrollProgress from "@/shared/components/fx/ScrollProgress";

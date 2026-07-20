@@ -2,10 +2,10 @@
  * CV display and validation formatters.
  *
  * Exports: formatDateRange, emailValid
- * Depends on: @/lib/storage (CvEntry)
+ * Depends on: @/features/cv/types (CvEntry)
  */
 
-import type { CvEntry } from "@/lib/storage";
+import type { CvEntry } from "@/features/cv/types";
 
 /**
  * Formats a CV entry's start/end dates for list display.

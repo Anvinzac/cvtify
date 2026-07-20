@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/shared/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { AppProvider } from "@/context/AppContext";
+import { AppProvider } from "@/shared/app-state/AppContext";
 import Index from "./pages/Index";
 import CvBuilder from "./pages/CvBuilder";
 import CvPreview from "./pages/CvPreview";

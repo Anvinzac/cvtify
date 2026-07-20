@@ -7,7 +7,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
-import type { CvEntry } from "@/lib/storage";
+import type { CvEntry } from "@/features/cv/types";
 import { SectionCard } from "@/features/cv/components/SectionCard";
 import { EntryRow } from "@/features/cv/components/EntryRow";
 import { EntryForm } from "@/features/cv/components/EntryForm";

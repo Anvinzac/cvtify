@@ -8,7 +8,7 @@ import { X, Check, BarChart3, Sparkles, ChevronRight, Plus, LayoutGrid, Calendar
 
 import { CATEGORIES } from "@/features/activities/lib/catalog";
 import type { Activity } from "@/features/activities/types";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 import ActivityWalkthrough from "@/features/activities/components/walkthrough/ActivityWalkthrough";
 import SpotlightCard from "@/shared/components/fx/SpotlightCard";
 import TimelineView from "@/features/activities/components/timeline/TimelineView";

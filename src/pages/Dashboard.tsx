@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Plus, BarChart3, Sparkles, ChevronRight, X, ArrowRight, ClipboardList } from "lucide-react";
 import { CATEGORIES } from "@/lib/data";
-import { useAppState } from "@/context/AppContext";
+import { useAppState } from "@/shared/app-state/AppContext";
 
 const CATEGORY_COLORS: Record<string, string> = {
   "home-business": "bg-amber-400",

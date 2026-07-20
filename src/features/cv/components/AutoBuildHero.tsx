@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { parseQuickFill } from "@/features/cv/lib/parseQuickFill";
-import { CvPersonalInfo } from "@/lib/storage";
+import type { CvPersonalInfo } from "@/features/cv/types";
 
 interface AutoBuildHeroProps {
   /** Number of activities in the timeline. */

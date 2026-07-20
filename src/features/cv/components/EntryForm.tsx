@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   Award, Briefcase, Building2, FileText, GraduationCap, MapPin, Sparkles,
 } from "lucide-react";
-import type { CvEntry } from "@/lib/storage";
+import type { CvEntry } from "@/features/cv/types";
 import { ImmersiveField } from "@/shared/components/fx/ImmersiveField";
 import { StoryTextarea } from "@/shared/components/fx/StoryTextarea";
 import { MonthYearField } from "@/shared/components/fx/MonthYearField";

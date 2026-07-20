@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Sparkles, Calendar, Tag } from "lucide-react";
 import { Activity, CATEGORIES } from "@/lib/data";
 import { activityToCvEntry } from "@/features/cv/lib/activityAutofill";
-import { CvEntry } from "@/lib/storage";
+import type { CvEntry } from "@/features/cv/types";
 
 interface ActivityImportSheetProps {
   open: boolean;

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Textarea } from "@/shared/components/ui/textarea";
 import { parseQuickFill, type QuickFillResult } from "@/features/cv/lib/parseQuickFill";
-import { CvPersonalInfo } from "@/lib/storage";
+import type { CvPersonalInfo } from "@/features/cv/types";
 
 const FIELD_LABELS: Record<keyof CvPersonalInfo, string> = {
   fullName: "Name",

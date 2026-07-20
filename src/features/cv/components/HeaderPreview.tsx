@@ -7,7 +7,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, Sparkles } from "lucide-react";
-import type { CvPersonalInfo } from "@/lib/storage";
+import type { CvPersonalInfo } from "@/features/cv/types";
 
 export interface HeaderPreviewProps {
   info: CvPersonalInfo;

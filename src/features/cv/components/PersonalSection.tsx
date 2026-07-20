@@ -7,7 +7,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Phone, MapPin, Link2, Sparkles, Plus } from "lucide-react";
-import type { CvPersonalInfo } from "@/lib/storage";
+import type { CvPersonalInfo } from "@/features/cv/types";
 import { ImmersiveField } from "@/shared/components/fx/ImmersiveField";
 import { SectionCard } from "@/features/cv/components/SectionCard";
 import { HeaderPreview } from "@/features/cv/components/HeaderPreview";
