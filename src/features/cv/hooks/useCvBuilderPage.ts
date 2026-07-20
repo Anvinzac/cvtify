@@ -2,18 +2,19 @@
  * State and mutation handlers for the CV builder page.
  *
  * Exports: useCvBuilderPage
- * Depends on: @/shared/app-state/AppContext, @/features/cv/types, activityAutofill
+ * Depends on: @/shared/app-state/AppContext, @/features/cv/types, cvBuilderPageHelpers
  */
 
 import { useState } from "react";
 import { useAppState } from "@/shared/app-state/AppContext";
 import type { CvEntry, CvPersonalInfo } from "@/features/cv/types";
 import { SKILL_CATEGORIES } from "@/features/cv/lib/skillCategories";
+import { draftSummary } from "@/features/cv/lib/activityAutofill";
 import {
-  activityToCvEntry,
-  deriveSkillGroupsFromActivities,
-  draftSummary,
-} from "@/features/cv/lib/activityAutofill";
+  computeHasAnyData,
+  computeCompletedSections,
+  buildAutoBuildUpdate,
+} from "@/features/cv/lib/cvBuilderPageHelpers";
 
 /** All CV builder UI state, derived values, and event handlers. */
 export function useCvBuilderPage() {
@@ -63,38 +64,7 @@ export function useCvBuilderPage() {
   };
 
   const handleAutoBuild = (paste: Partial<CvPersonalInfo>) => {
-    const personalInfo: CvPersonalInfo = { ...cv.personalInfo };
-    for (const [k, v] of Object.entries(paste)) {
-      const key = k as keyof CvPersonalInfo;
-      if (typeof v !== "string" || !v.trim()) continue;
-      if (!personalInfo[key] || personalInfo[key]?.trim() === "") {
-        personalInfo[key] = v;
-      }
-    }
-
-    const existingTitles = new Set(
-      cv.workExperience.map((e) => e.title.trim().toLowerCase())
-    );
-    const newEntries = activities
-      .filter((a) => !existingTitles.has(a.name.trim().toLowerCase()))
-      .map(activityToCvEntry);
-
-    const newSkills = deriveSkillGroupsFromActivities(activities, cv.skills);
-
-    const summary = cv.professionalSummary.trim()
-      ? cv.professionalSummary
-      : draftSummary(activities, {
-          fullName: personalInfo.fullName,
-          location: personalInfo.location,
-        });
-
-    setCvData({
-      ...cv,
-      personalInfo,
-      workExperience: [...cv.workExperience, ...newEntries],
-      skills: newSkills,
-      professionalSummary: summary,
-    });
+    setCvData(buildAutoBuildUpdate(cv, activities, paste));
   };
 
   const openSection = (
@@ -198,17 +168,8 @@ export function useCvBuilderPage() {
     setCvData({ ...cv, skills: newGroups });
   };
 
-  const hasAnyData = !!(cv.personalInfo.fullName || cv.professionalSummary ||
-    cv.workExperience.length > 0 || cv.education.length > 0 ||
-    cv.skills.some((g) => g.skills.length > 0) || cv.certifications.length > 0 ||
-    cv.languages.length > 0);
-  const completedSections = [
-    !!cv.personalInfo.fullName,
-    cv.professionalSummary.trim().length >= 80,
-    cv.workExperience.length > 0,
-    cv.skills.some((g) => g.skills.length > 0),
-    cv.education.length > 0,
-  ].filter(Boolean).length;
+  const hasAnyData = computeHasAnyData(cv);
+  const completedSections = computeCompletedSections(cv);
 
   return {
     cv,

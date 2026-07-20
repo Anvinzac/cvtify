@@ -1,3 +1,5 @@
+/** Legacy marketing landing page — not wired in App router; kept for reference. */
+
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Compass, Sparkles, Target, Zap } from "lucide-react";

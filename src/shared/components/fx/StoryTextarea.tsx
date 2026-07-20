@@ -1,39 +1,33 @@
-import { useEffect, useRef, useState, ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Wand2 } from "lucide-react";
+/**
+ * Animated textarea with typewriter placeholder, tone chips, and sweet-spot counter.
+ *
+ * Exports: StoryTextarea
+ * Depends on: framer-motion, lucide-react, StoryTextarea* subcomponents, useStoryTextareaTypewriter
+ */
 
-interface ToneTemplate {
-  id: string;
-  label: string;
-  emoji: string;
-  /** Prefilled body inserted when the chip is tapped. */
-  template: string;
-}
+import { useRef, useState, ReactNode } from "react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
+import { StoryTextareaToneChips, type ToneTemplate } from "@/shared/components/fx/StoryTextareaToneChips";
+import { StoryTextareaSweetSpot } from "@/shared/components/fx/StoryTextareaSweetSpot";
+import { useStoryTextareaTypewriter } from "@/shared/components/fx/useStoryTextareaTypewriter";
+
+export type { ToneTemplate };
 
 interface StoryTextareaProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  /** Helper text shown below the field. */
   guide?: string;
-  /** Rotating placeholders shown via a soft typewriter effect when empty. */
   rotatingPlaceholders?: string[];
-  /** Maximum character length. */
   maxLength?: number;
-  /** Tone-chip templates that prefill the textarea when tapped. */
   tones?: ToneTemplate[];
-  /** Icon shown inside the field (left side, top). */
   icon?: ReactNode;
-  /** Sweet-spot character range. Counter color shifts when in range. */
   sweetSpot?: { min: number; max: number };
   minHeight?: string;
 }
 
-/**
- * A textarea that feels alive: rotating typewriter placeholder, tone-chip
- * prefills, and a colour-shifting counter that rewards entering the
- * "just right" length range.
- */
+/** Textarea with rotating placeholder, tone prefills, and length coaching. */
 export function StoryTextarea({
   label,
   value,
@@ -48,48 +42,7 @@ export function StoryTextarea({
 }: StoryTextareaProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [focused, setFocused] = useState(false);
-  const [placeholder, setPlaceholder] = useState(rotatingPlaceholders[0] ?? "");
-  const phIndex = useRef(0);
-  const charIndex = useRef(0);
-  const direction = useRef<"typing" | "deleting" | "pausing">("typing");
-
-  // Typewriter cycle — only runs while value is empty + field not focused
-  useEffect(() => {
-    if (!rotatingPlaceholders.length) return;
-    if (value.length > 0 || focused) return;
-
-    let timer: ReturnType<typeof setTimeout>;
-    const tick = () => {
-      const target = rotatingPlaceholders[phIndex.current] ?? "";
-      const len = charIndex.current;
-
-      if (direction.current === "typing") {
-        if (len < target.length) {
-          charIndex.current = len + 1;
-          setPlaceholder(target.slice(0, charIndex.current));
-          timer = setTimeout(tick, 38 + Math.random() * 30);
-        } else {
-          direction.current = "pausing";
-          timer = setTimeout(tick, 1600);
-        }
-      } else if (direction.current === "pausing") {
-        direction.current = "deleting";
-        timer = setTimeout(tick, 60);
-      } else {
-        if (len > 0) {
-          charIndex.current = len - 1;
-          setPlaceholder(target.slice(0, charIndex.current));
-          timer = setTimeout(tick, 16);
-        } else {
-          phIndex.current = (phIndex.current + 1) % rotatingPlaceholders.length;
-          direction.current = "typing";
-          timer = setTimeout(tick, 200);
-        }
-      }
-    };
-    timer = setTimeout(tick, 400);
-    return () => clearTimeout(timer);
-  }, [rotatingPlaceholders, value, focused]);
+  const placeholder = useStoryTextareaTypewriter(rotatingPlaceholders, value, focused);
 
   const counter = value.length;
   const sweetState = sweetSpot
@@ -111,25 +64,7 @@ export function StoryTextarea({
 
   return (
     <div>
-      {tones && tones.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            <Wand2 className="h-3 w-3" /> Start from a tone
-          </span>
-          {tones.map((t) => (
-            <motion.button
-              key={t.id}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => onChange(t.template)}
-              className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10"
-            >
-              <span className="text-sm leading-none">{t.emoji}</span>
-              {t.label}
-            </motion.button>
-          ))}
-        </div>
-      )}
+      {tones && <StoryTextareaToneChips tones={tones} onSelect={onChange} />}
 
       <motion.div
         animate={focused ? "focus" : "rest"}
@@ -191,11 +126,8 @@ export function StoryTextarea({
           </div>
         </div>
 
-        {/* Bottom row: guide left, counter right */}
         <div className="flex items-center justify-between gap-2 border-t border-border/60 px-3.5 py-2">
-          <p className="flex-1 text-[11px] leading-relaxed text-muted-foreground">
-            {guide}
-          </p>
+          <p className="flex-1 text-[11px] leading-relaxed text-muted-foreground">{guide}</p>
           {maxLength && (
             <div className="flex items-center gap-2">
               {sweetState === "good" && (
@@ -215,7 +147,6 @@ export function StoryTextarea({
           )}
         </div>
 
-        {/* Animated underline */}
         <motion.div
           aria-hidden
           initial={false}
@@ -225,42 +156,12 @@ export function StoryTextarea({
         />
       </motion.div>
 
-      {/* Sweet-spot bar */}
-      {sweetSpot && maxLength && (
-        <div className="mt-2 h-1 overflow-hidden rounded-full bg-muted">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${Math.min(100, (counter / maxLength) * 100)}%` }}
-            transition={{ type: "spring", stiffness: 220, damping: 30 }}
-            className={`h-full rounded-full ${
-              sweetState === "good"
-                ? "bg-emerald-500"
-                : sweetState === "high"
-                ? "bg-amber-500"
-                : "gradient-warm"
-            }`}
-          />
-        </div>
-      )}
-
-      <AnimatePresence>
-        {sweetSpot && counter > 0 && (
-          <motion.p
-            key={sweetState}
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="mt-1.5 text-[11px] font-medium text-muted-foreground"
-          >
-            {sweetState === "low" &&
-              `A bit more — aim for ${sweetSpot.min}+ characters to give it weight.`}
-            {sweetState === "good" &&
-              "Right in the pocket. Recruiters love this length."}
-            {sweetState === "high" &&
-              "Powerful — but tighten anything that doesn't earn its place."}
-          </motion.p>
-        )}
-      </AnimatePresence>
+      <StoryTextareaSweetSpot
+        sweetSpot={sweetSpot}
+        maxLength={maxLength}
+        counter={counter}
+        sweetState={sweetState}
+      />
     </div>
   );
 }

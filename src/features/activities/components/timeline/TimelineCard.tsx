@@ -4,7 +4,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, X, Edit3, Users, Clock } from "lucide-react";
+import { X, Edit3, Users, Clock } from "lucide-react";
+import { TimelineCardTags } from "./TimelineCardTags";
 import { CATEGORIES } from "@/features/activities/lib/catalog";
 import type { Activity } from "@/features/activities/types";
 import {
@@ -153,48 +154,13 @@ export function TimelineCard({
             </div>
           </div>
 
-          {activity.skills.length > 0 && (
-            <div className="mb-2">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1">
-                <Sparkles className="w-2.5 h-2.5 text-primary" />
-                Skills built
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {activity.skills.map((s, i) => (
-                  <motion.span
-                    key={s}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={inView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ delay: index * 0.06 + 0.3 + i * 0.03, duration: 0.3 }}
-                    className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent/70 text-accent-foreground"
-                  >
-                    {s}
-                  </motion.span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activity.taskTypes.length > 0 && (
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Strengths discovered
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {activity.taskTypes.map((t, i) => (
-                  <motion.span
-                    key={t}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={inView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ delay: index * 0.06 + 0.45 + i * 0.03, duration: 0.3 }}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${colors.soft} ${colors.text}`}
-                  >
-                    {t}
-                  </motion.span>
-                ))}
-              </div>
-            </div>
-          )}
+          <TimelineCardTags
+            skills={activity.skills}
+            taskTypes={activity.taskTypes}
+            inView={inView}
+            index={index}
+            colors={colors}
+          />
         </div>
       </div>
     </motion.div>

@@ -2,40 +2,25 @@
  * Bottom sheet for importing timeline activities as CV experience entries.
  *
  * Exports: ActivityImportSheet (default)
- * Depends on: framer-motion, lucide-react, @/lib/data, activityAutofill, @/lib/storage
+ * Depends on: framer-motion, lucide-react, @/lib/data, ActivityImportRow
  */
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, Sparkles, Calendar, Tag } from "lucide-react";
-import { Activity, CATEGORIES } from "@/lib/data";
+import { X, Sparkles } from "lucide-react";
+import { Activity } from "@/lib/data";
 import { activityToCvEntry } from "@/features/cv/lib/activityAutofill";
 import type { CvEntry } from "@/features/cv/types";
+import { ActivityImportRow } from "@/features/cv/components/ActivityImportRow";
 
 interface ActivityImportSheetProps {
   open: boolean;
   activities: Activity[];
   onClose: () => void;
-  /** Receives the chosen CV entries (already converted). */
   onImport: (entries: CvEntry[]) => void;
 }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function activityWhenLabel(act: Activity): string {
-  if (typeof act.occurredAt === "number") {
-    const d = new Date(act.occurredAt);
-    if (act.datePrecision === "year") return String(d.getFullYear());
-    return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  }
-  return "Date unknown";
-}
-
-/**
- * Bottom sheet that lists every captured activity and lets the user
- * pick which ones to promote to CV work-experience entries. Skills,
- * task types, dates, and personal notes are all carried over.
- */
+/** Bottom sheet to pick timeline activities and promote them to CV entries. */
 export default function ActivityImportSheet({
   open,
   activities,
@@ -86,7 +71,6 @@ export default function ActivityImportSheet({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Backdrop */}
           <motion.div
             className="absolute inset-0 bg-background/70 backdrop-blur-md"
             onClick={onClose}
@@ -95,7 +79,6 @@ export default function ActivityImportSheet({
             exit={{ opacity: 0 }}
           />
 
-          {/* Sheet */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -103,12 +86,10 @@ export default function ActivityImportSheet({
             transition={{ type: "spring", stiffness: 260, damping: 30 }}
             className="absolute inset-x-0 bottom-0 flex max-h-[88vh] flex-col rounded-t-3xl border-t border-border bg-card shadow-elevated"
           >
-            {/* Handle */}
             <div className="flex justify-center pt-2">
               <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
             </div>
 
-            {/* Header */}
             <div className="flex items-start justify-between gap-3 px-5 pt-3 pb-2">
               <div>
                 <p className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-secondary">
@@ -116,9 +97,7 @@ export default function ActivityImportSheet({
                   Borrow from your timeline
                 </p>
                 <h2 className="mt-1 text-lg font-bold text-foreground leading-tight">
-                  {sorted.length === 0
-                    ? "No experiences yet"
-                    : `Pick experiences to add`}
+                  {sorted.length === 0 ? "No experiences yet" : "Pick experiences to add"}
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {sorted.length === 0
@@ -134,7 +113,6 @@ export default function ActivityImportSheet({
               </button>
             </div>
 
-            {/* Select-all bar */}
             {sorted.length > 1 && (
               <div className="flex items-center justify-between px-5 py-2 border-y border-border/60 bg-muted/30">
                 <button
@@ -149,7 +127,6 @@ export default function ActivityImportSheet({
               </div>
             )}
 
-            {/* List */}
             <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2">
               {sorted.length === 0 ? (
                 <div className="py-12 text-center">
@@ -158,85 +135,17 @@ export default function ActivityImportSheet({
                   </p>
                 </div>
               ) : (
-                sorted.map((act) => {
-                  const cat = CATEGORIES.find((c) => c.id === act.categoryId);
-                  const isSelected = selected.has(act.id);
-                  return (
-                    <motion.button
-                      key={act.id}
-                      layout
-                      onClick={() => toggle(act.id)}
-                      whileTap={{ scale: 0.985 }}
-                      className={`w-full text-left rounded-2xl border p-3 transition-colors ${
-                        isSelected
-                          ? "border-primary/50 bg-primary/5"
-                          : "border-border bg-background hover:border-primary/25"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="text-xl leading-none mt-0.5">
-                          {cat?.emoji ?? "✨"}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-foreground leading-tight">
-                            {act.name}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {cat?.name}
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground">
-                            <span className="inline-flex items-center gap-1">
-                              <Calendar className="h-2.5 w-2.5" />
-                              {activityWhenLabel(act)}
-                            </span>
-                            {act.duration && (
-                              <span className="inline-flex items-center gap-1">
-                                <Tag className="h-2.5 w-2.5" />
-                                {act.duration}
-                              </span>
-                            )}
-                          </div>
-                          {act.skills.length > 0 && (
-                            <div className="mt-1.5 flex flex-wrap gap-1">
-                              {act.skills.slice(0, 3).map((s) => (
-                                <span
-                                  key={s}
-                                  className="rounded-full bg-accent/60 px-2 py-0.5 text-[9px] font-semibold text-accent-foreground"
-                                >
-                                  {s}
-                                </span>
-                              ))}
-                              {act.skills.length > 3 && (
-                                <span className="text-[9px] text-muted-foreground">
-                                  +{act.skills.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <motion.span
-                          animate={
-                            isSelected
-                              ? { scale: 1, opacity: 1 }
-                              : { scale: 0.8, opacity: 0.4 }
-                          }
-                          transition={{ type: "spring", stiffness: 380, damping: 22 }}
-                          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
-                            isSelected
-                              ? "border-transparent gradient-warm text-primary-foreground shadow-sm"
-                              : "border-border bg-background text-transparent"
-                          }`}
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                        </motion.span>
-                      </div>
-                    </motion.button>
-                  );
-                })
+                sorted.map((act) => (
+                  <ActivityImportRow
+                    key={act.id}
+                    activity={act}
+                    isSelected={selected.has(act.id)}
+                    onToggle={() => toggle(act.id)}
+                  />
+                ))
               )}
             </div>
 
-            {/* Footer CTA */}
             {sorted.length > 0 && (
               <div className="border-t border-border bg-card/85 px-5 py-3 backdrop-blur-xl">
                 <button
