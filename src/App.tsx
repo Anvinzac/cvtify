@@ -5,17 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AppProvider } from "@/shared/app-state/AppContext";
-import Index from "./pages/Index";
-import CvBuilder from "./pages/CvBuilder";
-import CvPreview from "./pages/CvPreview";
-import CategorySelect from "./pages/CategorySelect";
-import Dashboard from "./pages/Dashboard";
-import AddActivity from "./pages/AddActivity";
-import ReportCard from "./pages/ReportCard";
-import Recommendations from "./pages/Recommendations";
-import DreamJobs from "./pages/DreamJobs";
-import Timeline from "./pages/Timeline";
-import NotFound from "./pages/NotFound";
+import CvBuilderRoute from "@/routes/cv-builder";
+import CvPreviewRoute from "@/routes/cv-preview";
+import CategorySelectRoute from "@/routes/categories";
+import DashboardRoute from "@/routes/dashboard";
+import AddActivityRoute from "@/routes/add-activity";
+import ReportCardRoute from "@/routes/report";
+import RecommendationsRoute from "@/routes/recommendations";
+import DreamJobsRoute from "@/routes/dream-jobs";
+import TimelineRoute from "@/routes/timeline";
+import NotFoundRoute from "@/routes/not-found";
 import PageTransition from "@/shared/components/fx/PageTransition";
 import CursorGlow from "@/shared/components/fx/CursorGlow";
 
@@ -27,16 +26,16 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait" initial={false}>
       <PageTransition routeKey={location.pathname}>
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<CvBuilder />} />
-          <Route path="/cv-preview" element={<CvPreview />} />
-          <Route path="/categories" element={<CategorySelect />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/add-activity/:categoryId" element={<AddActivity />} />
-          <Route path="/report" element={<ReportCard />} />
-          <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/dream-jobs" element={<DreamJobs />} />
-          <Route path="/timeline" element={<Timeline />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<CvBuilderRoute />} />
+          <Route path="/cv-preview" element={<CvPreviewRoute />} />
+          <Route path="/categories" element={<CategorySelectRoute />} />
+          <Route path="/dashboard" element={<DashboardRoute />} />
+          <Route path="/add-activity/:categoryId" element={<AddActivityRoute />} />
+          <Route path="/report" element={<ReportCardRoute />} />
+          <Route path="/recommendations" element={<RecommendationsRoute />} />
+          <Route path="/dream-jobs" element={<DreamJobsRoute />} />
+          <Route path="/timeline" element={<TimelineRoute />} />
+          <Route path="*" element={<NotFoundRoute />} />
         </Routes>
       </PageTransition>
     </AnimatePresence>
