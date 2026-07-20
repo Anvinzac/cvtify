@@ -12,7 +12,7 @@ import type { Activity } from "@/features/activities/types";
 import TimelineView from "@/features/activities/components/timeline/TimelineView";
 import ActivityWalkthrough from "@/features/activities/components/walkthrough/ActivityWalkthrough";
 import ScrollProgress from "@/shared/components/fx/ScrollProgress";
-import { BottomNav } from "@/pages/ReportCard";
+import { BottomNav } from "@/shared/components/BottomNav";
 
 /** Full-page chronological view of all captured activities. */
 export default function TimelinePage() {
