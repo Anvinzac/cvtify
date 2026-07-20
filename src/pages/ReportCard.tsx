@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowLeft, BarChart3, Sparkles, ChevronRight, Star, Heart, Zap, Palette, CalendarClock, ClipboardList } from "lucide-react";
 import { useAppState } from "@/context/AppContext";
 import { HOBBY_OPTIONS } from "@/lib/data";
-import CountUp from "@/components/fx/CountUp";
-import ScrollProgress from "@/components/fx/ScrollProgress";
+import CountUp from "@/shared/components/fx/CountUp";
+import ScrollProgress from "@/shared/components/fx/ScrollProgress";
 
 const ReportCard = () => {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Compass, Sparkles, Target, Zap } from "lucide-react";
-import Aurora from "@/components/fx/Aurora";
-import MagneticButton from "@/components/fx/MagneticButton";
-import CountUp from "@/components/fx/CountUp";
+import Aurora from "@/shared/components/fx/Aurora";
+import MagneticButton from "@/shared/components/fx/MagneticButton";
+import CountUp from "@/shared/components/fx/CountUp";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },

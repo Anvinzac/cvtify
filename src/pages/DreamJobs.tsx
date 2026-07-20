@@ -5,9 +5,9 @@ import { ArrowLeft, Heart, MapPin, DollarSign, CheckCircle2, Circle, Target } fr
 import { useAppState } from "@/context/AppContext";
 import { SAMPLE_JOBS } from "@/lib/data";
 import { BottomNav } from "./ReportCard";
-import ScrollProgress from "@/components/fx/ScrollProgress";
-import CountUp from "@/components/fx/CountUp";
-import SparkleBurst from "@/components/fx/SparkleBurst";
+import ScrollProgress from "@/shared/components/fx/ScrollProgress";
+import CountUp from "@/shared/components/fx/CountUp";
+import SparkleBurst from "@/shared/components/fx/SparkleBurst";
 
 const DreamJobs = () => {
   const navigate = useNavigate();
