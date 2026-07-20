@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Activity } from "@/lib/data";
+import type { Activity } from "@/features/activities/types";
 import { DraftData, loadDraft, saveDraft, CvData } from "@/lib/storage";
 
 /**
