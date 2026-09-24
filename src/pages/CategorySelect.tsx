@@ -85,7 +85,7 @@ export default function CategorySelect() {
             </h1>
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/profile")}
             className="flex items-center gap-1 px-3 py-2 rounded-xl bg-card border border-border text-xs text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors shadow-sm"
           >
             <FileText className="w-3.5 h-3.5" />

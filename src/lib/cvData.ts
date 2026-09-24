@@ -18,6 +18,10 @@ export interface Photo {
   src: string;
   alt: string;
   caption?: string;
+  id?: string;
+  position?: "center" | "top" | "bottom";
+  width?: number;
+  height?: number;
 }
 
 export interface Stage {
@@ -28,6 +32,8 @@ export interface Stage {
   period: string;
   location: string;
   summary: string;
+  duties?: string;
+  learning?: string;
   highlights: string[];
   skills: string[];
   photos: Photo[];
@@ -37,7 +43,7 @@ export interface Stage {
 
 export interface SkillGroup {
   title: string;
-  items: { name: string; level: number }[]; // level: 0–100
+  items: { name: string; level?: number }[]; // level: 0–100
 }
 
 export interface CVData {

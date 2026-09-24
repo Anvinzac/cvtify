@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AppProvider } from "@/context/AppContext";
+import { MediaProjectProvider } from "@/context/MediaProjectContext";
+import MediaStudio from "./pages/MediaStudio";
 import Index from "./pages/Index";
 import CvBuilder from "./pages/CvBuilder";
 import CvPreview from "./pages/CvPreview";
@@ -24,11 +26,12 @@ const queryClient = new QueryClient();
 
 function AnimatedRoutes() {
   const location = useLocation();
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <PageTransition routeKey={location.pathname}>
+  const mediaRoute = ["/", "/studio", "/media-cv", "/cv"].includes(location.pathname.replace(/\/$/, "") || "/");
+  const routes = (
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<CvBuilder />} />
+          <Route path="/" element={<MediaStudio />} />
+          <Route path="/studio" element={<MediaStudio />} />
+          <Route path="/profile" element={<CvBuilder />} />
           <Route path="/cv-preview" element={<CvPreview />} />
           {/* Media CV — cinematic outcome of profile setup */}
           <Route path="/media-cv" element={<CV />} />
@@ -43,9 +46,14 @@ function AnimatedRoutes() {
           <Route path="/timeline" element={<Timeline />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </PageTransition>
-    </AnimatePresence>
   );
+  if (mediaRoute) return routes;
+  return <>
+    <CursorGlow />
+    <AnimatePresence mode="wait" initial={false}>
+      <PageTransition routeKey={location.pathname}>{routes}</PageTransition>
+    </AnimatePresence>
+  </>;
 }
 
 const App = () => (
@@ -54,10 +62,11 @@ const App = () => (
       <AppProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <CursorGlow />
-          <AnimatedRoutes />
-        </BrowserRouter>
+        <MediaProjectProvider>
+          <BrowserRouter>
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </MediaProjectProvider>
       </AppProvider>
     </TooltipProvider>
   </QueryClientProvider>

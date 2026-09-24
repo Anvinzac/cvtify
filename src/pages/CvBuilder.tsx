@@ -306,6 +306,9 @@ export default function CvBuilder() {
         transition={{ duration: 0.5 }}
         className="relative px-4 pt-6 pb-3"
       >
+        <button type="button" onClick={() => navigate("/studio")} className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-4 py-2 text-xs font-semibold text-primary">
+          <Sparkles className="h-4 w-4" /> Open media CV studio <ArrowRight className="h-3 w-3" />
+        </button>
         <AutoBuildHero
           timelineCount={activities.length}
           filledCount={completedSections}

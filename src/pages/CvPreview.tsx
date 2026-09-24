@@ -62,7 +62,7 @@ export default function CvPreview() {
         {/* Toolbar */}
         <div className="flex items-center justify-between mb-4 no-print gap-2">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/profile")}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card border border-border text-sm font-medium text-muted-foreground hover:text-foreground transition-colors shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -70,11 +70,11 @@ export default function CvPreview() {
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate("/media-cv")}
+              onClick={() => navigate("/studio")}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-card border border-border text-sm font-medium text-foreground hover:bg-accent transition-colors shadow-sm"
             >
               <Sparkles className="w-4 h-4" />
-              Cinematic Media CV
+              Create a media CV
             </button>
             <button
               onClick={handlePrint}
@@ -92,7 +92,7 @@ export default function CvPreview() {
             <div className="flex flex-col items-center justify-center py-32 text-center">
               <p className="text-slate-400 text-lg mb-2">No CV data yet</p>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/profile")}
                 className="text-sm text-blue-600 hover:underline"
               >
                 Go back and add your details
