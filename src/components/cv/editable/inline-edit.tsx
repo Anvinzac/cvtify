@@ -1,5 +1,5 @@
 import { createElement, useCallback, useEffect, useLayoutEffect, useRef, useState, type ElementType, type KeyboardEvent } from "react";
-import { Check, X } from "lucide-react";
+import { Check, Pencil, X } from "lucide-react";
 import { monthLabel } from "@/lib/mediaProject";
 
 type Tag = "span" | "div" | "p" | "h1" | "h2" | "h3" | "h4" | "h5" | "small" | "b" | "strong" | "em" | "dt" | "dd";
@@ -212,24 +212,31 @@ export function InlineList({ value, onChange, separator, variant, id, className 
   }
 
   const rows = items.length ? items : [""];
+  const showPenButton = !disabled && suggestions && suggestions.length > 0 && variant === "chips";
+
   return (
     <div className={`cv-list cv-list-${variant} ${className}`.trim()} id={id} role="group" aria-label={ariaLabel}>
+      {showPenButton && (
+        <button type="button" className="cv-chips-edit" aria-label="Edit skills" onClick={openPicker}>
+          <Pencil size={14} />
+        </button>
+      )}
       {rows.map((item, i) => (
-        <span className="cv-list-item" key={i}>
+        <span
+          className="cv-list-item"
+          key={i}
+          onClick={variant === "chips" && !disabled && suggestions ? openPicker : undefined}
+          style={variant === "chips" && !disabled && suggestions ? { cursor: "pointer" } : undefined}
+        >
           {variant === "chips" && <span className="cv-chip-bullet" aria-hidden="true" />}
           <InlineText id={`${id}-item-${i}`} value={item} onChange={(text) => patch(i, text)} className="cv-list-text"
             placeholder={item && item.length ? undefined : itemPlaceholder} maxLength={200} disabled={disabled}
             ariaLabel={`${ariaLabel ?? "Item"} ${i + 1}`} onEnter={() => add(i)} />
-          {!disabled && items.length > 0 && <button type="button" className="cv-list-remove" aria-label={`Remove ${item || "item"}`} onClick={() => remove(i)}><X size={12} /></button>}
+          {!disabled && items.length > 0 && variant !== "chips" && <button type="button" className="cv-list-remove" aria-label={`Remove ${item || "item"}`} onClick={() => remove(i)}><X size={12} /></button>}
         </span>
       ))}
       {demoed && !disabled && (
         <button type="button" className="cv-demo-clear-inline" aria-label="Clear these examples and add your own" onClick={clearDemo}><X size={12} /> Clear examples</button>
-      )}
-      {!disabled && suggestions && suggestions.length > 0 && variant === "chips" && (
-        <button type="button" className="cv-list-pick" onClick={openPicker}>
-          <Check size={12} aria-hidden="true" /> Pick from list
-        </button>
       )}
       {!disabled && (items.length > 0 || variant === "bullets") && (
         <button type="button" id={`${id}-add`} className="cv-list-add" onClick={() => add()}>
