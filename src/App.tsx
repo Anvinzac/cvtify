@@ -7,6 +7,7 @@ import { AnimatePresence } from "framer-motion";
 import { AppProvider } from "@/context/AppContext";
 import { MediaProjectProvider } from "@/context/MediaProjectContext";
 import MediaStudio from "./pages/MediaStudio";
+import LiveCV from "./pages/LiveCV";
 import Index from "./pages/Index";
 import CvBuilder from "./pages/CvBuilder";
 import CvPreview from "./pages/CvPreview";
@@ -29,7 +30,7 @@ function AnimatedRoutes() {
   const mediaRoute = ["/", "/studio", "/media-cv", "/cv"].includes(location.pathname.replace(/\/$/, "") || "/");
   const routes = (
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<MediaStudio />} />
+          <Route path="/" element={<LiveCV />} />
           <Route path="/studio" element={<MediaStudio />} />
           <Route path="/profile" element={<CvBuilder />} />
           <Route path="/cv-preview" element={<CvPreview />} />

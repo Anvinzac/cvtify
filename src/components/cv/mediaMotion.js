@@ -23,8 +23,10 @@ export default function attachMediaMotion(root) {
   function paint() {
     frame = 0;
     if (disposed) return;
+    // Read-only: the CSS var --media-nav-height (74px default) sizes the nav's
+    // min-height, so never write nav.offsetHeight back into it — that feeds itself
+    // and grows the sticky header ~72px per repaint. We only measure for offsets.
     const navHeight = nav ? nav.offsetHeight : 74;
-    root.style.setProperty("--media-nav-height", navHeight + "px");
     if (active !== "still") {
       if (hero && heroImage) {
         const rect = hero.getBoundingClientRect();

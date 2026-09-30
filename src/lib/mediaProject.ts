@@ -14,7 +14,8 @@ const id = z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/);
 export const photoSchema = z.object({
   id,
   name: text(200),
-  src: z.string().max(2_800_000).regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/),
+// Data URLs for user uploads; https URLs are allowed so the demo persona can use stock photos.
+  src: z.string().max(2_800_000).regex(/^(data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+|https:\/\/[^\s"']+)$/),
   alt: text(300),
   caption: text(300),
   position: z.enum(["center", "top", "bottom"]),
