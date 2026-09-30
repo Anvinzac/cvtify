@@ -174,4 +174,42 @@
   .live-menu,.live-checklist{position:fixed;top:auto;bottom:12px;left:12px;right:12px;width:auto}
   .cv-popover{position:fixed;top:auto;bottom:12px;left:12px;right:12px;min-width:0}
 }
-@media print{.live-toolbar,.cv-cover-controls,.cv-photo-tools,.cv-block-tools,.cv-add-block,.cv-list-add,.cv-list-remove,.cv-photo-add{display:none!important}}
+
+/* --- AI assist button (sparkle icon) --- */
+.cv-ai-assist-btn{display:inline-grid;place-items:center;width:22px;height:22px;border:1px solid hsl(var(--border));border-radius:50%;background:hsl(var(--card));color:hsl(var(--muted-foreground));cursor:pointer;margin-left:6px;vertical-align:middle;transition:all .15s}
+.cv-ai-assist-btn:hover{border-color:hsl(var(--primary));color:hsl(var(--primary));background:hsl(var(--primary)/.08);transform:scale(1.1)}
+
+/* --- AI suggestion modal --- */
+.cv-ai-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:hsl(0 0% 0%/.55);backdrop-filter:blur(4px);padding:20px}
+.cv-ai-modal{background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:16px;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px hsl(0 0% 0%/.4)}
+.cv-ai-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid hsl(var(--border))}
+.cv-ai-title{display:flex;align-items:center;gap:8px}
+.cv-ai-title h3{margin:0;font-size:16px;font-weight:600;color:hsl(var(--foreground))}
+.cv-ai-title svg{color:hsl(var(--primary))}
+.cv-ai-close{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:hsl(var(--muted-foreground));cursor:pointer;transition:background .15s}
+.cv-ai-close:hover{background:hsl(var(--border))}
+.cv-ai-body{padding:20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
+.cv-ai-input-label{display:flex;flex-direction:column;gap:8px;font-size:13px;color:hsl(var(--muted-foreground))}
+.cv-ai-input{width:100%;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));color:hsl(var(--foreground));padding:12px;font-size:14px;font-family:inherit;resize:vertical;min-height:80px}
+.cv-ai-input:focus{outline:none;border-color:hsl(var(--primary));box-shadow:0 0 0 2px hsl(var(--primary)/.2)}
+.cv-ai-generate{display:inline-flex;align-items:center;gap:6px;border:0;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;align-self:flex-start;transition:filter .15s}
+.cv-ai-generate:hover:not(:disabled){filter:brightness(1.08)}
+.cv-ai-generate:disabled{opacity:.5;cursor:not-allowed}
+.cv-ai-error{color:#a3342d;background:#fdf1ee;border-radius:8px;padding:10px 14px;font-size:13px}
+.cv-ai-suggestions{display:flex;flex-direction:column;gap:10px}
+.cv-ai-suggestions-label{margin:0;font-size:13px;font-weight:600;color:hsl(var(--foreground))}
+.cv-ai-suggestion{display:flex;align-items:flex-start;gap:10px;border:1px solid hsl(var(--border));border-radius:10px;padding:12px 14px;background:hsl(var(--background));cursor:pointer;text-align:left;transition:all .15s}
+.cv-ai-suggestion:hover{border-color:hsl(var(--primary));background:hsl(var(--primary)/.05)}
+.cv-ai-suggestion.selected{border-color:hsl(var(--primary));background:hsl(var(--primary)/.1);box-shadow:0 0 0 2px hsl(var(--primary)/.3)}
+.cv-ai-suggestion-num{display:grid;place-items:center;min-width:24px;height:24px;border-radius:50%;background:hsl(var(--primary));color:hsl(var(--primary-foreground));font-size:12px;font-weight:700}
+.cv-ai-suggestion-text{flex:1;font-size:14px;line-height:1.5;color:hsl(var(--foreground))}
+.cv-ai-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid hsl(var(--border))}
+.cv-ai-cancel{border:1px solid hsl(var(--border));background:transparent;color:hsl(var(--foreground));border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer}
+.cv-ai-cancel:hover{background:hsl(var(--border))}
+.cv-ai-apply{border:0;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer}
+.cv-ai-apply:hover:not(:disabled){filter:brightness(1.08)}
+.cv-ai-apply:disabled{opacity:.5;cursor:not-allowed}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.cv-ai-generate .spin{animation:spin 1s linear infinite}
+
+@media print{.live-toolbar,.cv-cover-controls,.cv-photo-tools,.cv-block-tools,.cv-add-block,.cv-list-add,.cv-list-remove,.cv-photo-add,.cv-ai-assist-btn{display:none!important}}

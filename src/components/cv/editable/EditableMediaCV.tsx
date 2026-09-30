@@ -6,6 +6,7 @@ import {
 } from "@/lib/mediaProject";
 import { InlineList, InlinePeriod, InlineText } from "./inline-edit";
 import { budgetFor, CoverControls, PhotoTrack, type MediaBudget } from "./inline-media";
+import { AIAssistButton } from "./AIAssistButton";
 import type { Photo } from "@/lib/cvData";
 import type { DemoSamples } from "@/lib/demoProject";
 
@@ -233,10 +234,12 @@ const EditableChapter = memo(function EditableChapter({ e, index, total, remaini
             <InlineText as="p" className="media-org" id={`${e.id}-organization`} value={e.organization} maxLength={140} disabled={disabled} sample={sample?.organization} placeholder="Organization or project" ariaLabel="Organization" onChange={(organization) => patch({ organization })} />
             <InlineText as="p" className="media-location" value={e.location} maxLength={140} disabled={disabled} sample={sample?.location} placeholder="Location · Remote · Hybrid" ariaLabel="Location" onChange={(location) => patch({ location })} />
             <InlineText as="p" className="media-chapter-summary" multiline value={e.summary} maxLength={320} disabled={disabled} sample={sample?.summary} placeholder="The takeaway for employers — one or two sentences that capture this chapter." ariaLabel="Chapter summary" onChange={(summary) => patch({ summary })} />
+            <AIAssistButton context="summary" currentValue={e.summary} role={e.role} organization={e.organization} onApply={(summary) => patch({ summary })} disabled={disabled} />
 
             <p className="media-eyebrow cv-field-label">Results & highlights</p>
             <InlineList variant="bullets" separator={"\n"} id={`${e.id}-highlights`} value={e.highlights} maxLength={2000} disabled={disabled} sample={sample?.highlights}
               itemPlaceholder="A result you can stand behind" addLabel="Add a result" ariaLabel="Results and highlights" onChange={(highlights) => patch({ highlights })} />
+            <AIAssistButton context="highlights" currentValue={e.highlights} role={e.role} organization={e.organization} onApply={(highlights) => patch({ highlights })} disabled={disabled} />
 
             <p className="media-eyebrow cv-field-label">Skills demonstrated</p>
             <InlineList variant="chips" separator=", " id={`${e.id}-skills`} value={e.skills} maxLength={800} disabled={disabled} sample={sample?.skills}
@@ -248,10 +251,12 @@ const EditableChapter = memo(function EditableChapter({ e, index, total, remaini
               <div className="media-detail-content">
                 <section><h5>Responsibilities</h5>
                   <InlineText as="p" className="media-prose" multiline id={`${e.id}-duties`} value={e.duties} maxLength={4000} disabled={disabled} sample={sample?.duties}
-                    placeholder="Describe what you actually did, who you worked with, and what you were responsible for." ariaLabel="Responsibilities" onChange={(duties) => patch({ duties })} /></section>
+                    placeholder="Describe what you actually did, who you worked with, and what you were responsible for." ariaLabel="Responsibilities" onChange={(duties) => patch({ duties })} />
+                  <AIAssistButton context="duties" currentValue={e.duties} role={e.role} organization={e.organization} onApply={(duties) => patch({ duties })} disabled={disabled} /></section>
                 <section><h5>What I discovered</h5>
                   <InlineText as="p" className="media-prose" multiline value={e.learning} maxLength={1600} disabled={disabled} sample={sample?.learning}
-                    placeholder="A lesson, a turning point, or a strength you discovered along the way." ariaLabel="What you discovered" onChange={(learning) => patch({ learning })} /></section>
+                    placeholder="A lesson, a turning point, or a strength you discovered along the way." ariaLabel="What you discovered" onChange={(learning) => patch({ learning })} />
+                  <AIAssistButton context="learning" currentValue={e.learning} role={e.role} organization={e.organization} onApply={(learning) => patch({ learning })} disabled={disabled} /></section>
               </div>
             </details>
           </div>
