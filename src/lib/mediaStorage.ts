@@ -1,4 +1,4 @@
-import { emptyWorkspace, parseWorkspace, type MediaWorkspace, type MediaPhoto, newId } from "./mediaProject";
+import { emptyProject, parseProject, type GradProject, type MediaPhoto, newId } from "./mediaProject";
 
 const DATABASE = "cvtify-media-studio";
 const STORE = "workspace";
@@ -7,7 +7,7 @@ let pendingWrite: Promise<void> = Promise.resolve();
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (!window.indexedDB) { reject(new Error("This browser does not support local media storage.")); return; }
-    const request = indexedDB.open(DATABASE, 1);
+    const request = indexedDB.open(DATABASE, 2);
     let blocked = false;
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
@@ -16,13 +16,34 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onblocked = () => { blocked = true; reject(new Error("Close other CV_tify tabs, then retry opening the draft.")); };
     request.onsuccess = () => {
       if (blocked) { request.result.close(); return; }
-      request.result.onversionchange = () => request.result.close();
-      resolve(request.result);
+      const db = request.result;
+      // Self-heal: if the database exists but is missing the expected store
+      // (e.g. created by an older build), delete and recreate it.
+      if (!db.objectStoreNames.contains(STORE)) {
+        const version = db.version;
+        db.close();
+        const deleteReq = indexedDB.deleteDatabase(DATABASE);
+        deleteReq.onsuccess = () => {
+          const reopen = indexedDB.open(DATABASE, version + 1);
+          reopen.onupgradeneeded = () => {
+            if (!reopen.result.objectStoreNames.contains(STORE)) reopen.result.createObjectStore(STORE);
+          };
+          reopen.onsuccess = () => {
+            reopen.result.onversionchange = () => reopen.result.close();
+            resolve(reopen.result);
+          };
+          reopen.onerror = () => reject(reopen.error ?? new Error("Could not recreate local storage."));
+        };
+        deleteReq.onerror = () => reject(new Error("Could not clear stale local storage."));
+        return;
+      }
+      db.onversionchange = () => db.close();
+      resolve(db);
     };
   });
 }
 
-export async function loadMediaWorkspace(): Promise<MediaWorkspace> {
+export async function loadMediaWorkspace(): Promise<GradProject> {
   const db = await openDatabase();
   try {
     const raw = await new Promise<unknown>((resolve, reject) => {
@@ -32,21 +53,58 @@ export async function loadMediaWorkspace(): Promise<MediaWorkspace> {
       transaction.onabort = () => reject(transaction.error ?? new Error("Draft loading was interrupted."));
       transaction.onerror = () => reject(transaction.error);
     });
-    return raw === undefined ? emptyWorkspace() : parseWorkspace(raw);
+    if (raw === undefined || raw === null) return emptyProject();
+    // Detect legacy version-1 (work-history media CV) data, including the old
+    // workspace wrapper shape, and discard it — the schema is incompatible.
+    const record = raw as { version?: number; draft?: { version?: number } };
+    const version = record.version ?? record.draft?.version;
+    if (version !== 2) {
+      console.warn("[cvtify] Ignoring incompatible saved CV (version " + String(version ?? "unknown") + "); starting a fresh graduate CV.");
+      return emptyProject();
+    }
+    // Migrate legacy theme names (light/warm/cool) to the current dark palette.
+    const LEGACY_THEME: Record<string, "nebula" | "ember" | "aurora"> = {
+      light: "nebula", warm: "ember", cool: "aurora",
+    };
+    const maybeProject = raw as Record<string, unknown>;
+    const settings = maybeProject.settings as { theme?: string } | undefined;
+    if (settings?.theme && settings.theme in LEGACY_THEME) {
+      (maybeProject as any).settings = { ...settings, theme: LEGACY_THEME[settings.theme] };
+    }
+    return parseProject(raw);
   } finally { db.close(); }
 }
 
 /** Serialize commits so an older autosave can never overwrite a newer snapshot. */
-export function saveMediaWorkspace(workspace: MediaWorkspace): Promise<void> {
+export function saveMediaWorkspace(project: GradProject): Promise<void> {
   const write = async () => {
     const db = await openDatabase();
     try {
       await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction(STORE, "readwrite");
-        transaction.objectStore(STORE).put(workspace, "current");
+        transaction.objectStore(STORE).put(project, "current");
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error ?? new Error("The local draft could not be saved."));
         transaction.onabort = () => reject(transaction.error ?? new Error("Saving was interrupted. Browser storage may be full."));
+      });
+    } finally { db.close(); }
+  };
+  const next = pendingWrite.catch(() => undefined).then(write);
+  pendingWrite = next;
+  return next;
+}
+
+/** Remove any persisted draft so the next load starts blank. */
+export function clearMediaWorkspace(): Promise<void> {
+  const write = async () => {
+    const db = await openDatabase();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const transaction = db.transaction(STORE, "readwrite");
+        transaction.objectStore(STORE).delete("current");
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error ?? new Error("The local draft could not be cleared."));
+        transaction.onabort = () => reject(transaction.error ?? new Error("Clearing was interrupted."));
       });
     } finally { db.close(); }
   };

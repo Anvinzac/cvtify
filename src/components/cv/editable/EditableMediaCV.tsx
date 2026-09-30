@@ -1,269 +1,412 @@
-import { memo, useMemo } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
-import {
-  emptyExperience, MAX_EXPERIENCES, MAX_PHOTOS, newId, themeStyle, toMediaCV,
-  type MediaExperience, type MediaProject,
-} from "@/lib/mediaProject";
+import { useMemo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { InlineList, InlinePeriod, InlineText } from "./inline-edit";
 import { budgetFor, CoverControls, PhotoTrack, type MediaBudget } from "./inline-media";
 import { AIAssistButton } from "./AIAssistButton";
-import type { Photo } from "@/lib/cvData";
-import type { DemoSamples } from "@/lib/demoProject";
+import type { EntryItem, GradProject, MediaPhoto } from "@/lib/mediaProject";
+import { emptyCertificate, emptyEntry, themeStyle } from "@/lib/mediaProject";
+import "./editable-cv.css";
 
-const pad = (n: number) => String(n).padStart(2, "0");
+/** Cubic-bezier easing shared by every reveal (typed tuple keeps framer-motion happy). */
+const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-/** Predefined skill suggestions for the chip picker. */
+/** The three experience buckets share one entry-card template. */
+type EntrySectionKey = "activities" | "internships" | "partTimeJobs";
+
+/** Predefined skill suggestions for the chip picker — tuned for Vietnamese fresh grads. */
 const SKILL_SUGGESTIONS = [
-  "JavaScript", "TypeScript", "React", "Vue", "Angular", "Node.js", "Python", "Java", "Go", "Rust",
-  "HTML", "CSS", "Tailwind", "Sass", "GraphQL", "REST API", "SQL", "PostgreSQL", "MongoDB", "Redis",
-  "Docker", "Kubernetes", "AWS", "Azure", "GCP", "CI/CD", "Git", "Agile", "Scrum", "TDD",
-  "UX Design", "UI Design", "Figma", "Sketch", "Adobe XD", "Prototyping", "Wireframing",
-  "Product Management", "Project Management", "Leadership", "Communication", "Problem Solving",
-  "Machine Learning", "Data Science", "Analytics", "SEO", "Marketing", "Sales", "Customer Support",
+  "React", "TypeScript", "JavaScript", "Python", "Java", "Node.js", "HTML/CSS",
+  "Git", "Figma", "SQL", "MongoDB", "Docker", "AWS", "REST API",
+  "Tiếng Anh", "Tiếng Nhật", "Giao tiếp", "Làm việc nhóm", "Giải quyết vấn đề",
+  "Tư duy logic", "Quản lý thời gian", "Thuyết trình", "Lãnh đạo", "Sáng tạo",
+  "Microsoft Office", "Excel", "PowerPoint", "Photoshop", "Illustrator",
+  "Phân tích dữ liệu", "Machine Learning", "UI/UX Design", "Agile/Scrum",
 ];
 
-interface EditableProps {
-  project: MediaProject;
-  update: (fn: (draft: MediaProject) => MediaProject) => void;
-  onBusy?: (busy: boolean) => void;
-  disabled?: boolean;
-  samples?: DemoSamples;
+/** Scroll-triggered fade + slide reveal for a whole section with spring physics. */
+function RevealSection({ children, className }: { children: React.ReactNode; className?: string }) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.section
+      className={className}
+      initial={reduced ? undefined : { opacity: 0, y: 40 }}
+      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={reduced ? undefined : { type: "spring", stiffness: 80, damping: 20, mass: 0.8 }}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+/** Reveals its children one after another as the section scrolls into view. */
+function StaggerContainer({ children, className }: { children: React.ReactNode; className?: string }) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduced ? undefined : "hidden"}
+      whileInView={reduced ? undefined : "show"}
+      viewport={{ once: true, amount: 0.08 }}
+      variants={reduced ? undefined : { show: { transition: { staggerChildren: 0.06 } } }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** A single staggered child (used for entry cards). */
+function StaggerItem({ children, className }: { children: React.ReactNode; className?: string }) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      variants={reduced ? undefined : {
+        hidden: { opacity: 0, y: 24, scale: 0.97 },
+        show: {
+          opacity: 1, y: 0, scale: 1,
+          transition: { type: "spring", stiffness: 90, damping: 18, mass: 0.6 },
+        },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Splits text into per-character spans for staggered letter reveal. */
+function AnimatedText({ text, className, id }: { text: string; className?: string; id?: string }) {
+  const reduced = useReducedMotion();
+  if (reduced || !text) {
+    return <span className={className} id={id}>{text}</span>;
+  }
+  const chars = text.split("");
+  return (
+    <span className={className} id={id} aria-label={text}>
+      {chars.map((char, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 12 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ delay: i * 0.03, type: "spring", stiffness: 120, damping: 15 }}
+          style={{ display: "inline-block", whiteSpace: char === " " ? "pre" : undefined }}
+        >
+          {char}
+        </motion.span>
+      ))}
+    </span>
+  );
+}
+
+interface EditableGradCVProps {
+  project: GradProject;
+  /** The seeded demo project, used to recognise untouched example content. */
+  samples: GradProject;
+  onChange: (updater: (draft: GradProject) => GradProject) => void;
 }
 
 /**
- * The live, tap-to-type CV. It renders the same semantic layout and theme as the
- * shipping document, but every field is editable in place and every media frame is
- * a dropzone. Motion is intentionally off here so editing stays stable; the parent
- * page switches to the read-only MediaCVDocument + parallax for the "Preview" lens.
+ * EditableGradCV — the live, tap-to-type version of the Vietnamese fresh-graduate CV.
+ * It mirrors GradCVDocument's `.grad-*` layout exactly, but every text field is an
+ * inline editor and every photo frame is a dropzone. Motion is handled here by
+ * framer-motion (not mediaMotion.js) so the editing surface stays scroll-reactive.
  */
-export function EditableMediaCV({ project, update, onBusy, disabled, samples }: EditableProps) {
-  const cv = useMemo(() => toMediaCV(project), [project]);
-  const settings = project.settings;
-  const p = project.profile;
-  const ps = samples?.profile;
-  const skills = cv.skillGroups.flatMap((group) => group.items);
-  const learnings = cv.experience.filter((stage) => stage.learning);
-  const showSkills = settings.showSkills && skills.length > 0;
-  const showStory = settings.showStory;
-  const showGallery = settings.showGallery && cv.gallery.length > 0;
+export function EditableGradCV({ project, samples, onChange }: EditableGradCVProps) {
+  const { profile, education, activities, internships, partTimeJobs, skills, hobbies, settings } = project;
+  const style = themeStyle(settings);
   const budget: MediaBudget = useMemo(() => budgetFor(project), [project]);
 
-  const setProfile = (key: keyof MediaProject["profile"]) => (value: string) =>
-    update((d) => ({ ...d, profile: { ...d.profile, [key]: value } }));
-  const links = [
-    { id: "overview", label: "At a glance" },
-    { id: "experience", label: "Experience" },
-    ...(showSkills ? [{ id: "skills", label: "Skills" }] : []),
-    ...(showStory ? [{ id: "story", label: "Story" }] : []),
-    ...(showGallery ? [{ id: "gallery", label: "Photos" }] : []),
-    { id: "contact", label: "Contact" },
-  ];
+  /* ----- field updaters ----- */
+  const updateProfile = <K extends keyof GradProject["profile"]>(field: K, value: GradProject["profile"][K]) =>
+    onChange((draft) => ({ ...draft, profile: { ...draft.profile, [field]: value } }));
+
+  const updateEducation = <K extends keyof GradProject["education"]>(field: K, value: GradProject["education"][K]) =>
+    onChange((draft) => ({ ...draft, education: { ...draft.education, [field]: value } }));
+
+  const patchEntry = (section: EntrySectionKey, entryId: string, patch: Partial<EntryItem>) =>
+    onChange((draft) => ({
+      ...draft,
+      [section]: draft[section].map((e) => (e.id === entryId ? { ...e, ...patch } : e)),
+    }) as GradProject);
+
+  const addEntry = (section: EntrySectionKey) =>
+    onChange((draft) => ({ ...draft, [section]: [...draft[section], emptyEntry()] }) as GradProject);
+
+  const removeEntry = (section: EntrySectionKey, entryId: string) =>
+    onChange((draft) => ({ ...draft, [section]: draft[section].filter((e) => e.id !== entryId) }) as GradProject);
+
+  /* ----- certificates ----- */
+  const updateCert = (certId: string, patch: Partial<Omit<GradProject["education"]["certificates"][number], "id">>) =>
+    onChange((draft) => ({
+      ...draft,
+      education: {
+        ...draft.education,
+        certificates: draft.education.certificates.map((c) => (c.id === certId ? { ...c, ...patch } : c)),
+      },
+    }));
+
+  const addCertificate = () =>
+    onChange((draft) => ({
+      ...draft,
+      education: { ...draft.education, certificates: [...draft.education.certificates, emptyCertificate()] },
+    }));
+
+  const removeCertificate = (certId: string) =>
+    onChange((draft) => ({
+      ...draft,
+      education: { ...draft.education, certificates: draft.education.certificates.filter((c) => c.id !== certId) },
+    }));
 
   return (
-    <div className={`media-cv media-document is-editing type-${settings.typography} pace-${settings.pace}`} style={themeStyle(settings)} data-media-document data-motion="still">
-      <header className="media-navigation">
-        <nav className="media-container" aria-label="CV sections">
-          <a href="#top" className="media-identity" aria-label={`${p.name || "Your name"} — back to top`}>
-            <span>{(p.name.trim() || "Y N").split(/\s+/).map((n) => n[0]).slice(0, 2).join("").toUpperCase()}</span>
-            <b>{p.name || "Your name"}</b>
-          </a>
-          <ul>{links.map((link) => <li key={link.id}><a href={`#${link.id}`}>{link.label}</a></li>)}</ul>
-        </nav>
-      </header>
-      <main>
-        {/* ---------- Hero ---------- */}
-        <section id="top" className="media-hero" aria-labelledby="media-name">
-          <div className="media-hero-photo">
-            {p.cover?.src
-              ? <img src={p.cover.src} alt={p.cover.alt} width={p.cover.width} height={p.cover.height} style={{ objectPosition: p.cover.position }} decoding="async" />
-              : <div className="cv-cover-empty">Your cover photo fills this space</div>}
-          </div>
-          <div className="media-hero-shade" aria-hidden="true" />
-          <div className="media-container media-hero-content">
-            <p className="media-eyebrow">The person behind the work</p>
-            <InlineText as="p" className="media-availability" value={p.availability} maxLength={160} disabled={disabled} sample={ps?.availability}
-              placeholder="What are you looking for? e.g. Open to senior roles" ariaLabel="Availability" onChange={setProfile("availability")} />
-            <InlineText as="h1" id="media-name" value={p.name} maxLength={100} disabled={disabled} sample={ps?.name} placeholder="Your name" ariaLabel="Your name" onChange={setProfile("name")} />
-            <InlineText as="p" className="media-headline" id="profile-headline" value={p.headline} maxLength={160} disabled={disabled} sample={ps?.headline}
-              placeholder="Your role — e.g. Product Designer & Researcher" ariaLabel="Professional headline" onChange={setProfile("headline")} />
-            <InlineText as="p" className="media-tagline" multiline value={p.tagline} maxLength={360} disabled={disabled} sample={ps?.tagline}
-              placeholder="One line about what you bring to a team." ariaLabel="Introduction line" onChange={setProfile("tagline")} />
-            <InlineText as="p" className="media-location" value={p.location} maxLength={140} disabled={disabled} sample={ps?.location} placeholder="Where you're based · Remote" ariaLabel="Location" onChange={setProfile("location")} />
-            <div className="media-tags" aria-label="Signature skills">{skills.slice(0, 6).map((skill) => <span key={skill.name}>{skill.name}</span>)}</div>
-            <div className="media-hero-actions"><a className="media-button" href="#overview">My experience at a glance ↓</a><a className="media-button secondary" href="#contact">Get in touch ↗</a></div>
-            <dl className="media-stats">{cv.stats.map((stat) => <div key={stat.label}><dt>{stat.label}</dt><dd>{stat.value}</dd></div>)}</dl>
-            <CoverControls photo={p.cover} budget={budget} disabled={disabled} onBusy={onBusy} onChange={(cover) => update((d) => ({ ...d, profile: { ...d.profile, cover } }))} />
-          </div>
-        </section>
-
-        {/* ---------- Overview (derived) ---------- */}
-        <section id="overview" className="media-section media-container" aria-labelledby="overview-title">
-          <div className="media-section-heading"><p className="media-eyebrow">The short version</p><h2 id="overview-title">Experience, <em>at a glance.</em></h2><p>This summary builds itself from your chapters below. Edit a chapter and it updates here instantly.</p></div>
-          <ol className="media-overview-list">{cv.experience.map((stage, index) => <li key={stage.id}>
-            <span className="media-index">{pad(index + 1)}</span>
-            <div><p className="media-date">{stage.period}</p><h3><a href={`#chapter-${stage.id}`}>{stage.role || "Untitled role"} <span aria-hidden="true">↗</span></a></h3>
-              <p className="media-org">{stage.org || "Organization not set"}{stage.location && ` · ${stage.location}`}</p>
-              <p className="media-excerpt">{stage.summary}</p>
-              {stage.highlights[0] && <p className="media-result">{stage.highlights[0]}</p>}
-              <div className="media-tags">{stage.skills.slice(0, 5).map((skill) => <span key={skill}>{skill}</span>)}</div>
+    <div className="grad-document is-editing" data-editable data-media-document data-motion={settings.motion} style={style}>
+      <div className="grad-container">
+        {/* ---------- Hero / profile ---------- */}
+        <RevealSection className="grad-section">
+          <div className="grad-hero">
+            <div className="grad-hero-photo-wrap">
+              {profile.photo && (
+                <img
+                  className="grad-hero-photo"
+                  src={profile.photo.src}
+                  alt={profile.photo.alt || profile.name}
+                  style={{ objectPosition: profile.photo.position }}
+                  width={profile.photo.width}
+                  height={profile.photo.height}
+                  decoding="async"
+                />
+              )}
+              <CoverControls
+                photo={profile.photo}
+                budget={budget}
+                id="cover-photo"
+                onChange={(photo: MediaPhoto | null) => updateProfile("photo", photo)}
+              />
             </div>
-            <a className="media-overview-photo" href={`#chapter-${stage.id}`} tabIndex={-1} aria-hidden="true">{stage.photos[0] && <img src={stage.photos[0].src} alt="" loading="lazy" decoding="async" style={{ objectPosition: stage.photos[0].position }} />}</a>
-          </li>)}</ol>
-          {!project.experiences.length && <button type="button" className="cv-add-block" onClick={() => update((d) => ({ ...d, experiences: [emptyExperience()] }))}><Plus size={16} /> Add your first chapter</button>}
-        </section>
-
-        {/* ---------- Intro / manifesto ---------- */}
-        <section id="intro" className="media-intro media-section"><div className="media-container">
-          <p className="media-eyebrow">A little context</p>
-          <h2>The story behind my work.</h2>
-          <InlineText as="p" className="media-prose" multiline value={p.about} maxLength={2200} disabled={disabled} sample={ps?.about}
-            placeholder="What brought you here, what matters to you, and where you're going. This is your opening narrative." ariaLabel="About you" onChange={setProfile("about")} />
-          <div className="cv-signature">
-            <p className="media-eyebrow">Signature skills</p>
-            <InlineList variant="chips" separator=", " id="profile-skills" value={p.skills} maxLength={1000} disabled={disabled} sample={ps?.skills}
-              itemPlaceholder="Add a skill" addLabel="Add skill" ariaLabel="Signature skills" onChange={setProfile("skills")}
-              suggestions={SKILL_SUGGESTIONS} pickerTitle="Select signature skills" />
-          </div>
-        </div></section>
-
-        {/* ---------- Experience chapters ---------- */}
-        <section id="experience" aria-labelledby="experience-title">
-          <div className="media-container media-section-heading media-experience-heading"><p className="media-eyebrow">The chapters</p><h2 id="experience-title">Work. Growth. <em>Perspective.</em></h2><p>Each chapter is a role, project, or period. Tap any line to rewrite it; drop photos into the frame.</p></div>
-          {project.experiences.map((e, index) => (
-            <EditableChapter key={e.id} e={e} index={index} total={project.experiences.length} remaining={budget.remaining}
-              remainingBytes={budget.remainingBytes} update={update} onBusy={onBusy} disabled={disabled} sample={samples?.experiences[index]} />
-          ))}
-          <div className="media-container">
-            <button type="button" id="add-experience" className="cv-add-block" disabled={project.experiences.length >= MAX_EXPERIENCES}
-              onClick={() => update((d) => ({ ...d, experiences: [...d.experiences, emptyExperience()] }))}>
-              <Plus size={17} /> Add another chapter
-            </button>
-            <p className="cv-hint">{project.experiences.length} / {MAX_EXPERIENCES} chapters · reorder with the arrows on each chapter.</p>
-          </div>
-        </section>
-
-        {/* ---------- Skills (derived) ---------- */}
-        {showSkills && <section id="skills" className="media-section media-container" aria-labelledby="skills-title">
-          <div className="media-section-heading"><p className="media-eyebrow">Capabilities</p><h2 id="skills-title">What I <em>bring.</em></h2><p>Collected automatically from your signature skills and the skills on each chapter — no invented levels.</p></div>
-          <div className="media-skill-grid">{skills.map((skill) => {
-            const evidence = cv.experience.filter((stage) => stage.skills.some((s) => s.toLocaleLowerCase() === skill.name.toLocaleLowerCase()));
-            return <article className="media-skill-card" key={skill.name}><h3>{skill.name}</h3>{evidence.length ? <ul>{evidence.map((stage) => <li key={stage.id}><a href={`#chapter-${stage.id}`}>{stage.role} · {stage.org} ↗</a></li>)}</ul> : <p>Signature skill</p>}</article>;
-          })}</div>
-        </section>}
-
-        {/* ---------- Story / values ---------- */}
-        {showStory && <section id="story" className="media-section media-story" aria-labelledby="story-title"><div className="media-container">
-          <div className="media-section-heading"><p className="media-eyebrow">Self-discovery</p><h2 id="story-title">The person <em>I’m becoming.</em></h2></div>
-          <div className="media-value-grid">
-            {project.values.map((v, i) => <article className="cv-value" key={v.id}>
-              <div className="cv-value-tools cv-block-tools">
-                <button type="button" className="cv-tool-button danger" disabled={disabled} aria-label="Remove value"
-                  onClick={() => update((d) => ({ ...d, values: d.values.filter((x) => x.id !== v.id) }))}><Trash2 size={14} /></button>
+            <div className="grad-hero-info">
+              <InlineText
+                as="h1" className="grad-hero-name" id="profile-name"
+                value={profile.name} onChange={(v) => updateProfile("name", v)}
+                sample={samples.profile.name} placeholder="Họ và tên" ariaLabel="Họ và tên" maxLength={100}
+              />
+              <InlineText
+                as="p" className="grad-hero-objective" id="profile-objective"
+                value={profile.objective} onChange={(v) => updateProfile("objective", v)}
+                sample={samples.profile.objective} placeholder="Mục tiêu nghề nghiệp..." ariaLabel="Mục tiêu nghề nghiệp"
+                multiline maxLength={500}
+              />
+              <div className="grad-hero-contact">
+                <InlineText as="span" id="profile-email" value={profile.email} onChange={(v) => updateProfile("email", v)}
+                  sample={samples.profile.email} placeholder="Email" ariaLabel="Email" maxLength={254} />
+                <InlineText as="span" id="profile-phone" value={profile.phone} onChange={(v) => updateProfile("phone", v)}
+                  sample={samples.profile.phone} placeholder="SĐT" ariaLabel="Số điện thoại" maxLength={20} />
+                <InlineText as="span" id="profile-dob" value={profile.dob} onChange={(v) => updateProfile("dob", v)}
+                  sample={samples.profile.dob} placeholder="Ngày sinh" ariaLabel="Ngày sinh" maxLength={30} />
+                <InlineText as="span" id="profile-address" value={profile.address} onChange={(v) => updateProfile("address", v)}
+                  sample={samples.profile.address} placeholder="Địa chỉ" ariaLabel="Địa chỉ" maxLength={300} />
               </div>
-              <p className="media-index">{pad(i + 1)}</p>
-              <InlineText as="h3" id={`value-${v.id}`} value={v.title} maxLength={100} disabled={disabled} sample={samples?.values[i]?.title} placeholder="A value that guides you" ariaLabel="Value title"
-                onChange={(title) => update((d) => ({ ...d, values: d.values.map((x) => x.id === v.id ? { ...x, title } : x) }))} />
-              <InlineText as="p" className="media-prose" multiline value={v.text} maxLength={800} disabled={disabled} sample={samples?.values[i]?.text} placeholder="What this looks like in your work" ariaLabel="Value description"
-                onChange={(text) => update((d) => ({ ...d, values: d.values.map((x) => x.id === v.id ? { ...x, text } : x) }))} />
-            </article>)}
+            </div>
           </div>
-          {project.values.length < 6 && <button type="button" className="cv-add-block" disabled={disabled}
-            onClick={() => update((d) => ({ ...d, values: [...d.values, { id: newId(), title: "", text: "" }] }))}><Plus size={16} /> Add a value</button>}
-          {!!learnings.length && <div className="media-learning-list">{learnings.map((stage) => <article key={stage.id}><a className="media-eyebrow" href={`#chapter-${stage.id}`}>{stage.role} · {stage.org} ↗</a><h3>What I discovered</h3><p className="media-prose">{stage.learning}</p></article>)}</div>}
-        </div></section>}
+        </RevealSection>
 
-        {/* ---------- Gallery (derived) ---------- */}
-        {showGallery && <section id="gallery" className="media-section media-container" aria-labelledby="gallery-title">
-          <div className="media-section-heading"><p className="media-eyebrow">In frames</p><h2 id="gallery-title">Moments <em>along the way.</em></h2><p>Every photo you add to a chapter gathers here automatically.</p></div>
-          <div className="media-gallery">{cv.experience.flatMap((stage) => stage.photos.map((photo, i) => <GalleryFigure key={`${stage.id}-${photo.id ?? i}`} photo={photo} context={`${stage.role} · ${stage.org}`} />))}</div>
-        </section>}
+        {/* ---------- Education ---------- */}
+        <RevealSection className="grad-section">
+          <h2 className="grad-heading">Học Vấn</h2>
+          <div className="grad-education">
+            <div className="grad-edu-header">
+              <div>
+                <InlineText as="div" className="grad-edu-school" id="education-school"
+                  value={education.school} onChange={(v) => updateEducation("school", v)}
+                  sample={samples.education.school} placeholder="Tên trường đại học" ariaLabel="Tên trường" maxLength={200} />
+                <InlineText as="div" className="grad-edu-major" id="education-major"
+                  value={education.major} onChange={(v) => updateEducation("major", v)}
+                  sample={samples.education.major} placeholder="Chuyên ngành" ariaLabel="Chuyên ngành" maxLength={200} />
+              </div>
+            </div>
+            <div className="grad-edu-meta">
+              <InlinePeriod
+                id="education-period"
+                start={education.startDate} end={education.endDate} current={false}
+                onChange={({ start, end }) =>
+                  onChange((draft) => ({
+                    ...draft,
+                    education: {
+                      ...draft.education,
+                      startDate: start ?? draft.education.startDate,
+                      endDate: end ?? draft.education.endDate,
+                    },
+                  }))
+                }
+              />
+              <InlineText as="span" className="grad-edu-gpa" id="education-gpa"
+                value={education.gpa} onChange={(v) => updateEducation("gpa", v)}
+                sample={samples.education.gpa} placeholder="GPA" ariaLabel="GPA" maxLength={20} />
+            </div>
+            <InlineText as="p" className="grad-edu-honors" id="education-honors"
+              value={education.honors} onChange={(v) => updateEducation("honors", v)}
+              sample={samples.education.honors} placeholder="Danh hiệu, học bổng..." ariaLabel="Danh hiệu, học bổng"
+              multiline maxLength={500} />
 
-        {/* ---------- Contact ---------- */}
-        <section id="contact" className="media-section media-contact" aria-labelledby="contact-title"><div className="media-container">
-          <p className="media-eyebrow">The next chapter</p><h2 id="contact-title">Let’s <em>connect.</em></h2>
-          <InlineText as="span" className="media-email" id="profile-email" value={p.email} maxLength={254} disabled={disabled} sample={ps?.email} placeholder="you@example.com" ariaLabel="Contact email" onChange={setProfile("email")} />
-          <div className="cv-contact-fields">
-            <label className="cv-contact-field"><span>Website / portfolio</span>
-              <InlineText as="span" id="profile-website" value={p.website} maxLength={500} disabled={disabled} sample={ps?.website} placeholder="https://your-portfolio.com" ariaLabel="Website" onChange={setProfile("website")} /></label>
-            <label className="cv-contact-field"><span>LinkedIn</span>
-              <InlineText as="span" id="profile-linkedin" value={p.linkedin} maxLength={500} disabled={disabled} sample={ps?.linkedin} placeholder="https://linkedin.com/in/you" ariaLabel="LinkedIn" onChange={setProfile("linkedin")} /></label>
+            {/* Certificates */}
+            <div className="grad-certificates">
+              {education.certificates.map((cert) => (
+                <span key={cert.id} className="grad-cert-badge">
+                  <InlineText as="span" value={cert.name} onChange={(v) => updateCert(cert.id, { name: v })}
+                    placeholder="Tên chứng chỉ" ariaLabel="Tên chứng chỉ" maxLength={200} />
+                  <InlineText as="span" className="grad-cert-score" value={cert.score}
+                    onChange={(v) => updateCert(cert.id, { score: v })} placeholder="Điểm" ariaLabel="Điểm" maxLength={50} />
+                  <InlineText as="span" className="grad-cert-issuer" value={cert.issuer}
+                    onChange={(v) => updateCert(cert.id, { issuer: v })} placeholder="Đơn vị cấp" ariaLabel="Đơn vị cấp" maxLength={200} />
+                  <button type="button" className="cv-list-remove" onClick={() => removeCertificate(cert.id)} aria-label="Xóa chứng chỉ">×</button>
+                </span>
+              ))}
+              <button type="button" className="cv-add-inline" onClick={addCertificate} id="add-certificate">+ Thêm chứng chỉ</button>
+            </div>
+
+            {/* Education photo */}
+            <PhotoTrack
+              id="photos-education"
+              photos={education.photo ? [education.photo] : []}
+              onChange={(photos) => updateEducation("photo", photos[0] ?? null)}
+              maxPhotos={1}
+              budget={budget}
+              label="Ảnh trường / lễ tốt nghiệp"
+            />
           </div>
-          <footer><span>{p.name || "Your name"}{p.location && ` · ${p.location}`}</span><a href="#top">Back to top ↑</a></footer>
-        </div></section>
-      </main>
+        </RevealSection>
+
+        {/* ---------- Experience buckets ---------- */}
+        <EntrySection
+          title="Hoạt Động" section="activities" entries={activities} samples={samples.activities}
+          addLabel="+ Thêm hoạt động" budget={budget}
+          onAdd={() => addEntry("activities")}
+          onRemove={(id) => removeEntry("activities", id)}
+          onPatch={(id, patch) => patchEntry("activities", id, patch)}
+        />
+        <EntrySection
+          title="Thực Tập" section="internships" entries={internships} samples={samples.internships}
+          addLabel="+ Thêm kỳ thực tập" budget={budget}
+          onAdd={() => addEntry("internships")}
+          onRemove={(id) => removeEntry("internships", id)}
+          onPatch={(id, patch) => patchEntry("internships", id, patch)}
+        />
+        <EntrySection
+          title="Làm Thêm" section="partTimeJobs" entries={partTimeJobs} samples={samples.partTimeJobs}
+          addLabel="+ Thêm công việc" budget={budget}
+          onAdd={() => addEntry("partTimeJobs")}
+          onRemove={(id) => removeEntry("partTimeJobs", id)}
+          onPatch={(id, patch) => patchEntry("partTimeJobs", id, patch)}
+        />
+
+        {/* ---------- Skills & hobbies ---------- */}
+        <RevealSection className="grad-section">
+          <h2 className="grad-heading">Kỹ Năng &amp; Sở Thích</h2>
+          <div className="grad-skills-section">
+            <div className="grad-chip-group">
+              <h4>Kỹ năng</h4>
+              <InlineList
+                value={skills}
+                onChange={(v) => onChange((draft) => ({ ...draft, skills: v }))}
+                separator=", " variant="chips"
+                itemPlaceholder="Thêm kỹ năng..." addLabel="+ Thêm"
+                suggestions={SKILL_SUGGESTIONS} pickerTitle="Chọn kỹ năng"
+                id="skills" sample={samples.skills} ariaLabel="Kỹ năng" maxLength={1000}
+              />
+            </div>
+            <div className="grad-chip-group">
+              <h4>Sở thích</h4>
+              <InlineList
+                value={hobbies}
+                onChange={(v) => onChange((draft) => ({ ...draft, hobbies: v }))}
+                separator=", " variant="chips"
+                itemPlaceholder="Thêm sở thích..." addLabel="+ Thêm"
+                pickerTitle="Chọn sở thích"
+                id="hobbies" sample={samples.hobbies} ariaLabel="Sở thích" maxLength={500}
+              />
+            </div>
+          </div>
+        </RevealSection>
+      </div>
     </div>
   );
 }
 
-function GalleryFigure({ photo, context }: { photo: Photo; context?: string }) {
-  return <figure className="media-photo-figure"><div className="media-image-frame"><img src={photo.src} alt={photo.alt} width={photo.width} height={photo.height} loading="lazy" decoding="async" style={{ objectPosition: photo.position }} /></div>{(photo.caption || context) && <figcaption>{photo.caption && <span>{photo.caption}</span>}{context && <small>{context}</small>}</figcaption>}</figure>;
+interface EntrySectionProps {
+  title: string;
+  section: EntrySectionKey;
+  entries: EntryItem[];
+  samples: EntryItem[];
+  addLabel: string;
+  budget: MediaBudget;
+  onAdd: () => void;
+  onRemove: (entryId: string) => void;
+  onPatch: (entryId: string, patch: Partial<EntryItem>) => void;
 }
 
-interface ChapterProps extends Omit<EditableProps, "project" | "samples"> { e: MediaExperience; index: number; total: number; remaining: number; remainingBytes: number; sample?: DemoSamples["experiences"][number]; }
-
-const EditableChapter = memo(function EditableChapter({ e, index, total, remaining, remainingBytes, update, onBusy, disabled, sample }: ChapterProps) {
-  const patch = (fields: Partial<MediaExperience>) => update((d) => ({ ...d, experiences: d.experiences.map((x) => x.id === e.id ? { ...x, ...fields } : x) }));
-  function move(offset: number) {
-    update((d) => {
-      const next = [...d.experiences];
-      const target = index + offset;
-      if (target < 0 || target >= next.length) return d;
-      [next[index], next[target]] = [next[target], next[index]];
-      return { ...d, experiences: next };
-    });
-  }
-  const budget: MediaBudget = { remaining, remainingBytes };
-
+/** One experience bucket (activities / internships / part-time jobs) — shared card template. */
+function EntrySection({ title, section, entries, samples, addLabel, budget, onAdd, onRemove, onPatch }: EntrySectionProps) {
   return (
-    <article id={`chapter-${e.id}`} className="media-chapter cv-chapter">
-      <div className="media-container">
-        <div className="media-chapter-top">
-          <p className="media-eyebrow">Chapter {pad(index + 1)}</p>
-          <div className="cv-block-tools">
-            <span className="media-date">{pad(index + 1)} / {pad(total)}</span>
-            <button type="button" className="cv-tool-button" disabled={disabled || index === 0} aria-label="Move chapter earlier" onClick={() => move(-1)}><ArrowUp size={14} /></button>
-            <button type="button" className="cv-tool-button" disabled={disabled || index === total - 1} aria-label="Move chapter later" onClick={() => move(1)}><ArrowDown size={14} /></button>
-            <button type="button" className="cv-tool-button danger" disabled={disabled} aria-label="Remove chapter"
-              onClick={() => { if (window.confirm(`Remove ${e.role || "this chapter"} and its photos?`)) update((d) => ({ ...d, experiences: d.experiences.filter((x) => x.id !== e.id) })); }}><Trash2 size={14} /></button>
-          </div>
-        </div>
-        <div className="media-chapter-layout">
-          <div className="media-chapter-copy">
-            <InlinePeriod id={`${e.id}-startDate`} start={e.startDate} end={e.endDate} current={e.current} disabled={disabled} onChange={patch} />
-            <InlineText as="h3" id={`${e.id}-role`} value={e.role} maxLength={140} disabled={disabled} sample={sample?.role} placeholder="Your role or title" ariaLabel="Role" onChange={(role) => patch({ role })} />
-            <InlineText as="p" className="media-org" id={`${e.id}-organization`} value={e.organization} maxLength={140} disabled={disabled} sample={sample?.organization} placeholder="Organization or project" ariaLabel="Organization" onChange={(organization) => patch({ organization })} />
-            <InlineText as="p" className="media-location" value={e.location} maxLength={140} disabled={disabled} sample={sample?.location} placeholder="Location · Remote · Hybrid" ariaLabel="Location" onChange={(location) => patch({ location })} />
-            <InlineText as="p" className="media-chapter-summary" multiline value={e.summary} maxLength={320} disabled={disabled} sample={sample?.summary} placeholder="The takeaway for employers — one or two sentences that capture this chapter." ariaLabel="Chapter summary" onChange={(summary) => patch({ summary })} />
-            <AIAssistButton context="summary" currentValue={e.summary} role={e.role} organization={e.organization} onApply={(summary) => patch({ summary })} disabled={disabled} />
-
-            <p className="media-eyebrow cv-field-label">Results & highlights</p>
-            <InlineList variant="bullets" separator={"\n"} id={`${e.id}-highlights`} value={e.highlights} maxLength={2000} disabled={disabled} sample={sample?.highlights}
-              itemPlaceholder="A result you can stand behind" addLabel="Add a result" ariaLabel="Results and highlights" onChange={(highlights) => patch({ highlights })} />
-            <AIAssistButton context="highlights" currentValue={e.highlights} role={e.role} organization={e.organization} onApply={(highlights) => patch({ highlights })} disabled={disabled} />
-
-            <p className="media-eyebrow cv-field-label">Skills demonstrated</p>
-            <InlineList variant="chips" separator=", " id={`${e.id}-skills`} value={e.skills} maxLength={800} disabled={disabled} sample={sample?.skills}
-              itemPlaceholder="Add a skill" addLabel="Add skill" ariaLabel="Skills demonstrated" onChange={(skills) => patch({ skills })}
-              suggestions={SKILL_SUGGESTIONS} pickerTitle="Select skills for this chapter" />
-
-            <details className="media-chapter-details" id={`details-${e.id}`}>
-              <summary>Inside this chapter <span>Responsibilities & what you discovered</span></summary>
-              <div className="media-detail-content">
-                <section><h5>Responsibilities</h5>
-                  <InlineText as="p" className="media-prose" multiline id={`${e.id}-duties`} value={e.duties} maxLength={4000} disabled={disabled} sample={sample?.duties}
-                    placeholder="Describe what you actually did, who you worked with, and what you were responsible for." ariaLabel="Responsibilities" onChange={(duties) => patch({ duties })} />
-                  <AIAssistButton context="duties" currentValue={e.duties} role={e.role} organization={e.organization} onApply={(duties) => patch({ duties })} disabled={disabled} /></section>
-                <section><h5>What I discovered</h5>
-                  <InlineText as="p" className="media-prose" multiline value={e.learning} maxLength={1600} disabled={disabled} sample={sample?.learning}
-                    placeholder="A lesson, a turning point, or a strength you discovered along the way." ariaLabel="What you discovered" onChange={(learning) => patch({ learning })} />
-                  <AIAssistButton context="learning" currentValue={e.learning} role={e.role} organization={e.organization} onApply={(learning) => patch({ learning })} disabled={disabled} /></section>
+    <RevealSection className="grad-section">
+      <h2 className="grad-heading">{title}</h2>
+      <StaggerContainer className="grad-entries">
+        {entries.map((entry, idx) => (
+          <StaggerItem key={entry.id} className="grad-entry-card">
+            <div className="grad-entry-header">
+              <div>
+                <InlineText as="div" className="grad-entry-title" id={`${entry.id}-title`}
+                  value={entry.title} onChange={(v) => onPatch(entry.id, { title: v })}
+                  sample={samples[idx]?.title} placeholder="Tên vị trí / hoạt động" ariaLabel="Tên vị trí" maxLength={200} />
+                <InlineText as="div" className="grad-entry-org" id={`${entry.id}-organization`}
+                  value={entry.organization} onChange={(v) => onPatch(entry.id, { organization: v })}
+                  sample={samples[idx]?.organization} placeholder="Tổ chức" ariaLabel="Tổ chức" maxLength={200} />
               </div>
-            </details>
-          </div>
-          <PhotoTrack id={`photos-${e.id}`} photos={e.photos} label={`Chapter ${index + 1} photos`} budget={budget} limit={MAX_PHOTOS}
-            disabled={disabled} onBusy={onBusy} onChange={(photos) => patch({ photos })} />
-        </div>
-      </div>
-    </article>
+              <div className="grad-entry-controls">
+                <InlinePeriod
+                  id={`${entry.id}-period`}
+                  start={entry.startDate} end={entry.endDate} current={entry.current}
+                  onChange={({ start, end, current }) =>
+                    onPatch(entry.id, {
+                      ...(start !== undefined ? { startDate: start } : {}),
+                      ...(end !== undefined ? { endDate: end } : {}),
+                      ...(current !== undefined ? { current } : {}),
+                    })
+                  }
+                />
+                <button type="button" className="cv-list-remove" onClick={() => onRemove(entry.id)} aria-label="Xóa mục">×</button>
+              </div>
+            </div>
+            <InlineText as="div" className="grad-entry-location" id={`${entry.id}-location`}
+              value={entry.location} onChange={(v) => onPatch(entry.id, { location: v })}
+              sample={samples[idx]?.location} placeholder="Địa điểm" ariaLabel="Địa điểm" maxLength={200} />
+            <InlineText as="p" className="grad-entry-description" id={`${entry.id}-description`}
+              value={entry.description} onChange={(v) => onPatch(entry.id, { description: v })}
+              sample={samples[idx]?.description} placeholder="Mô tả ngắn gọn..." ariaLabel="Mô tả" multiline maxLength={2000} />
+            <AIAssistButton context="summary" currentValue={entry.description} role={entry.title} organization={entry.organization}
+              onApply={(description) => onPatch(entry.id, { description })} />
+            <InlineList
+              value={entry.highlights}
+              onChange={(v) => onPatch(entry.id, { highlights: v })}
+              separator={"\n"} variant="bullets"
+              itemPlaceholder="Thêm điểm nổi bật..." addLabel="+ Thêm"
+              className="grad-entry-highlights" id={`${entry.id}-highlights`}
+              sample={samples[idx]?.highlights} ariaLabel="Điểm nổi bật" maxLength={4000}
+            />
+            <AIAssistButton context="highlights" currentValue={entry.highlights} role={entry.title} organization={entry.organization}
+              onApply={(highlights) => onPatch(entry.id, { highlights })} />
+            <PhotoTrack
+              id={`photos-${entry.id}`}
+              photos={entry.photos}
+              onChange={(photos) => onPatch(entry.id, { photos })}
+              maxPhotos={4}
+              budget={budget}
+              label="Thêm ảnh"
+            />
+          </StaggerItem>
+        ))}
+      </StaggerContainer>
+      <button type="button" className="cv-add-entry" onClick={onAdd} id={`add-${section}`}>{addLabel}</button>
+    </RevealSection>
   );
-});
+}
+
+export default EditableGradCV;

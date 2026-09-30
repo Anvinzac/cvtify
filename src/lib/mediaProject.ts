@@ -1,255 +1,290 @@
 import { z } from "zod";
 import type { CSSProperties } from "react";
-import type { CVData } from "./cvData";
-import type { CvData as ProfileData } from "./storage";
 
-export const MAX_EXPERIENCES = 20;
-export const MAX_PHOTOS = 6;
+/* ------------------------------------------------------------------
+ * FRESH-GRADUATE CV DATA MODEL (version 2)
+ * A compact, Vietnamese-language CV aimed at new graduates. The model
+ * is education-centric: profile, education (+ certificates), and three
+ * experience buckets (activities, internships, part-time jobs), plus
+ * comma-separated skills and hobbies.
+ * ------------------------------------------------------------------ */
+
 export const MAX_TOTAL_PHOTOS = 60;
 export const MAX_PHOTO_DATA_BYTES = 24 * 1024 * 1024;
 export const MAX_BACKUP_BYTES = 90 * 1024 * 1024;
-const text = (max: number) => z.string().max(max);
-const id = z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/);
 
 export const photoSchema = z.object({
-  id,
-  name: text(200),
-// Data URLs for user uploads; https URLs are allowed so the demo persona can use stock photos.
-  src: z.string().max(2_800_000).regex(/^(data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+|https:\/\/[^\s"']+)$/),
-  alt: text(300),
-  caption: text(300),
+  id: z.string(),
+  name: z.string().max(200),
+  // Data URLs for user uploads; https URLs are allowed so the demo persona can use stock photos.
+  src: z
+    .string()
+    .max(2_800_000)
+    .refine((s) => s.startsWith("data:image/") || s.startsWith("https://"), {
+      message: "Ảnh phải là data URL hoặc liên kết https.",
+    }),
+  alt: z.string().max(300),
+  caption: z.string().max(300),
   position: z.enum(["center", "top", "bottom"]),
-  width: z.number().int().positive().max(2400),
-  height: z.number().int().positive().max(2400),
+  width: z.number().int().min(1).max(2400),
+  height: z.number().int().min(1).max(2400),
 });
-export type MediaPhoto = Required<z.infer<typeof photoSchema>>;
+export type MediaPhoto = z.infer<typeof photoSchema>;
 
-export const experienceSchema = z.object({
-  id,
-  role: text(140),
-  organization: text(140),
-  location: text(140),
-  startDate: text(7),
-  endDate: text(7),
+export const certificateSchema = z.object({
+  id: z.string(),
+  name: z.string().max(200),
+  score: z.string().max(50),
+  date: z.string().max(10), // "YYYY-MM" or free text
+  issuer: z.string().max(200),
+});
+export type Certificate = z.infer<typeof certificateSchema>;
+
+export const entryItemSchema = z.object({
+  id: z.string(),
+  title: z.string().max(200),
+  organization: z.string().max(200),
+  location: z.string().max(200),
+  startDate: z.string().max(10),
+  endDate: z.string().max(10),
   current: z.boolean(),
-  summary: text(320),
-  duties: text(4000),
-  highlights: text(2000),
-  skills: text(800),
-  learning: text(1600),
-  photos: z.array(photoSchema).max(MAX_PHOTOS),
+  description: z.string().max(2000),
+  highlights: z.string().max(4000), // newline-separated
+  photos: z.array(photoSchema).max(4),
 });
-export type MediaExperience = Required<Omit<z.infer<typeof experienceSchema>, "photos">> & { photos: MediaPhoto[] };
+export type EntryItem = z.infer<typeof entryItemSchema>;
 
-export const settingsSchema = z.object({
-  theme: z.enum(["midnight", "paper", "forest"]),
-  typography: z.enum(["editorial", "modern", "minimal"]),
+export const gradSettingsSchema = z.object({
+  theme: z.enum(["nebula", "ember", "aurora"]),
   motion: z.enum(["immersive", "subtle", "still"]),
-  pace: z.enum(["quick", "detailed"]),
-  showSkills: z.boolean(),
-  showStory: z.boolean(),
-  showGallery: z.boolean(),
+  pace: z.enum(["compact", "detailed"]),
 });
-export type MediaSettings = Required<z.infer<typeof settingsSchema>>;
+export type GradSettings = z.infer<typeof gradSettingsSchema>;
 
-export const projectSchema = z.object({
-  version: z.literal(1),
-  profile: z.object({
-    name: text(100),
-    headline: text(160),
-    email: text(254),
-    location: text(140),
-    availability: text(160),
-    tagline: text(360),
-    about: text(2200),
-    skills: text(1000),
-    website: text(500),
-    linkedin: text(500),
-    cover: photoSchema.nullable(),
-  }),
-  experiences: z.array(experienceSchema).max(MAX_EXPERIENCES),
-  values: z.array(z.object({ id, title: text(100), text: text(800) })).max(6),
-  settings: settingsSchema,
-}).superRefine((project, ctx) => {
-  const photos = [...(project.profile.cover ? [project.profile.cover] : []), ...project.experiences.flatMap((e) => e.photos)];
-  if (photos.length > MAX_TOTAL_PHOTOS) ctx.addIssue({ code: "custom", message: `Use no more than ${MAX_TOTAL_PHOTOS} photos in one CV.` });
-  if (photos.reduce((bytes, photo) => bytes + photo.src.length, 0) > MAX_PHOTO_DATA_BYTES) ctx.addIssue({ code: "custom", message: "The combined optimized photo data must be under 24 MB." });
-  for (const entries of [project.experiences, project.values, photos]) {
-    if (new Set(entries.map((entry) => entry.id)).size !== entries.length) {
-      ctx.addIssue({ code: "custom", message: "This project contains duplicate identifiers." });
+export const gradProjectSchema = z
+  .object({
+    version: z.literal(2),
+    profile: z.object({
+      name: z.string().max(100),
+      objective: z.string().max(500),
+      email: z.string().max(254),
+      phone: z.string().max(20),
+      dob: z.string().max(30),
+      address: z.string().max(300),
+      photo: photoSchema.nullable(),
+    }),
+    education: z.object({
+      school: z.string().max(200),
+      major: z.string().max(200),
+      gpa: z.string().max(20),
+      startDate: z.string().max(10),
+      endDate: z.string().max(10),
+      honors: z.string().max(500),
+      certificates: z.array(certificateSchema).max(10),
+      photo: photoSchema.nullable(),
+    }),
+    activities: z.array(entryItemSchema).max(10),
+    internships: z.array(entryItemSchema).max(10),
+    partTimeJobs: z.array(entryItemSchema).max(10),
+    skills: z.string().max(1000), // comma-separated
+    hobbies: z.string().max(500), // comma-separated
+    settings: gradSettingsSchema,
+  })
+  .superRefine((project, ctx) => {
+    const allPhotos: MediaPhoto[] = [
+      ...(project.profile.photo ? [project.profile.photo] : []),
+      ...(project.education.photo ? [project.education.photo] : []),
+      ...project.activities.flatMap((a) => a.photos),
+      ...project.internships.flatMap((i) => i.photos),
+      ...project.partTimeJobs.flatMap((j) => j.photos),
+    ];
+    if (allPhotos.length > MAX_TOTAL_PHOTOS) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Quá ${MAX_TOTAL_PHOTOS} ảnh` });
     }
-  }
-});
-export type MediaProject = {
-  version: 1;
-  profile: Required<Omit<z.infer<typeof projectSchema>["profile"], "cover">> & { cover: MediaPhoto | null };
-  experiences: MediaExperience[];
-  values: { id: string; title: string; text: string }[];
-  settings: MediaSettings;
-};
-export const parseProject = (input: unknown) => projectSchema.parse(input) as MediaProject;
-export const workspaceSchema = z.object({
-  draft: projectSchema,
-  generated: projectSchema.nullable(),
-  generatedAt: z.string().nullable(),
-  step: z.number().int().min(0).max(4),
-});
-export interface MediaWorkspace {
-  draft: MediaProject;
-  generated: MediaProject | null;
-  generatedAt: string | null;
-  step: number;
-}
-export const parseWorkspace = (input: unknown) => workspaceSchema.parse(input) as MediaWorkspace;
+    const bytes = allPhotos.reduce((sum, p) => sum + photoDataBytes(p), 0);
+    if (bytes > MAX_PHOTO_DATA_BYTES) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Tổng dung lượng ảnh vượt 24 MB" });
+    }
+    // Unique ID check across every entry, photo and certificate.
+    const ids = new Set<string>();
+    const allEntries = [...project.activities, ...project.internships, ...project.partTimeJobs];
+    for (const item of allEntries) {
+      if (ids.has(item.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Trùng id: ${item.id}` });
+      ids.add(item.id);
+      for (const photo of item.photos) {
+        if (ids.has(photo.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Trùng id ảnh: ${photo.id}` });
+        ids.add(photo.id);
+      }
+    }
+    for (const cert of project.education.certificates) {
+      if (ids.has(cert.id)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Trùng id chứng chỉ: ${cert.id}` });
+      ids.add(cert.id);
+    }
+  });
 
-export const newId = () => typeof crypto.randomUUID === "function" ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("");
-export const photoDataBytes = (project: MediaProject) => project.experiences.reduce((bytes, experience) => bytes + experience.photos.reduce((n, photo) => n + photo.src.length, 0), project.profile.cover?.src.length ?? 0);
-export const defaultSettings: MediaSettings = {
-  theme: "midnight", typography: "editorial", motion: "immersive", pace: "quick",
-  showSkills: true, showStory: true, showGallery: true,
-};
+export type GradProject = z.infer<typeof gradProjectSchema>;
 
-export function emptyExperience(): MediaExperience {
-  return { id: newId(), role: "", organization: "", location: "", startDate: "", endDate: "", current: false,
-    summary: "", duties: "", highlights: "", skills: "", learning: "", photos: [] };
+/* ------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------ */
+
+export const newId = () =>
+  typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+
+export const parseProject = (input: unknown): GradProject => gradProjectSchema.parse(input);
+
+export const defaultSettings: GradSettings = { theme: "nebula", motion: "immersive", pace: "compact" };
+
+/** Estimates the decoded byte size of a base64 data URL (0 for remote https photos). */
+export function photoDataBytes(photo: MediaPhoto): number {
+  if (!photo.src.startsWith("data:")) return 0;
+  const comma = photo.src.indexOf(",");
+  const base64 = comma >= 0 ? photo.src.slice(comma + 1) : photo.src;
+  const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor((base64.length * 3) / 4) - padding);
 }
-export function emptyProject(): MediaProject {
+
+export function emptyCertificate(): Certificate {
+  return { id: newId(), name: "", score: "", date: "", issuer: "" };
+}
+
+export function emptyEntry(): EntryItem {
   return {
-    version: 1,
-    profile: { name: "", headline: "", email: "", location: "", availability: "", tagline: "", about: "", skills: "", website: "", linkedin: "", cover: null },
-    experiences: [emptyExperience()], values: [], settings: { ...defaultSettings },
+    id: newId(),
+    title: "",
+    organization: "",
+    location: "",
+    startDate: "",
+    endDate: "",
+    current: false,
+    description: "",
+    highlights: "",
+    photos: [],
   };
 }
-export const emptyWorkspace = (): MediaWorkspace => ({ draft: emptyProject(), generated: null, generatedAt: null, step: 0 });
 
-export const THEMES = [
-  { id: "midnight" as const, name: "Midnight", description: "Warm gold on cinematic charcoal.", background: "#100e0d", foreground: "#f5eee5", accent: "#efbd69", muted: "#b8ada0", border: "#3a332b" },
-  { id: "paper" as const, name: "Paper", description: "An airy, ink-on-paper portfolio.", background: "#f6f3ed", foreground: "#202b37", accent: "#275aa8", muted: "#5a6470", border: "#d5d8dd" },
-  { id: "forest" as const, name: "Forest", description: "Deep green with a fresh lime accent.", background: "#0d1c19", foreground: "#edf4e6", accent: "#c0df8c", muted: "#a7b8ad", border: "#30443a" },
-];
-export const STYLES = [
-  { id: "editorial" as const, name: "Editorial", description: "Expressive serif headlines, generous spacing.", font: '"Fraunces", Georgia, serif' },
-  { id: "modern" as const, name: "Modern", description: "Confident sans-serif with crisp, rounded frames.", font: '"Inter", system-ui, sans-serif' },
-  { id: "minimal" as const, name: "Minimal", description: "Quiet typography, square images, no film grain.", font: '"Inter", system-ui, sans-serif' },
-];
-
-export function themeStyle(settings: MediaSettings): CSSProperties {
-  const themes = {
-    midnight: { background: "24 10% 6%", foreground: "35 44% 93%", primary: "37 81% 67%", muted: "32 15% 67%", border: "32 15% 20%", card: "24 10% 9%" },
-    paper: { background: "40 33% 95%", foreground: "211 27% 17%", primary: "216 62% 41%", muted: "213 11% 40%", border: "218 10% 85%", card: "40 25% 99%" },
-    forest: { background: "168 37% 8%", foreground: "90 39% 93%", primary: "82 56% 71%", muted: "145 11% 69%", border: "150 17% 23%", card: "162 27% 12%" },
-  };
-  const t = themes[settings.theme];
+export function emptyProject(): GradProject {
   return {
-    "--background": t.background, "--foreground": t.foreground, "--primary": t.primary,
-    "--primary-foreground": settings.theme === "paper" ? "0 0% 100%" : t.background,
-    "--muted-foreground": t.muted, "--border": t.border, "--input": t.border,
-    "--card": t.card, "--card-foreground": t.foreground, "--accent": t.card,
-    "--accent-foreground": t.foreground, "--ring": t.primary,
-    "--font-display": STYLES.find((s) => s.id === settings.typography)!.font,
-    "--gradient-warm": `linear-gradient(120deg, hsl(${t.primary}), hsl(${t.primary} / .85))`,
-    colorScheme: settings.theme === "paper" ? "light" : "dark",
+    version: 2,
+    profile: { name: "", objective: "", email: "", phone: "", dob: "", address: "", photo: null },
+    education: {
+      school: "",
+      major: "",
+      gpa: "",
+      startDate: "",
+      endDate: "",
+      honors: "",
+      certificates: [],
+      photo: null,
+    },
+    activities: [],
+    internships: [],
+    partTimeJobs: [],
+    skills: "",
+    hobbies: "",
+    settings: { ...defaultSettings },
+  };
+}
+
+/** Splits a comma/newline separated string, trims, drops empties and de-duplicates. */
+export function splitItems(value: string, sep?: string): string[] {
+  const seen = new Set<string>();
+  const parts = sep ? value.split(sep) : value.split(/[,\n]/);
+  return parts
+    .map((s) => s.trim())
+    .filter((s) => {
+      if (!s || seen.has(s.toLocaleLowerCase())) return false;
+      seen.add(s.toLocaleLowerCase());
+      return true;
+    });
+}
+
+/** Splits newline-separated highlights into clean bullet lines. */
+export const lines = (value: string) =>
+  value
+    .split("\n")
+    .map((s) => s.replace(/^[-•]\s*/, "").trim())
+    .filter(Boolean);
+
+export const validMonth = (value: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value.trim());
+
+/** Vietnamese month label: "2024-09" -> "09/2024"; anything else is returned as-is. */
+export function monthLabel(dateStr: string): string {
+  const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(dateStr.trim());
+  if (!match) return dateStr;
+  return `${match[2]}/${match[1]}`;
+}
+
+/* ------------------------------------------------------------------
+ * Theming
+ * ------------------------------------------------------------------ */
+
+const THEME_TOKENS: Record<GradSettings["theme"], {
+  background: string; foreground: string; primary: string; accent: string;
+  card: string; muted: string; border: string; mutedForeground: string;
+}> = {
+  nebula: {
+    background: "#0B0D17", foreground: "#E8E6F0", primary: "#7C3AED", accent: "#3B82F6",
+    card: "#13162A", muted: "#1C1F3A", border: "#252850", mutedForeground: "#8B8DA8",
+  },
+  ember: {
+    background: "#1A1412", foreground: "#F0E8E0", primary: "#F59E0B", accent: "#EF4444",
+    card: "#261E1A", muted: "#332822", border: "#4A3830", mutedForeground: "#A89080",
+  },
+  aurora: {
+    background: "#0A1219", foreground: "#E0F0EC", primary: "#06B6D4", accent: "#10B981",
+    card: "#111E28", muted: "#172A36", border: "#1F3A4A", mutedForeground: "#78A098",
+  },
+};
+
+export function themeStyle(settings: GradSettings): CSSProperties {
+  const t = THEME_TOKENS[settings.theme];
+  return {
+    "--background": t.background,
+    "--foreground": t.foreground,
+    "--primary": t.primary,
+    "--accent": t.accent,
+    "--card": t.card,
+    "--muted": t.muted,
+    "--border": t.border,
+    "--muted-foreground": t.mutedForeground,
+    colorScheme: "dark",
   } as CSSProperties;
 }
 
-export function splitItems(value: string): string[] {
-  const seen = new Set<string>();
-  return value.split(/[,\n]/).map((s) => s.trim()).filter((s) => {
-    if (!s || seen.has(s.toLocaleLowerCase())) return false;
-    seen.add(s.toLocaleLowerCase());
-    return true;
-  });
-}
-export const lines = (value: string) => value.split("\n").map((s) => s.replace(/^[-•]\s*/, "").trim()).filter(Boolean);
-export const validMonth = (value: string) => /^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(value);
-export function monthLabel(value: string) {
-  if (!validMonth(value)) return "Date not set";
-  const [year, month] = value.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" }).format(new Date(year, month - 1, 1));
-}
-export const periodLabel = (e: MediaExperience) => `${monthLabel(e.startDate)} — ${e.current ? "Present" : monthLabel(e.endDate)}`;
+/* ------------------------------------------------------------------
+ * Completeness checklist
+ * ------------------------------------------------------------------ */
 
-export function safeWebsite(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  try {
-    const url = new URL(/^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`);
-    return ["http:", "https:"].includes(url.protocol) && url.hostname.includes(".") && !url.username && !url.password ? url.href : "";
-  } catch { return ""; }
+export interface ProjectIssue {
+  id: string;
+  message: string;
+  /** Blocking issues gate Download/Share; advisory issues are gentle nudges. */
+  blocking: boolean;
 }
-export interface ProjectIssue { step: number; field: string; message: string }
-export function projectIssues(project: MediaProject): ProjectIssue[] {
-  const result: ProjectIssue[] = [];
-  const issue = (step: number, field: string, message: string) => result.push({ step, field, message });
+
+export function projectIssues(project: GradProject): ProjectIssue[] {
+  const issues: ProjectIssue[] = [];
   const p = project.profile;
-  if (photoDataBytes(project) > MAX_PHOTO_DATA_BYTES) issue(2, "cover-photo", "Remove some photos to keep optimized image data under 24 MB.");
-  if (!p.name.trim()) issue(0, "profile-name", "Add your name.");
-  if (!p.headline.trim()) issue(0, "profile-headline", "Add your professional headline.");
-  if (!z.string().email().safeParse(p.email.trim()).success) issue(0, "profile-email", "Enter a valid contact email.");
-  for (const field of ["website", "linkedin"] as const) {
-    if (p[field].trim() && !safeWebsite(p[field])) issue(0, `profile-${field}`, `Use a valid http or https ${field} address.`);
-  }
-  if (!project.experiences.length) issue(1, "add-experience", "Add at least one experience.");
-  project.experiences.forEach((e, i) => {
-    const prefix = `Chapter ${i + 1}: `;
-    if (!e.role.trim()) issue(1, `${e.id}-role`, prefix + "add a role.");
-    if (!e.organization.trim()) issue(1, `${e.id}-organization`, prefix + "add an organization or project.");
-    if (!validMonth(e.startDate)) issue(1, `${e.id}-startDate`, prefix + "choose a start month.");
-    if (!e.current && !validMonth(e.endDate)) issue(1, `${e.id}-endDate`, prefix + "choose an end month or mark as current.");
-    if (!e.current && validMonth(e.startDate) && validMonth(e.endDate) && e.endDate < e.startDate) issue(1, `${e.id}-endDate`, prefix + "end date cannot precede the start date.");
-    if (!e.duties.trim()) issue(1, `${e.id}-duties`, prefix + "describe your duties.");
-    if (!e.photos.length) issue(2, `photos-${e.id}`, prefix + "upload at least one photo.");
-    e.photos.forEach((photo) => {
-      if (!photo.alt.trim()) issue(2, `alt-${photo.id}`, prefix + "describe the photo for screen readers.");
-    });
-  });
-  if (p.cover && !p.cover.alt.trim()) issue(2, `alt-${p.cover.id}`, "Describe your cover photo for screen readers.");
-  project.values.forEach((v) => {
-    if (!v.title.trim() || !v.text.trim()) issue(0, `value-${v.id}`, "Complete or remove the unfinished value.");
-  });
-  return result;
+  const e = project.education;
+  const add = (id: string, message: string, blocking: boolean) => issues.push({ id, message, blocking });
+
+  // Blocking — the CV is not shareable without these.
+  if (!p.name.trim()) add("profile-name", "Vui lòng nhập họ và tên.", true);
+  if (!e.school.trim()) add("education-school", "Vui lòng nhập tên trường.", true);
+  if (!e.major.trim()) add("education-major", "Vui lòng nhập chuyên ngành.", true);
+
+  // Advisory — recommended but not required.
+  if (!p.objective.trim()) add("profile-objective", "Nên thêm mục tiêu nghề nghiệp.", false);
+  if (!e.gpa.trim()) add("education-gpa", "Nên thêm GPA của bạn.", false);
+  if (!p.email.trim()) add("profile-email", "Nên thêm email liên hệ.", false);
+  if (!p.phone.trim()) add("profile-phone", "Nên thêm số điện thoại liên hệ.", false);
+
+  return issues;
 }
 
-/** Generates structure only; never invents responsibilities, outcomes, or skill scores. */
-export function toMediaCV(project: MediaProject): CVData {
-  const p = project.profile;
-  const skills = splitItems([p.skills, ...project.experiences.map((e) => e.skills)].join(","));
-  const gallery = project.experiences.flatMap((e) => e.photos);
-  return {
-    name: p.name.trim(), role: p.headline.trim(), tagline: p.tagline.trim(),
-    location: p.location.trim(), availability: p.availability.trim(), focus: skills.slice(0, 3).join(" · "),
-    stats: [
-      { label: "Experiences", value: String(project.experiences.length) },
-      { label: "Skills", value: String(skills.length) },
-      { label: "Story frames", value: String(gallery.length + (p.cover ? 1 : 0)) },
-    ],
-    heroPhoto: p.cover ?? gallery[0] ?? { src: "", alt: "" },
-    manifesto: p.about.trim(),
-    experience: project.experiences.map((e, i) => ({
-      id: e.id, chapter: `Chapter ${String(i + 1).padStart(2, "0")}`, role: e.role.trim(), org: e.organization.trim(),
-      period: periodLabel(e), location: e.location.trim(), summary: e.summary.trim() || lines(e.duties)[0] || "",
-      duties: e.duties.trim(), learning: e.learning.trim(), highlights: lines(e.highlights), skills: splitItems(e.skills), photos: e.photos,
-    })),
-    skillGroups: skills.length ? [{ title: "Skills from my experience", items: skills.map((name) => ({ name })) }] : [],
-    values: project.values.map(({ title, text }) => ({ title: title.trim(), text: text.trim() })),
-    gallery,
-    contact: { email: p.email.trim(), resumeHref: "", links: [
-      { label: "Website", href: safeWebsite(p.website) }, { label: "LinkedIn", href: safeWebsite(p.linkedin) },
-    ].filter((link) => link.href) },
-  };
-}
-
-/** Import is explicit: the original profile and its storage are left untouched. */
-export function fromProfile(profile: ProfileData): MediaProject {
-  const project = emptyProject();
-  project.profile = { ...project.profile, name: profile.personalInfo.fullName, email: profile.personalInfo.email,
-    location: profile.personalInfo.location, about: profile.professionalSummary,
-    website: profile.personalInfo.website ?? "", linkedin: profile.personalInfo.linkedin ?? "",
-    skills: profile.skills.flatMap((g) => g.skills).join(", "), headline: profile.workExperience[0]?.title ?? "" };
-  project.experiences = profile.workExperience.slice(0, MAX_EXPERIENCES).map((e) => ({
-    ...emptyExperience(), role: e.title, organization: e.organization, location: e.location ?? "",
-    startDate: e.startDate, endDate: e.endDate ?? "", current: !!e.isCurrent, duties: e.description ?? "",
-  }));
-  if (!project.experiences.length) project.experiences = [emptyExperience()];
-  return project;
-}
+/** Only the blocking issues — used to gate Download HTML / share actions. */
+export const blockingIssues = (project: GradProject): ProjectIssue[] =>
+  projectIssues(project).filter((issue) => issue.blocking);

@@ -1,84 +1,94 @@
 /* ------------------------------------------------------------------
- * DEMO PROJECT — turns the sample persona in cvData.ts ("Alex Rivera")
- * into a full MediaProject so first-time visitors can see the live CV
- * fully populated: every chapter, photos, values, and a clean checklist.
+ * DEMO PROJECT — turns the Vietnamese sample persona in cvData.ts into a
+ * full GradProject so first-time visitors see the live CV populated.
  * Photos are picsum placeholder URLs (see photoSchema's https allowance).
  * ------------------------------------------------------------------ */
-import { cv } from "./cvData";
-import {
-  emptyExperience, emptyProject, newId, type MediaExperience, type MediaPhoto, type MediaProject,
-} from "./mediaProject";
+import { gradCvData } from "./cvData";
+import { defaultSettings, newId, type GradProject, type MediaPhoto } from "./mediaProject";
 
-const toPhoto = (src: string, alt: string, caption = "", width = 1600, height = 1000): MediaPhoto => ({
-  id: newId(), name: "", src, alt, caption, position: "center", width, height,
+const toPhoto = (src: string, alt: string, width: number, height: number, caption = ""): MediaPhoto => ({
+  id: newId(),
+  name: "",
+  src,
+  alt,
+  caption,
+  position: "center",
+  width,
+  height,
 });
 
-/** "2016 — 2017" -> { startDate: "2016-01", endDate: "2017-12", current: false } */
-function parsePeriod(period: string) {
-  const years = period.match(/\d{4}/g) ?? [];
-  const current = /present|now/i.test(period) || years.length < 2;
+export function demoProject(): GradProject {
   return {
-    startDate: years[0] ? `${years[0]}-01` : "",
-    endDate: !current && years[1] ? `${years[1]}-12` : "",
-    current,
+    version: 2,
+    profile: {
+      name: gradCvData.profile.name,
+      objective: gradCvData.profile.objective,
+      email: gradCvData.profile.email,
+      phone: gradCvData.profile.phone,
+      dob: gradCvData.profile.dob,
+      address: gradCvData.profile.address,
+      photo: gradCvData.profile.photoUrl
+        ? toPhoto(gradCvData.profile.photoUrl, "Ảnh chân dung", 400, 400)
+        : null,
+    },
+    education: {
+      school: gradCvData.education.school,
+      major: gradCvData.education.major,
+      gpa: gradCvData.education.gpa,
+      startDate: gradCvData.education.startDate,
+      endDate: gradCvData.education.endDate,
+      honors: gradCvData.education.honors,
+      certificates: gradCvData.education.certificates.map((c) => ({ id: newId(), ...c })),
+      photo: gradCvData.education.photoUrl
+        ? toPhoto(gradCvData.education.photoUrl, "Khuôn viên trường", 800, 500)
+        : null,
+    },
+    activities: gradCvData.activities.map((a) => ({
+      id: newId(),
+      title: a.title,
+      organization: a.organization,
+      location: a.location,
+      startDate: a.startDate,
+      endDate: a.endDate,
+      current: false,
+      description: a.description,
+      highlights: a.highlights,
+      photos: a.photoUrl ? [toPhoto(a.photoUrl, a.title, 600, 400)] : [],
+    })),
+    internships: gradCvData.internships.map((i) => ({
+      id: newId(),
+      title: i.title,
+      organization: i.organization,
+      location: i.location,
+      startDate: i.startDate,
+      endDate: i.endDate,
+      current: false,
+      description: i.description,
+      highlights: i.highlights,
+      photos: i.photoUrl ? [toPhoto(i.photoUrl, i.title, 600, 400)] : [],
+    })),
+    partTimeJobs: gradCvData.partTimeJobs.map((j) => ({
+      id: newId(),
+      title: j.title,
+      organization: j.organization,
+      location: j.location,
+      startDate: j.startDate,
+      endDate: j.endDate,
+      current: j.current ?? false,
+      description: j.description,
+      highlights: j.highlights,
+      photos: j.photoUrl ? [toPhoto(j.photoUrl, j.title, 600, 400)] : [],
+    })),
+    skills: gradCvData.skills.join(", "),
+    hobbies: gradCvData.hobbies.join(", "),
+    settings: { ...defaultSettings },
   };
-}
-
-export function demoProject(): MediaProject {
-  const project = emptyProject();
-  project.profile = {
-    ...project.profile,
-    name: cv.name,
-    headline: cv.role,
-    email: cv.contact.email,
-    location: cv.location,
-    availability: cv.availability,
-    tagline: cv.tagline,
-    about: cv.manifesto,
-    skills: cv.skillGroups.flatMap((group) => group.items.map((item) => item.name)).join(", "),
-    website: cv.contact.links.find((link) => link.label === "Portfolio")?.href ?? "",
-    linkedin: cv.contact.links.find((link) => link.label === "LinkedIn")?.href ?? "",
-    cover: toPhoto(cv.heroPhoto.src, cv.heroPhoto.alt, "", 1800, 1200),
-  };
-  project.experiences = cv.experience.map((stage): MediaExperience => ({
-    ...emptyExperience(),
-    role: stage.role,
-    organization: stage.org,
-    location: stage.location,
-    ...parsePeriod(stage.period),
-    summary: stage.summary,
-    duties: [stage.summary, ...stage.highlights.map((h) => `- ${h}`)].join("\n"),
-    highlights: stage.highlights.join("\n"),
-    skills: stage.skills.join(", "),
-    learning: stage.learning ?? "",
-    photos: stage.photos.map((photo) => toPhoto(photo.src, photo.alt, photo.caption ?? "")),
-  }));
-  project.values = cv.values.map(({ title, text }) => ({ id: newId(), title, text }));
-  return project;
 }
 
 /**
- * Per-field demo originals, derived from the SAME builder that seeds the draft so
- * the strings match exactly. The live editor uses these to recognise untouched
+ * Mirror of the seeded demo, used by the live editor to recognise untouched
  * example content and offer tap-to-wipe / revert / clear behaviour.
  */
-export interface DemoSamples {
-  profile: Partial<Record<"name" | "headline" | "tagline" | "location" | "availability" | "about" | "skills" | "email" | "website" | "linkedin", string>>;
-  experiences: Array<Partial<Record<"role" | "organization" | "location" | "summary" | "duties" | "highlights" | "skills" | "learning", string>>>;
-  values: Array<{ title: string; text: string }>;
-}
-
-export function demoSamples(): DemoSamples {
-  const p = demoProject();
-  return {
-    profile: {
-      name: p.profile.name, headline: p.profile.headline, tagline: p.profile.tagline, location: p.profile.location,
-      availability: p.profile.availability, about: p.profile.about, skills: p.profile.skills, email: p.profile.email, website: p.profile.website, linkedin: p.profile.linkedin,
-    },
-    experiences: p.experiences.map((e) => ({
-      role: e.role, organization: e.organization, location: e.location, summary: e.summary,
-      duties: e.duties, highlights: e.highlights, skills: e.skills, learning: e.learning,
-    })),
-    values: p.values.map((v) => ({ title: v.title, text: v.text })),
-  };
+export function demoSamples(): GradProject {
+  return demoProject();
 }

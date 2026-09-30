@@ -1,264 +1,124 @@
 /* ------------------------------------------------------------------
- * CV CONTENT — the single source of truth for the whole site.
- * Everything below is SAMPLE / PLACEHOLDER content. Replace the text
- * and the photo `src` values with your own.
- *
- * Swapping a photo is a one-line change:
- *   1) Remote URL  -> src: "https://your-cdn.com/photo.jpg"
- *   2) Local file  -> import shot from "@/assets/shot.jpg";  src: shot
- *
- * Placeholder photos use picsum.photos (always loads, seed-stable).
+ * GRAD CV CONTENT — the sample persona for the Vietnamese fresh-graduate
+ * CV. Everything below is SAMPLE / PLACEHOLDER content used to seed the
+ * live editor demo. Photos use picsum.photos (always loads, seed-stable);
+ * swap a photo with a one-line change to its `photoUrl`.
  * ------------------------------------------------------------------ */
 
-/** Build a deterministic placeholder image URL. */
-const ph = (seed: string, w = 1600, h = 1000) =>
-  `https://picsum.photos/seed/${seed}/${w}/${h}`;
-
-export interface Photo {
-  src: string;
-  alt: string;
-  caption?: string;
-  id?: string;
-  position?: "center" | "top" | "bottom";
-  width?: number;
-  height?: number;
-}
-
-export interface Stage {
-  id: string;
-  chapter: string;
-  role: string;
-  org: string;
-  period: string;
-  location: string;
-  summary: string;
-  duties?: string;
-  learning?: string;
-  highlights: string[];
-  skills: string[];
-  photos: Photo[];
-  /** Optional per-stage accent (any CSS color). Falls back to the theme gold. */
-  accent?: string;
-}
-
-export interface SkillGroup {
-  title: string;
-  items: { name: string; level?: number }[]; // level: 0–100
-}
-
-export interface CVData {
-  name: string;
-  role: string;
-  tagline: string;
-  location: string;
-  availability: string;
-  focus: string;
-  stats: { label: string; value: string }[];
-  heroPhoto: Photo;
-  manifesto: string;
-  experience: Stage[];
-  skillGroups: SkillGroup[];
-  values: { title: string; text: string }[];
-  gallery: Photo[];
-  contact: {
-    email: string;
-    resumeHref: string;
-    links: { label: string; href: string }[];
-  };
-}
-
-export const cv: CVData = {
-  name: "Alex Rivera",
-  role: "Product Designer & Creative Technologist",
-  tagline:
-    "I turn messy human problems into calm, considered products — and I document the journey frame by frame.",
-  location: "Lisbon, Portugal",
-  availability: "Open to senior & lead roles",
-  focus: "Design systems · Motion · Front-end",
-  stats: [
-    { label: "Years crafting", value: "8+" },
-    { label: "Products shipped", value: "40+" },
-    { label: "Teams led", value: "6" },
-    { label: "Awards", value: "4" },
-  ],
-  heroPhoto: {
-    src: ph("alex-hero-portrait", 1800, 1200),
-    alt: "Alex Rivera at work in a sunlit studio",
+export const gradCvData = {
+  profile: {
+    name: "Nguyễn Thị Minh Anh",
+    objective:
+      "Sinh viên mới tốt nghiệp ngành Kỹ thuật Phần mềm, đam mê phát triển giao diện người dùng và mong muốn đóng góp cho sản phẩm công nghệ có ý nghĩa.",
+    email: "minhanh.nguyen@email.com",
+    phone: "0912 345 678",
+    dob: "15/03/2002",
+    address: "Quận Hai Bà Trưng, Hà Nội",
+    photoUrl: "https://picsum.photos/seed/portrait-vn/400/400",
   },
-  manifesto:
-    "I believe the best work happens at the seam between design and engineering — where a sketch becomes something you can touch, and a product becomes something people trust. This is the story of how I got here: the studios, the late nights, the detours, and the craft that tied it all together.",
-  experience: [
-    {
-      id: "studio-nove",
-      chapter: "Chapter 01",
-      role: "Junior Designer",
-      org: "Studio Nove",
-      period: "2016 — 2017",
-      location: "Porto, PT",
-      summary:
-        "My first studio. I learned that craft is repetition with intention — typesetting, grid work, and shipping small things every single week.",
-      highlights: [
-        "Shipped 20+ brand & print projects end to end",
-        "Built the studio's first reusable layout kit",
-      ],
-      skills: ["Typography", "Layout", "Brand", "Print"],
-      accent: "#e0a458",
-      photos: [
-        { src: ph("stage1-desk"), alt: "Designer's desk with sketches and type specimens" },
-        { src: ph("stage1-print"), alt: "Freshly printed posters drying on a rack" },
-        { src: ph("stage1-studio"), alt: "Small studio team reviewing work on a wall" },
-      ],
-    },
-    {
-      id: "freelance",
-      chapter: "Chapter 02",
-      role: "Freelance Product Designer",
-      org: "Self-employed",
-      period: "2017 — 2019",
-      location: "Lisbon, PT",
-      summary:
-        "Going independent taught me the whole shape of a project: scoping, pitching, designing, and — for the first time — building what I designed.",
-      highlights: [
-        "Partnered with 15+ startups across fintech & culture",
-        "Learned front-end to ship my own prototypes",
-      ],
-      skills: ["Product Design", "Prototyping", "Client Strategy", "HTML/CSS"],
-      accent: "#d98b6a",
-      photos: [
-        { src: ph("stage2-laptop"), alt: "Laptop open to a design tool in a cafe" },
-        { src: ph("stage2-sketchbook"), alt: "Sketchbook full of wireframes and flows" },
-        { src: ph("stage2-workshop"), alt: "Running a workshop with sticky notes on glass" },
-      ],
-    },
-    {
-      id: "lumen-labs",
-      chapter: "Chapter 03",
-      role: "Product Designer",
-      org: "Lumen Labs",
-      period: "2019 — 2021",
-      location: "Lisbon, PT",
-      summary:
-        "Joined a product team at last. I owned a surface end to end, ran research, and discovered how much design is really about listening.",
-      highlights: [
-        "Led redesign that lifted activation by 34%",
-        "Introduced the team's first usability testing cadence",
-      ],
-      skills: ["UX Research", "Interaction Design", "Analytics", "Collaboration"],
-      accent: "#8fb6a8",
-      photos: [
-        { src: ph("stage3-team"), alt: "Product team gathered around a screen" },
-        { src: ph("stage3-whiteboard"), alt: "Whiteboard covered in journey maps" },
-        { src: ph("stage3-testing"), alt: "Usability testing session in progress" },
-      ],
-    },
-    {
-      id: "atlas-health",
-      chapter: "Chapter 04",
-      role: "Senior Product Designer",
-      org: "Atlas Health",
-      period: "2021 — 2023",
-      location: "Remote",
-      summary:
-        "Scaled a design system across four squads and mentored juniors. Accessibility stopped being a checklist and became a point of pride.",
-      highlights: [
-        "Built a design system used by 40+ engineers",
-        "Reached WCAG AA across core patient flows",
-      ],
-      skills: ["Design Systems", "Accessibility", "Mentorship", "Art Direction"],
-      accent: "#a9b7d6",
-      photos: [
-        { src: ph("stage4-system"), alt: "Design system components laid out on a grid" },
-        { src: ph("stage4-remote"), alt: "Remote setup with video call on screen" },
-        { src: ph("stage4-review"), alt: "Design review with annotated screens" },
-      ],
-    },
-    {
-      id: "northstar",
-      chapter: "Chapter 05",
-      role: "Design Lead & Creative Technologist",
-      org: "Northstar",
-      period: "2023 — Present",
-      location: "Lisbon, PT",
-      summary:
-        "Today I lead a small team at the edge of design and code — prototyping in the browser, shipping motion that means something, and telling the story.",
-      highlights: [
-        "Lead a cross-functional team of 7",
-        "Shipped an award-winning product site & motion language",
-      ],
-      skills: ["Leadership", "Motion Design", "Front-end (React)", "Storytelling"],
-      accent: "#e8c46a",
-      photos: [
-        { src: ph("stage5-motion"), alt: "Motion design frames on a timeline" },
-        { src: ph("stage5-code"), alt: "Code editor beside a design canvas" },
-        { src: ph("stage5-stage"), alt: "Presenting work on a large stage screen" },
-      ],
-    },
-  ],
-  skillGroups: [
-    {
-      title: "Design & Craft",
-      items: [
-        { name: "Product Design", level: 94 },
-        { name: "Design Systems", level: 90 },
-        { name: "Typography", level: 84 },
-        { name: "Prototyping", level: 88 },
-      ],
-    },
-    {
-      title: "Technical",
-      items: [
-        { name: "Front-end (React / TS)", level: 80 },
-        { name: "Motion & Interaction", level: 86 },
-        { name: "Accessibility", level: 83 },
-        { name: "Design APIs / Tokens", level: 76 },
-      ],
-    },
-    {
-      title: "Leadership",
-      items: [
-        { name: "Art Direction", level: 87 },
-        { name: "Mentorship", level: 82 },
-        { name: "Stakeholder Comms", level: 89 },
-        { name: "Research", level: 75 },
-      ],
-    },
-  ],
-  values: [
-    {
-      title: "Curiosity first",
-      text: "Every project starts with questions, not answers. I'd rather understand the problem too well than solve the wrong one quickly.",
-    },
-    {
-      title: "Craft with intent",
-      text: "Details are decisions. Spacing, easing, a well-set headline — they add up to whether something feels trustworthy.",
-    },
-    {
-      title: "People over pixels",
-      text: "Design is a service to the person on the other side of the screen. Accessibility and clarity are never optional extras.",
-    },
-    {
-      title: "Ship and learn",
-      text: "A launched imperfect thing teaches more than a perfect thing in a draft. I build, measure, and iterate in the open.",
-    },
-  ],
-  gallery: [
-    { src: ph("gallery-1", 900, 1200), alt: "Studio still life with design tools" },
-    { src: ph("gallery-2", 900, 700), alt: "City skyline at dusk" },
-    { src: ph("gallery-3", 900, 1000), alt: "Close-up of a sketchbook page" },
-    { src: ph("gallery-4", 900, 800), alt: "Team laughing during an offsite" },
-    { src: ph("gallery-5", 900, 1100), alt: "Hands typing on a keyboard" },
-    { src: ph("gallery-6", 900, 900), alt: "Abstract light and shadow study" },
-  ],
-  contact: {
-    email: "hello@alexrivera.design",
-    resumeHref: "/cv.pdf",
-    links: [
-      { label: "LinkedIn", href: "https://www.linkedin.com/" },
-      { label: "Portfolio", href: "https://dribbble.com/" },
-      { label: "GitHub", href: "https://github.com/" },
+  education: {
+    school: "Đại học Bách Khoa Hà Nội",
+    major: "Kỹ thuật Phần mềm",
+    gpa: "3.65/4.0",
+    startDate: "2020-09",
+    endDate: "2024-06",
+    honors: "Bằng Giỏi — Học bổng khuyến khích học tập 4 kỳ liên tiếp",
+    photoUrl: "https://picsum.photos/seed/campus-hust/800/500",
+    certificates: [
+      { name: "IELTS Academic", score: "7.5", date: "2023-03", issuer: "British Council" },
+      { name: "AWS Certified Cloud Practitioner", score: "Pass", date: "2024-01", issuer: "Amazon Web Services" },
+      { name: "Tin học văn phòng MOS", score: "950/1000", date: "2022-08", issuer: "Microsoft" },
     ],
   },
+  activities: [
+    {
+      title: "Tình nguyện viên — Mùa hè Xanh",
+      organization: "Đoàn Thanh niên ĐH Bách Khoa",
+      location: "Hòa Bình",
+      startDate: "2022-06",
+      endDate: "2022-08",
+      description:
+        "Tham gia dạy tin học cơ bản cho học sinh tiểu học vùng cao và xây dựng website giới thiệu nông sản địa phương.",
+      highlights:
+        "Dạy tin học cho 60+ học sinh\nXây dựng website giới thiệu nông sản\nPhối hợp nhóm 15 tình nguyện viên",
+      photoUrl: "https://picsum.photos/seed/volunteer-vn/600/400",
+    },
+    {
+      title: "Trợ lý Nghiên cứu — Phòng AI Lab",
+      organization: "Đại học Bách Khoa Hà Nội",
+      location: "Hà Nội",
+      startDate: "2023-02",
+      endDate: "2023-12",
+      description:
+        "Hỗ trợ nghiên cứu xử lý ngôn ngữ tự nhiên tiếng Việt, thu thập và gán nhãn dữ liệu, viết báo cáo khoa học.",
+      highlights:
+        "Đồng tác giả 1 bài báo ICTA 2023\nGán nhãn 5000+ mẫu văn bản tiếng Việt\nXây dựng pipeline tiền xử lý dữ liệu",
+      photoUrl: "https://picsum.photos/seed/research-lab/600/400",
+    },
+    {
+      title: "Giải Nhì — Cuộc thi Lập trình HUST Contest",
+      organization: "Đại học Bách Khoa Hà Nội",
+      location: "Hà Nội",
+      startDate: "2023-04",
+      endDate: "2023-04",
+      description: "Tham gia đội 3 người giải thuật toán competitive programming, xếp hạng 2/120 đội.",
+      highlights: "Giải Nhì bảng cá nhân\nTop 5% thuật toán dynamic programming",
+      photoUrl: "",
+    },
+  ],
+  internships: [
+    {
+      title: "Thực tập sinh Frontend Developer",
+      organization: "FPT Software",
+      location: "Hà Nội",
+      startDate: "2023-06",
+      endDate: "2023-09",
+      description:
+        "Phát triển giao diện dashboard quản lý dự án bằng React và TypeScript cho khách hàng Nhật Bản.",
+      highlights:
+        "Xây dựng 12 components tái sử dụng\nTối ưu bundle size giảm 35%\nTham gia code review và daily standup\nViết unit test đạt coverage 85%",
+      photoUrl: "https://picsum.photos/seed/fpt-office/600/400",
+    },
+  ],
+  partTimeJobs: [
+    {
+      title: "Gia sư Toán & Tin học",
+      organization: "Tự do",
+      location: "Hà Nội",
+      startDate: "2021-09",
+      endDate: "2023-05",
+      current: false,
+      description: "Dạy kèm Toán và Tin học cho học sinh cấp 2-3, chuẩn bị thi chuyển cấp và Olympic Tin.",
+      highlights: "Hướng dẫn 8 học sinh\n2 học sinh đạt giải Olympic Tin cấp thành phố",
+      photoUrl: "",
+    },
+    {
+      title: "Barista bán thời gian",
+      organization: "The Coffee House",
+      location: "Hà Nội",
+      startDate: "2022-01",
+      endDate: "2022-12",
+      current: false,
+      description: "Pha chế đồ uống, quản lý ca sáng, hỗ trợ đào tạo nhân viên mới.",
+      highlights: "Phục vụ 100+ khách/ngày\nĐược bình chọn Barista xuất sắc tháng 6/2022",
+      photoUrl: "https://picsum.photos/seed/barista-coffee/600/400",
+    },
+  ],
+  skills: [
+    "React",
+    "TypeScript",
+    "JavaScript",
+    "HTML/CSS",
+    "Node.js",
+    "Git",
+    "Figma",
+    "Tiếng Anh (IELTS 7.5)",
+    "Làm việc nhóm",
+    "Giải quyết vấn đề",
+    "Tư duy logic",
+    "Quản lý thời gian",
+  ],
+  hobbies: ["Đọc sách công nghệ", "Chạy bộ", "Nhiếp ảnh", "Nấu ăn", "Du lịch"],
 };
 
-/** Convenience: the most recent stage, used for the hero's "now" framing. */
-export const currentStage: Stage = cv.experience[cv.experience.length - 1];
+export type GradCvData = typeof gradCvData;

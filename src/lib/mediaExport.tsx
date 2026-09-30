@@ -1,28 +1,32 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { MediaCVDocument } from "@/components/cv/MediaCVDocument";
+import { GradCVDocument } from "@/components/cv/MediaCVDocument";
 import documentCss from "@/components/cv/media-document.css?inline";
 import motionSource from "@/components/cv/mediaMotion.js?raw";
-import { parseProject, projectIssues, type MediaProject } from "./mediaProject";
+import { blockingIssues, parseProject, type GradProject } from "./mediaProject";
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
 })[character]!);
 
 /** No server, external images, fonts, CDN scripts, tracking, or editor data. */
-export function createMediaHTML(input: MediaProject): string {
+export function createMediaHTML(input: GradProject): string {
   const project = parseProject(input);
-  if (projectIssues(project).length) throw new Error("Complete the required fields and generate your CV before exporting.");
-  const title = `${project.profile.name.trim()} — ${project.profile.headline.trim()}`;
-  const description = project.profile.tagline.trim() || project.profile.headline.trim();
-  const markup = renderToStaticMarkup(<MediaCVDocument project={project} />);
+  if (blockingIssues(project).length) throw new Error("Vui lòng hoàn thiện các mục bắt buộc trước khi tải CV.");
+  const title = `${project.profile.name.trim()} — CV`;
+  const description = project.profile.objective.trim() || project.education.major.trim() || project.profile.name.trim();
+  const markup = renderToStaticMarkup(<GradCVDocument project={project} />);
   // Import the controller as source so the download needs neither a bundler nor React.
-  const script = motionSource.replace("export default function attachMediaMotion", "function attachMediaMotion");
+  // mediaMotion.js exposes both a named `export function` and an `export default`,
+  // so strip both to produce a plain inline script.
+  const script = motionSource
+    .replace("export function attachMediaMotion", "function attachMediaMotion")
+    .replace("export default attachMediaMotion;", "");
   return `<!doctype html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: https:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="description" content="${escapeHtml(description)}">
 <title>${escapeHtml(title)}</title>

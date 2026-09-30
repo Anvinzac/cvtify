@@ -136,7 +136,7 @@ export function InlineText({ value, onChange, as = "span", className = "", id, m
     <div className="cv-demo-field" data-demoed={demoed && !disabled ? "true" : undefined}>
       {editable}
       {showClear && (
-        <button type="button" className="cv-field-clear" aria-label="Clear this field"
+        <button type="button" className="cv-field-clear" aria-label="Xóa nội dung"
           onPointerDown={(event) => event.preventDefault()} onClick={clearField}><X size={13} /></button>
       )}
     </div>
@@ -162,7 +162,7 @@ interface InlineListProps {
 }
 
 /** An editable list (one result per line, or comma-separated skill chips). */
-export function InlineList({ value, onChange, separator, variant, id, className = "", itemPlaceholder, addLabel = "Add", maxLength = 2000, ariaLabel, disabled, sample, suggestions, pickerTitle }: InlineListProps) {
+export function InlineList({ value, onChange, separator, variant, id, className = "", itemPlaceholder, addLabel = "Thêm", maxLength = 2000, ariaLabel, disabled, sample, suggestions, pickerTitle }: InlineListProps) {
   const delimiter = separator === "\n" ? "\n" : ",";
   const split = (raw: string) => raw.split(delimiter).map((s) => s.trim()).filter(Boolean);
   const [items, setItems] = useState<string[]>(() => split(value));
@@ -177,7 +177,7 @@ export function InlineList({ value, onChange, separator, variant, id, className 
   const demoed = !!sample && sample.length > 0 && value === sample;
 
   function emit(next: string[]) {
-    const joined = next.join(separator).slice(0, maxLength);
+    const joined = next.filter(Boolean).join(separator).slice(0, maxLength);
     lastEmitted.current = joined;
     setItems(next);
     onChange(joined);
@@ -185,71 +185,68 @@ export function InlineList({ value, onChange, separator, variant, id, className 
   function patch(index: number, text: string) {
     const next = [...items];
     next[index] = text;
+    // Auto-append: if the last item is now non-empty, add a new empty row
+    if (index === next.length - 1 && text.trim() && !disabled) {
+      next.push("");
+    }
     emit(next);
-  }
-  function add(after?: number) {
-    const next = [...items];
-    const at = after === undefined ? next.length : after + 1;
-    next.splice(at, 0, "");
-    setItems(next);
-    focusElement(`${id}-item-${at}`);
   }
   function remove(index: number) {
     const next = items.filter((_, i) => i !== index);
-    emit(next);
-    focusElement(`${id}-add`);
+    // Ensure at least one empty row remains
+    if (next.length === 0 || (next.length === 1 && !next[0].trim())) next.length = 0;
+    emit(next.length ? next : [""]);
+    focusElement(`${id}-item-0`);
   }
   function clearDemo() {
-    emit([]);
-    focusElement(`${id}-add`);
+    emit([""]);
+    focusElement(`${id}-item-0`);
   }
   function openPicker() {
     setPickerOpen(true);
   }
   function handlePickerConfirm(selected: string[]) {
-    emit(selected);
+    // Always keep one empty row at the end for typing
+    emit([...selected, ""]);
     setPickerOpen(false);
   }
 
-  const rows = items.length ? items : [""];
+  // Always show one empty row at the bottom for direct typing (when not disabled)
+  const displayItems = disabled ? items : [...items, ...items[items.length - 1]?.trim() ? [""] : []];
+  const rows = displayItems.length ? displayItems : [""];
   const showPenButton = !disabled && suggestions && suggestions.length > 0 && variant === "chips";
 
   return (
     <div className={`cv-list cv-list-${variant} ${className}`.trim()} id={id} role="group" aria-label={ariaLabel}>
       {showPenButton && (
-        <button type="button" className="cv-chips-edit" aria-label="Edit skills" onClick={openPicker}>
+        <button type="button" className="cv-chips-edit" aria-label="Chỉnh sửa kỹ năng" onClick={openPicker}>
           <Pencil size={14} />
         </button>
       )}
       {rows.map((item, i) => (
         <span
-          className="cv-list-item"
+          className={`cv-list-item ${!item.trim() && i === rows.length - 1 && !disabled ? "cv-list-item-empty" : ""}`}
           key={i}
-          onClick={variant === "chips" && !disabled && suggestions ? openPicker : undefined}
-          style={variant === "chips" && !disabled && suggestions ? { cursor: "pointer" } : undefined}
+          onClick={variant === "chips" && !disabled && suggestions && item.trim() ? openPicker : undefined}
+          style={variant === "chips" && !disabled && suggestions && item.trim() ? { cursor: "pointer" } : undefined}
         >
           {variant === "chips" && <span className="cv-chip-bullet" aria-hidden="true" />}
           <InlineText id={`${id}-item-${i}`} value={item} onChange={(text) => patch(i, text)} className="cv-list-text"
             placeholder={item && item.length ? undefined : itemPlaceholder} maxLength={200} disabled={disabled}
-            ariaLabel={`${ariaLabel ?? "Item"} ${i + 1}`} onEnter={() => add(i)} />
-          {!disabled && items.length > 0 && variant !== "chips" && <button type="button" className="cv-list-remove" aria-label={`Remove ${item || "item"}`} onClick={() => remove(i)}><X size={12} /></button>}
+            ariaLabel={`${ariaLabel ?? "Item"} ${i + 1}`} onEnter={() => focusElement(`${id}-item-${i + 1}`)} />
+          {!disabled && item.trim() && variant !== "chips" && <button type="button" className="cv-list-remove" aria-label={`Remove ${item || "item"}`} onClick={() => remove(i)}><X size={12} /></button>}
         </span>
       ))}
       {demoed && !disabled && (
-        <button type="button" className="cv-demo-clear-inline" aria-label="Clear these examples and add your own" onClick={clearDemo}><X size={12} /> Clear examples</button>
-      )}
-      {!disabled && (items.length > 0 || variant === "bullets") && (
-        <button type="button" id={`${id}-add`} className="cv-list-add" onClick={() => add()}>
-          {variant === "chips" ? <span aria-hidden="true">＋</span> : <Check size={12} aria-hidden="true" />}{addLabel}
-        </button>
+        <button type="button" className="cv-demo-clear-inline" aria-label="Xóa ví dụ và thêm nội dung của bạn" onClick={clearDemo}><X size={12} /> Xóa ví dụ</button>
       )}
       {pickerOpen && suggestions && (
         <ChipPicker
           suggestions={suggestions}
-          selected={items}
+          selected={items.filter(Boolean)}
           onConfirm={handlePickerConfirm}
           onClose={() => setPickerOpen(false)}
-          title={pickerTitle ?? "Select skills"}
+          title={pickerTitle ?? "Chọn kỹ năng"}
         />
       )}
     </div>
@@ -279,19 +276,19 @@ export function InlinePeriod({ id, start, end, current, onChange, disabled }: In
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  const label = `${monthLabel(start)} — ${current ? "Present" : monthLabel(end)}`;
+  const label = `${monthLabel(start)} — ${current ? "Nay" : monthLabel(end)}`;
   return (
     <span className="cv-period" ref={wrap}>
       <button type="button" id={id} className="cv-editable cv-period-trigger media-date" disabled={disabled}
         aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{label}</button>
       {open && (
-        <span className="cv-popover" role="dialog" aria-label="Edit dates">
-          <label className="cv-pop-field"><span>Start month</span>
+        <span className="cv-popover" role="dialog" aria-label="Chỉnh sửa ngày">
+          <label className="cv-pop-field"><span>Tháng bắt đầu</span>
             <input type="month" value={start} min="1000-01" max="9999-12" autoFocus onChange={(e) => onChange({ start: e.target.value })} /></label>
-          <label className="cv-pop-field"><span>End month</span>
+          <label className="cv-pop-field"><span>Tháng kết thúc</span>
             <input type="month" value={end} disabled={current} min={start || "1000-01"} max="9999-12" onChange={(e) => onChange({ end: e.target.value })} /></label>
-          <label className="cv-check"><input type="checkbox" checked={current} onChange={(e) => onChange({ current: e.target.checked })} /> I currently work here</label>
-          <span className="cv-pop-actions"><button type="button" className="cv-pop-done" onClick={() => setOpen(false)}>Done</button></span>
+          <label className="cv-check"><input type="checkbox" checked={current} onChange={(e) => onChange({ current: e.target.checked })} /> Tôi đang làm việc tại đây</label>
+          <span className="cv-pop-actions"><button type="button" className="cv-pop-done" onClick={() => setOpen(false)}>Xong</button></span>
         </span>
       )}
     </span>
@@ -307,7 +304,7 @@ interface ChipPickerProps {
   title?: string;
 }
 
-export function ChipPicker({ suggestions, selected, onConfirm, onClose, title = "Select options" }: ChipPickerProps) {
+export function ChipPicker({ suggestions, selected, onConfirm, onClose, title = "Chọn" }: ChipPickerProps) {
   const [picks, setPicks] = useState<Set<string>>(() => new Set(selected));
 
   function toggle(item: string) {
@@ -327,7 +324,7 @@ export function ChipPicker({ suggestions, selected, onConfirm, onClose, title = 
       <div className="cv-chip-picker" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
         <div className="cv-chip-picker-header">
           <h3>{title}</h3>
-          <button type="button" className="cv-chip-picker-close" aria-label="Close" onClick={onClose}>
+          <button type="button" className="cv-chip-picker-close" aria-label="Đóng" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
@@ -346,10 +343,10 @@ export function ChipPicker({ suggestions, selected, onConfirm, onClose, title = 
         </div>
         <div className="cv-chip-picker-actions">
           <button type="button" className="cv-chip-picker-cancel" onClick={onClose}>
-            Cancel
+            Hủy
           </button>
           <button type="button" className="cv-chip-picker-confirm" onClick={confirm}>
-            Confirm
+            Xác nhận
           </button>
         </div>
       </div>
