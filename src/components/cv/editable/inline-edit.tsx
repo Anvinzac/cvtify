@@ -40,6 +40,10 @@ interface InlineTextProps {
   disabled?: boolean;
   /** Single-line only: called on Enter instead of blurring. */
   onEnter?: () => void;
+  /** The seeded demo text for this field. While the value still equals it, the
+   *  field is treated as untouched example content: tapping wipes it, blurring
+   *  with nothing typed restores it, and a clear (✕) affordance is offered. */
+  sample?: string;
 }
 
 /**
@@ -47,9 +51,10 @@ interface InlineTextProps {
  * React never renders its text child, so live re-renders cannot move the caret;
  * content is synced from `value` only while the field is not focused.
  */
-export function InlineText({ value, onChange, as = "span", className = "", id, multiline = false, placeholder, maxLength = 600, ariaLabel, disabled, onEnter }: InlineTextProps) {
+export function InlineText({ value, onChange, as = "span", className = "", id, multiline = false, placeholder, maxLength = 600, ariaLabel, disabled, onEnter, sample }: InlineTextProps) {
   const ref = useRef<HTMLElement | null>(null);
   const editing = useRef(false);
+  const restoreDemoOnBlur = useRef(false);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -57,6 +62,9 @@ export function InlineText({ value, onChange, as = "span", className = "", id, m
     const next = value ?? "";
     if (readText(el, multiline) !== next) el.textContent = next;
   }, [value, multiline]);
+
+  // Untouched example content only: the field still holds exactly the seeded text.
+  const demoed = !!sample && sample.length > 0 && value === sample;
 
   const emit = useCallback((text: string) => {
     const clamped = maxLength && text.length > maxLength ? text.slice(0, maxLength) : text;
@@ -68,13 +76,27 @@ export function InlineText({ value, onChange, as = "span", className = "", id, m
     if (!ref.current) return;
     emit(readText(ref.current, multiline));
   }
+  function handleFocus() {
+    editing.current = true;
+    restoreDemoOnBlur.current = demoed;
+    // Wipe the example text so the first keystroke is the user's own.
+    if (demoed && ref.current) { ref.current.textContent = ""; placeCaretEnd(ref.current); }
+  }
   function handleBlur() {
     editing.current = false;
     if (!ref.current) return;
-    let text = readText(ref.current, multiline);
-    if (!multiline) text = text.replace(/\s+/g, " ").trim();
-    ref.current.textContent = text;
-    if (text !== value) onChange(text.slice(0, maxLength));
+    const text = readText(ref.current, multiline);
+    // Tapped a demo field, entered nothing, moved on → restore the example text.
+    if (restoreDemoOnBlur.current && !text.trim()) {
+      ref.current.textContent = sample ?? "";
+      restoreDemoOnBlur.current = false;
+      return;
+    }
+    restoreDemoOnBlur.current = false;
+    let next = text;
+    if (!multiline) next = next.replace(/\s+/g, " ").trim();
+    ref.current.textContent = next;
+    if (next !== value) onChange(next.slice(0, maxLength));
   }
   function handlePaste(event: React.ClipboardEvent) {
     event.preventDefault();
@@ -89,15 +111,37 @@ export function InlineText({ value, onChange, as = "span", className = "", id, m
     if (onEnter) onEnter();
     else (event.target as HTMLElement).blur();
   }
+  function clearField() {
+    const el = ref.current;
+    if (!el) return;
+    restoreDemoOnBlur.current = demoed;
+    editing.current = true;
+    el.textContent = "";
+    el.focus();
+    placeCaretEnd(el);
+    onChange("");
+  }
 
-  return createElement(as, {
+  const editable = createElement(as, {
     ref, id, className: `cv-editable ${className}`.trim(), contentEditable: !disabled, suppressContentEditableWarning: true,
     role: "textbox", tabIndex: disabled ? -1 : 0, "aria-multiline": multiline ? "true" : "false", "aria-label": ariaLabel,
     "data-placeholder": placeholder, "data-empty": !value ? "true" : undefined, spellCheck: true, enterKeyHint: multiline ? "enter" : "done",
-    onInput: handleInput, onBlur: handleBlur, onFocus: () => { editing.current = true; }, onPaste: handlePaste, onKeyDown: handleKeyDown,
+    onInput: handleInput, onBlur: handleBlur, onFocus: handleFocus, onPaste: handlePaste, onKeyDown: handleKeyDown,
   } as Record<string, unknown>);
-}
 
+  // Show clear (✕) on any non-empty field, positioned at the right edge
+  const showClear = !disabled && value.length > 0;
+  if (!showClear && !sample) return editable;
+  return (
+    <div className="cv-demo-field" data-demoed={demoed && !disabled ? "true" : undefined}>
+      {editable}
+      {showClear && (
+        <button type="button" className="cv-field-clear" aria-label="Clear this field"
+          onPointerDown={(event) => event.preventDefault()} onClick={clearField}><X size={13} /></button>
+      )}
+    </div>
+  );
+}
 interface InlineListProps {
   value: string;
   onChange: (value: string) => void;
@@ -110,19 +154,27 @@ interface InlineListProps {
   maxLength?: number;
   ariaLabel?: string;
   disabled?: boolean;
+  /** Seeded demo text for the whole list; while value still equals it a clear (✕) is offered. */
+  sample?: string;
+  /** Predefined suggestions to pick from (for chips variant). Opens a modal picker. */
+  suggestions?: string[];
+  pickerTitle?: string;
 }
 
 /** An editable list (one result per line, or comma-separated skill chips). */
-export function InlineList({ value, onChange, separator, variant, id, className = "", itemPlaceholder, addLabel = "Add", maxLength = 2000, ariaLabel, disabled }: InlineListProps) {
+export function InlineList({ value, onChange, separator, variant, id, className = "", itemPlaceholder, addLabel = "Add", maxLength = 2000, ariaLabel, disabled, sample, suggestions, pickerTitle }: InlineListProps) {
   const delimiter = separator === "\n" ? "\n" : ",";
   const split = (raw: string) => raw.split(delimiter).map((s) => s.trim()).filter(Boolean);
   const [items, setItems] = useState<string[]>(() => split(value));
   const lastEmitted = useRef(items.join(separator));
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useLayoutEffect(() => {
     if (value !== lastEmitted.current) { setItems(split(value)); lastEmitted.current = value; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  const demoed = !!sample && sample.length > 0 && value === sample;
 
   function emit(next: string[]) {
     const joined = next.join(separator).slice(0, maxLength);
@@ -147,6 +199,17 @@ export function InlineList({ value, onChange, separator, variant, id, className 
     emit(next);
     focusElement(`${id}-add`);
   }
+  function clearDemo() {
+    emit([]);
+    focusElement(`${id}-add`);
+  }
+  function openPicker() {
+    setPickerOpen(true);
+  }
+  function handlePickerConfirm(selected: string[]) {
+    emit(selected);
+    setPickerOpen(false);
+  }
 
   const rows = items.length ? items : [""];
   return (
@@ -160,10 +223,27 @@ export function InlineList({ value, onChange, separator, variant, id, className 
           {!disabled && items.length > 0 && <button type="button" className="cv-list-remove" aria-label={`Remove ${item || "item"}`} onClick={() => remove(i)}><X size={12} /></button>}
         </span>
       ))}
+      {demoed && !disabled && (
+        <button type="button" className="cv-demo-clear-inline" aria-label="Clear these examples and add your own" onClick={clearDemo}><X size={12} /> Clear examples</button>
+      )}
+      {!disabled && suggestions && suggestions.length > 0 && variant === "chips" && (
+        <button type="button" className="cv-list-pick" onClick={openPicker}>
+          <Check size={12} aria-hidden="true" /> Pick from list
+        </button>
+      )}
       {!disabled && (items.length > 0 || variant === "bullets") && (
         <button type="button" id={`${id}-add`} className="cv-list-add" onClick={() => add()}>
           {variant === "chips" ? <span aria-hidden="true">＋</span> : <Check size={12} aria-hidden="true" />}{addLabel}
         </button>
+      )}
+      {pickerOpen && suggestions && (
+        <ChipPicker
+          suggestions={suggestions}
+          selected={items}
+          onConfirm={handlePickerConfirm}
+          onClose={() => setPickerOpen(false)}
+          title={pickerTitle ?? "Select skills"}
+        />
       )}
     </div>
   );
@@ -208,5 +288,64 @@ export function InlinePeriod({ id, start, end, current, onChange, disabled }: In
         </span>
       )}
     </span>
+  );
+}
+
+/** A translucent modal overlay for picking from a predefined list of chips. */
+interface ChipPickerProps {
+  suggestions: string[];
+  selected: string[];
+  onConfirm: (selected: string[]) => void;
+  onClose: () => void;
+  title?: string;
+}
+
+export function ChipPicker({ suggestions, selected, onConfirm, onClose, title = "Select options" }: ChipPickerProps) {
+  const [picks, setPicks] = useState<Set<string>>(() => new Set(selected));
+
+  function toggle(item: string) {
+    const next = new Set(picks);
+    if (next.has(item)) next.delete(item);
+    else next.add(item);
+    setPicks(next);
+  }
+
+  function confirm() {
+    onConfirm(Array.from(picks));
+    onClose();
+  }
+
+  return (
+    <div className="cv-chip-picker-overlay" onClick={onClose}>
+      <div className="cv-chip-picker" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
+        <div className="cv-chip-picker-header">
+          <h3>{title}</h3>
+          <button type="button" className="cv-chip-picker-close" aria-label="Close" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="cv-chip-picker-grid">
+          {suggestions.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`cv-chip-picker-item ${picks.has(item) ? "selected" : ""}`}
+              onClick={() => toggle(item)}
+            >
+              {item}
+              {picks.has(item) && <Check size={14} />}
+            </button>
+          ))}
+        </div>
+        <div className="cv-chip-picker-actions">
+          <button type="button" className="cv-chip-picker-cancel" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="cv-chip-picker-confirm" onClick={confirm}>
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

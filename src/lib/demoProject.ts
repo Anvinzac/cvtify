@@ -56,3 +56,29 @@ export function demoProject(): MediaProject {
   project.values = cv.values.map(({ title, text }) => ({ id: newId(), title, text }));
   return project;
 }
+
+/**
+ * Per-field demo originals, derived from the SAME builder that seeds the draft so
+ * the strings match exactly. The live editor uses these to recognise untouched
+ * example content and offer tap-to-wipe / revert / clear behaviour.
+ */
+export interface DemoSamples {
+  profile: Partial<Record<"name" | "headline" | "tagline" | "location" | "availability" | "about" | "skills" | "email" | "website" | "linkedin", string>>;
+  experiences: Array<Partial<Record<"role" | "organization" | "location" | "summary" | "duties" | "highlights" | "skills" | "learning", string>>>;
+  values: Array<{ title: string; text: string }>;
+}
+
+export function demoSamples(): DemoSamples {
+  const p = demoProject();
+  return {
+    profile: {
+      name: p.profile.name, headline: p.profile.headline, tagline: p.profile.tagline, location: p.profile.location,
+      availability: p.profile.availability, about: p.profile.about, skills: p.profile.skills, email: p.profile.email, website: p.profile.website, linkedin: p.profile.linkedin,
+    },
+    experiences: p.experiences.map((e) => ({
+      role: e.role, organization: e.organization, location: e.location, summary: e.summary,
+      duties: e.duties, highlights: e.highlights, skills: e.skills, learning: e.learning,
+    })),
+    values: p.values.map((v) => ({ title: v.title, text: v.text })),
+  };
+}

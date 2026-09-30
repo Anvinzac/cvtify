@@ -7,14 +7,26 @@ import {
 import { InlineList, InlinePeriod, InlineText } from "./inline-edit";
 import { budgetFor, CoverControls, PhotoTrack, type MediaBudget } from "./inline-media";
 import type { Photo } from "@/lib/cvData";
+import type { DemoSamples } from "@/lib/demoProject";
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Predefined skill suggestions for the chip picker. */
+const SKILL_SUGGESTIONS = [
+  "JavaScript", "TypeScript", "React", "Vue", "Angular", "Node.js", "Python", "Java", "Go", "Rust",
+  "HTML", "CSS", "Tailwind", "Sass", "GraphQL", "REST API", "SQL", "PostgreSQL", "MongoDB", "Redis",
+  "Docker", "Kubernetes", "AWS", "Azure", "GCP", "CI/CD", "Git", "Agile", "Scrum", "TDD",
+  "UX Design", "UI Design", "Figma", "Sketch", "Adobe XD", "Prototyping", "Wireframing",
+  "Product Management", "Project Management", "Leadership", "Communication", "Problem Solving",
+  "Machine Learning", "Data Science", "Analytics", "SEO", "Marketing", "Sales", "Customer Support",
+];
 
 interface EditableProps {
   project: MediaProject;
   update: (fn: (draft: MediaProject) => MediaProject) => void;
   onBusy?: (busy: boolean) => void;
   disabled?: boolean;
+  samples?: DemoSamples;
 }
 
 /**
@@ -23,10 +35,11 @@ interface EditableProps {
  * a dropzone. Motion is intentionally off here so editing stays stable; the parent
  * page switches to the read-only MediaCVDocument + parallax for the "Preview" lens.
  */
-export function EditableMediaCV({ project, update, onBusy, disabled }: EditableProps) {
+export function EditableMediaCV({ project, update, onBusy, disabled, samples }: EditableProps) {
   const cv = useMemo(() => toMediaCV(project), [project]);
   const settings = project.settings;
   const p = project.profile;
+  const ps = samples?.profile;
   const skills = cv.skillGroups.flatMap((group) => group.items);
   const learnings = cv.experience.filter((stage) => stage.learning);
   const showSkills = settings.showSkills && skills.length > 0;
@@ -67,14 +80,14 @@ export function EditableMediaCV({ project, update, onBusy, disabled }: EditableP
           <div className="media-hero-shade" aria-hidden="true" />
           <div className="media-container media-hero-content">
             <p className="media-eyebrow">The person behind the work</p>
-            <InlineText as="p" className="media-availability" value={p.availability} maxLength={160} disabled={disabled}
+            <InlineText as="p" className="media-availability" value={p.availability} maxLength={160} disabled={disabled} sample={ps?.availability}
               placeholder="What are you looking for? e.g. Open to senior roles" ariaLabel="Availability" onChange={setProfile("availability")} />
-            <InlineText as="h1" id="media-name" value={p.name} maxLength={100} disabled={disabled} placeholder="Your name" ariaLabel="Your name" onChange={setProfile("name")} />
-            <InlineText as="p" className="media-headline" id="profile-headline" value={p.headline} maxLength={160} disabled={disabled}
+            <InlineText as="h1" id="media-name" value={p.name} maxLength={100} disabled={disabled} sample={ps?.name} placeholder="Your name" ariaLabel="Your name" onChange={setProfile("name")} />
+            <InlineText as="p" className="media-headline" id="profile-headline" value={p.headline} maxLength={160} disabled={disabled} sample={ps?.headline}
               placeholder="Your role — e.g. Product Designer & Researcher" ariaLabel="Professional headline" onChange={setProfile("headline")} />
-            <InlineText as="p" className="media-tagline" multiline value={p.tagline} maxLength={360} disabled={disabled}
+            <InlineText as="p" className="media-tagline" multiline value={p.tagline} maxLength={360} disabled={disabled} sample={ps?.tagline}
               placeholder="One line about what you bring to a team." ariaLabel="Introduction line" onChange={setProfile("tagline")} />
-            <InlineText as="p" className="media-location" value={p.location} maxLength={140} disabled={disabled} placeholder="Where you're based · Remote" ariaLabel="Location" onChange={setProfile("location")} />
+            <InlineText as="p" className="media-location" value={p.location} maxLength={140} disabled={disabled} sample={ps?.location} placeholder="Where you're based · Remote" ariaLabel="Location" onChange={setProfile("location")} />
             <div className="media-tags" aria-label="Signature skills">{skills.slice(0, 6).map((skill) => <span key={skill.name}>{skill.name}</span>)}</div>
             <div className="media-hero-actions"><a className="media-button" href="#overview">My experience at a glance ↓</a><a className="media-button secondary" href="#contact">Get in touch ↗</a></div>
             <dl className="media-stats">{cv.stats.map((stat) => <div key={stat.label}><dt>{stat.label}</dt><dd>{stat.value}</dd></div>)}</dl>
@@ -102,12 +115,13 @@ export function EditableMediaCV({ project, update, onBusy, disabled }: EditableP
         <section id="intro" className="media-intro media-section"><div className="media-container">
           <p className="media-eyebrow">A little context</p>
           <h2>The story behind my work.</h2>
-          <InlineText as="p" className="media-prose" multiline value={p.about} maxLength={2200} disabled={disabled}
+          <InlineText as="p" className="media-prose" multiline value={p.about} maxLength={2200} disabled={disabled} sample={ps?.about}
             placeholder="What brought you here, what matters to you, and where you're going. This is your opening narrative." ariaLabel="About you" onChange={setProfile("about")} />
           <div className="cv-signature">
             <p className="media-eyebrow">Signature skills</p>
-            <InlineList variant="chips" separator=", " id="profile-skills" value={p.skills} maxLength={1000} disabled={disabled}
-              itemPlaceholder="Add a skill" addLabel="Add skill" ariaLabel="Signature skills" onChange={setProfile("skills")} />
+            <InlineList variant="chips" separator=", " id="profile-skills" value={p.skills} maxLength={1000} disabled={disabled} sample={ps?.skills}
+              itemPlaceholder="Add a skill" addLabel="Add skill" ariaLabel="Signature skills" onChange={setProfile("skills")}
+              suggestions={SKILL_SUGGESTIONS} pickerTitle="Select signature skills" />
           </div>
         </div></section>
 
@@ -116,7 +130,7 @@ export function EditableMediaCV({ project, update, onBusy, disabled }: EditableP
           <div className="media-container media-section-heading media-experience-heading"><p className="media-eyebrow">The chapters</p><h2 id="experience-title">Work. Growth. <em>Perspective.</em></h2><p>Each chapter is a role, project, or period. Tap any line to rewrite it; drop photos into the frame.</p></div>
           {project.experiences.map((e, index) => (
             <EditableChapter key={e.id} e={e} index={index} total={project.experiences.length} remaining={budget.remaining}
-              remainingBytes={budget.remainingBytes} update={update} onBusy={onBusy} disabled={disabled} />
+              remainingBytes={budget.remainingBytes} update={update} onBusy={onBusy} disabled={disabled} sample={samples?.experiences[index]} />
           ))}
           <div className="media-container">
             <button type="button" id="add-experience" className="cv-add-block" disabled={project.experiences.length >= MAX_EXPERIENCES}
@@ -146,9 +160,9 @@ export function EditableMediaCV({ project, update, onBusy, disabled }: EditableP
                   onClick={() => update((d) => ({ ...d, values: d.values.filter((x) => x.id !== v.id) }))}><Trash2 size={14} /></button>
               </div>
               <p className="media-index">{pad(i + 1)}</p>
-              <InlineText as="h3" id={`value-${v.id}`} value={v.title} maxLength={100} disabled={disabled} placeholder="A value that guides you" ariaLabel="Value title"
+              <InlineText as="h3" id={`value-${v.id}`} value={v.title} maxLength={100} disabled={disabled} sample={samples?.values[i]?.title} placeholder="A value that guides you" ariaLabel="Value title"
                 onChange={(title) => update((d) => ({ ...d, values: d.values.map((x) => x.id === v.id ? { ...x, title } : x) }))} />
-              <InlineText as="p" className="media-prose" multiline value={v.text} maxLength={800} disabled={disabled} placeholder="What this looks like in your work" ariaLabel="Value description"
+              <InlineText as="p" className="media-prose" multiline value={v.text} maxLength={800} disabled={disabled} sample={samples?.values[i]?.text} placeholder="What this looks like in your work" ariaLabel="Value description"
                 onChange={(text) => update((d) => ({ ...d, values: d.values.map((x) => x.id === v.id ? { ...x, text } : x) }))} />
             </article>)}
           </div>
@@ -166,12 +180,12 @@ export function EditableMediaCV({ project, update, onBusy, disabled }: EditableP
         {/* ---------- Contact ---------- */}
         <section id="contact" className="media-section media-contact" aria-labelledby="contact-title"><div className="media-container">
           <p className="media-eyebrow">The next chapter</p><h2 id="contact-title">Let’s <em>connect.</em></h2>
-          <InlineText as="span" className="media-email" id="profile-email" value={p.email} maxLength={254} disabled={disabled} placeholder="you@example.com" ariaLabel="Contact email" onChange={setProfile("email")} />
+          <InlineText as="span" className="media-email" id="profile-email" value={p.email} maxLength={254} disabled={disabled} sample={ps?.email} placeholder="you@example.com" ariaLabel="Contact email" onChange={setProfile("email")} />
           <div className="cv-contact-fields">
             <label className="cv-contact-field"><span>Website / portfolio</span>
-              <InlineText as="span" id="profile-website" value={p.website} maxLength={500} disabled={disabled} placeholder="https://your-portfolio.com" ariaLabel="Website" onChange={setProfile("website")} /></label>
+              <InlineText as="span" id="profile-website" value={p.website} maxLength={500} disabled={disabled} sample={ps?.website} placeholder="https://your-portfolio.com" ariaLabel="Website" onChange={setProfile("website")} /></label>
             <label className="cv-contact-field"><span>LinkedIn</span>
-              <InlineText as="span" id="profile-linkedin" value={p.linkedin} maxLength={500} disabled={disabled} placeholder="https://linkedin.com/in/you" ariaLabel="LinkedIn" onChange={setProfile("linkedin")} /></label>
+              <InlineText as="span" id="profile-linkedin" value={p.linkedin} maxLength={500} disabled={disabled} sample={ps?.linkedin} placeholder="https://linkedin.com/in/you" ariaLabel="LinkedIn" onChange={setProfile("linkedin")} /></label>
           </div>
           <footer><span>{p.name || "Your name"}{p.location && ` · ${p.location}`}</span><a href="#top">Back to top ↑</a></footer>
         </div></section>
@@ -184,9 +198,9 @@ function GalleryFigure({ photo, context }: { photo: Photo; context?: string }) {
   return <figure className="media-photo-figure"><div className="media-image-frame"><img src={photo.src} alt={photo.alt} width={photo.width} height={photo.height} loading="lazy" decoding="async" style={{ objectPosition: photo.position }} /></div>{(photo.caption || context) && <figcaption>{photo.caption && <span>{photo.caption}</span>}{context && <small>{context}</small>}</figcaption>}</figure>;
 }
 
-interface ChapterProps extends Omit<EditableProps, "project"> { e: MediaExperience; index: number; total: number; remaining: number; remainingBytes: number; }
+interface ChapterProps extends Omit<EditableProps, "project" | "samples"> { e: MediaExperience; index: number; total: number; remaining: number; remainingBytes: number; sample?: DemoSamples["experiences"][number]; }
 
-const EditableChapter = memo(function EditableChapter({ e, index, total, remaining, remainingBytes, update, onBusy, disabled }: ChapterProps) {
+const EditableChapter = memo(function EditableChapter({ e, index, total, remaining, remainingBytes, update, onBusy, disabled, sample }: ChapterProps) {
   const patch = (fields: Partial<MediaExperience>) => update((d) => ({ ...d, experiences: d.experiences.map((x) => x.id === e.id ? { ...x, ...fields } : x) }));
   function move(offset: number) {
     update((d) => {
@@ -215,27 +229,28 @@ const EditableChapter = memo(function EditableChapter({ e, index, total, remaini
         <div className="media-chapter-layout">
           <div className="media-chapter-copy">
             <InlinePeriod id={`${e.id}-startDate`} start={e.startDate} end={e.endDate} current={e.current} disabled={disabled} onChange={patch} />
-            <InlineText as="h3" id={`${e.id}-role`} value={e.role} maxLength={140} disabled={disabled} placeholder="Your role or title" ariaLabel="Role" onChange={(role) => patch({ role })} />
-            <InlineText as="p" className="media-org" id={`${e.id}-organization`} value={e.organization} maxLength={140} disabled={disabled} placeholder="Organization or project" ariaLabel="Organization" onChange={(organization) => patch({ organization })} />
-            <InlineText as="p" className="media-location" value={e.location} maxLength={140} disabled={disabled} placeholder="Location · Remote · Hybrid" ariaLabel="Location" onChange={(location) => patch({ location })} />
-            <InlineText as="p" className="media-chapter-summary" multiline value={e.summary} maxLength={320} disabled={disabled} placeholder="The takeaway for employers — one or two sentences that capture this chapter." ariaLabel="Chapter summary" onChange={(summary) => patch({ summary })} />
+            <InlineText as="h3" id={`${e.id}-role`} value={e.role} maxLength={140} disabled={disabled} sample={sample?.role} placeholder="Your role or title" ariaLabel="Role" onChange={(role) => patch({ role })} />
+            <InlineText as="p" className="media-org" id={`${e.id}-organization`} value={e.organization} maxLength={140} disabled={disabled} sample={sample?.organization} placeholder="Organization or project" ariaLabel="Organization" onChange={(organization) => patch({ organization })} />
+            <InlineText as="p" className="media-location" value={e.location} maxLength={140} disabled={disabled} sample={sample?.location} placeholder="Location · Remote · Hybrid" ariaLabel="Location" onChange={(location) => patch({ location })} />
+            <InlineText as="p" className="media-chapter-summary" multiline value={e.summary} maxLength={320} disabled={disabled} sample={sample?.summary} placeholder="The takeaway for employers — one or two sentences that capture this chapter." ariaLabel="Chapter summary" onChange={(summary) => patch({ summary })} />
 
             <p className="media-eyebrow cv-field-label">Results & highlights</p>
-            <InlineList variant="bullets" separator={"\n"} id={`${e.id}-highlights`} value={e.highlights} maxLength={2000} disabled={disabled}
+            <InlineList variant="bullets" separator={"\n"} id={`${e.id}-highlights`} value={e.highlights} maxLength={2000} disabled={disabled} sample={sample?.highlights}
               itemPlaceholder="A result you can stand behind" addLabel="Add a result" ariaLabel="Results and highlights" onChange={(highlights) => patch({ highlights })} />
 
             <p className="media-eyebrow cv-field-label">Skills demonstrated</p>
-            <InlineList variant="chips" separator=", " id={`${e.id}-skills`} value={e.skills} maxLength={800} disabled={disabled}
-              itemPlaceholder="Add a skill" addLabel="Add skill" ariaLabel="Skills demonstrated" onChange={(skills) => patch({ skills })} />
+            <InlineList variant="chips" separator=", " id={`${e.id}-skills`} value={e.skills} maxLength={800} disabled={disabled} sample={sample?.skills}
+              itemPlaceholder="Add a skill" addLabel="Add skill" ariaLabel="Skills demonstrated" onChange={(skills) => patch({ skills })}
+              suggestions={SKILL_SUGGESTIONS} pickerTitle="Select skills for this chapter" />
 
             <details className="media-chapter-details" id={`details-${e.id}`}>
               <summary>Inside this chapter <span>Responsibilities & what you discovered</span></summary>
               <div className="media-detail-content">
                 <section><h5>Responsibilities</h5>
-                  <InlineText as="p" className="media-prose" multiline id={`${e.id}-duties`} value={e.duties} maxLength={4000} disabled={disabled}
+                  <InlineText as="p" className="media-prose" multiline id={`${e.id}-duties`} value={e.duties} maxLength={4000} disabled={disabled} sample={sample?.duties}
                     placeholder="Describe what you actually did, who you worked with, and what you were responsible for." ariaLabel="Responsibilities" onChange={(duties) => patch({ duties })} /></section>
                 <section><h5>What I discovered</h5>
-                  <InlineText as="p" className="media-prose" multiline value={e.learning} maxLength={1600} disabled={disabled}
+                  <InlineText as="p" className="media-prose" multiline value={e.learning} maxLength={1600} disabled={disabled} sample={sample?.learning}
                     placeholder="A lesson, a turning point, or a strength you discovered along the way." ariaLabel="What you discovered" onChange={(learning) => patch({ learning })} /></section>
               </div>
             </details>

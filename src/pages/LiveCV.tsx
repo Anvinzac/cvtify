@@ -7,7 +7,7 @@ import { EditableMediaCV } from "@/components/cv/editable/EditableMediaCV";
 import { MediaCVDocument } from "@/components/cv/MediaCVDocument";
 import attachMediaMotion from "@/components/cv/mediaMotion.js";
 import { downloadFile, filenameFor } from "@/lib/mediaStorage";
-import { demoProject } from "@/lib/demoProject";
+import { demoProject, demoSamples } from "@/lib/demoProject";
 import {
   emptyExperience, emptyProject, fromProfile, MAX_BACKUP_BYTES, newId, parseProject,
   projectIssues, STYLES, THEMES, type MediaSettings,
@@ -49,6 +49,7 @@ export default function LiveCV() {
   const issues = useMemo(() => (project ? projectIssues(project) : []), [project]);
   const busy = uploading || exporting || restoring;
   const onBusy = useCallback((value: boolean) => setUploading(value), []);
+  const samples = useMemo(() => demoSamples(), []);
 
   useEffect(() => { document.title = project?.profile.name ? `${project.profile.name} — Media CV` : "Create your media CV — CV_tify"; }, [project?.profile.name]);
   useEffect(() => {
@@ -243,7 +244,7 @@ export default function LiveCV() {
       </div>
 
       {mode === "edit"
-        ? <EditableMediaCV project={project} update={updateDraft} onBusy={onBusy} disabled={busy} />
+        ? <EditableMediaCV project={project} update={updateDraft} onBusy={onBusy} disabled={busy} samples={samples} />
         : <MediaCVDocument project={project} />}
     </div>
   );

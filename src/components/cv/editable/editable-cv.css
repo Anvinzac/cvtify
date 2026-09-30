@@ -15,6 +15,35 @@
 .media-document:not(.is-editing) .cv-editable{cursor:default}
 .media-document:not(.is-editing) .cv-editable:hover{background:none;box-shadow:none}
 
+/* --- Seeded example (demo) fields: tap-to-wipe, revert-on-empty, clear (✕) --- */
+.media-document .cv-demo-field{position:relative}
+.media-document .cv-demo-field[data-demoed="true"]>.cv-editable{cursor:pointer;box-shadow:inset 0 -1px 0 0 hsl(var(--primary)/.45)}
+.media-document .cv-demo-field[data-demoed="true"]:hover>.cv-editable{background:hsl(var(--primary)/.08)}
+.cv-field-clear{position:absolute;top:50%;right:-8px;transform:translateY(-50%);z-index:6;display:grid;place-items:center;width:20px;height:20px;border:1.5px solid hsl(var(--background));border-radius:50%;background:hsl(var(--primary));color:hsl(var(--primary-foreground));cursor:pointer;box-shadow:0 2px 6px hsl(0 0% 0%/.28);opacity:0;transition:opacity .15s}
+.cv-field-clear:hover{filter:brightness(1.08)}
+.cv-demo-field:hover>.cv-field-clear,.cv-demo-field:focus-within>.cv-field-clear{opacity:1}
+.cv-demo-clear-inline{display:inline-flex;align-items:center;gap:5px;border:1px solid hsl(var(--border));border-radius:30px;background:hsl(var(--primary)/.10);color:hsl(var(--primary));padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;align-self:flex-start}
+.cv-demo-clear-inline:hover{border-color:hsl(var(--primary));background:hsl(var(--primary)/.18)}
+.cv-list-pick{display:inline-flex;align-items:center;gap:5px;border:1px solid hsl(var(--primary));background:hsl(var(--primary)/.08);color:hsl(var(--primary));border-radius:30px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;transition:background .15s}
+.cv-list-pick:hover{background:hsl(var(--primary)/.16)}
+
+/* --- Chip picker modal (translucent overlay) --- */
+.cv-chip-picker-overlay{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:hsl(0 0% 0%/.55);backdrop-filter:blur(4px);padding:20px}
+.cv-chip-picker{background:hsl(var(--card));border:1px solid hsl(var(--border));border-radius:16px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px hsl(0 0% 0%/.4)}
+.cv-chip-picker-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid hsl(var(--border))}
+.cv-chip-picker-header h3{margin:0;font-size:16px;font-weight:600;color:hsl(var(--foreground))}
+.cv-chip-picker-close{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:hsl(var(--muted-foreground));cursor:pointer;transition:background .15s}
+.cv-chip-picker-close:hover{background:hsl(var(--border))}
+.cv-chip-picker-grid{display:flex;flex-wrap:wrap;gap:8px;padding:20px;overflow-y:auto;flex:1}
+.cv-chip-picker-item{display:inline-flex;align-items:center;gap:6px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));border-radius:30px;padding:6px 14px;font-size:13px;cursor:pointer;transition:all .15s}
+.cv-chip-picker-item:hover{border-color:hsl(var(--primary));background:hsl(var(--primary)/.08)}
+.cv-chip-picker-item.selected{border-color:hsl(var(--primary));background:hsl(var(--primary));color:hsl(var(--primary-foreground))}
+.cv-chip-picker-actions{display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid hsl(var(--border))}
+.cv-chip-picker-cancel{border:1px solid hsl(var(--border));background:transparent;color:hsl(var(--foreground));border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer}
+.cv-chip-picker-cancel:hover{background:hsl(var(--border))}
+.cv-chip-picker-confirm{border:0;background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer}
+.cv-chip-picker-confirm:hover{filter:brightness(1.08)}
+
 /* --- Editable lists (bullets / chips) --- */
 .cv-list{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .cv-list-bullets{flex-direction:column;align-items:stretch;gap:10px}
