@@ -46,6 +46,18 @@ export function clearAIConfig() {
 }
 
 /**
+ * Get fallback AI configuration from environment.
+ */
+export function getAIFallbackConfig(): AISuggestionConfig | null {
+  const endpoint = import.meta.env.VITE_AI_FALLBACK_ENDPOINT;
+  const apiKey = import.meta.env.VITE_AI_FALLBACK_API_KEY;
+  const model = import.meta.env.VITE_AI_FALLBACK_MODEL;
+
+  if (!endpoint || !apiKey) return null;
+  return { endpoint, apiKey, model };
+}
+
+/**
  * Check if AI suggestions are available (config exists).
  */
 export function isAIEnabled(): boolean {
@@ -63,6 +75,7 @@ const CONTEXT_PROMPTS: Record<SuggestionContext, string> = {
 
 /**
  * Generate 3 AI suggestions for a given context and rough notes.
+ * Tries primary config first, falls back to secondary if available.
  */
 export async function generateSuggestions(
   context: SuggestionContext,
@@ -70,13 +83,42 @@ export async function generateSuggestions(
   role?: string,
   organization?: string
 ): Promise<AISuggestion[]> {
-  const config = getAIConfig();
-  if (!config) throw new Error("AI not configured");
+  const primaryConfig = getAIConfig();
+  const fallbackConfig = getAIFallbackConfig();
+
+  if (!primaryConfig && !fallbackConfig) throw new Error("AI not configured");
 
   const systemPrompt = CONTEXT_PROMPTS[context];
   const contextInfo = [role && `Role: ${role}`, organization && `Organization: ${organization}`].filter(Boolean).join("\n");
   const userPrompt = `${contextInfo ? contextInfo + "\n\n" : ""}Rough notes: ${roughNotes}\n\nGenerate exactly 3 different professional versions. Return ONLY a JSON array of 3 strings, no other text.`;
 
+  // Try primary config first
+  if (primaryConfig) {
+    try {
+      return await callAI(primaryConfig, systemPrompt, userPrompt);
+    } catch (err) {
+      // If primary fails and we have a fallback, try fallback
+      if (!fallbackConfig) throw err;
+      console.warn("Primary AI failed, trying fallback:", err);
+    }
+  }
+
+  // Try fallback config
+  if (fallbackConfig) {
+    return await callAI(fallbackConfig, systemPrompt, userPrompt);
+  }
+
+  throw new Error("All AI providers failed");
+}
+
+/**
+ * Internal function to call a single AI provider.
+ */
+async function callAI(
+  config: AISuggestionConfig,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<AISuggestion[]> {
   const response = await fetch(`${config.endpoint}/v1/chat/completions`, {
     method: "POST",
     headers: {
