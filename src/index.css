@@ -3,6 +3,19 @@
 @tailwind utilities;
 
 @layer base {
+  /* ─────────────────────────────────────────────────────────────────────
+     TOKEN MODEL — HSL triplets vs. resolved theme values
+     The :root tokens below are HSL channel triplets consumed by Tailwind
+     utilities through the hsl(var(--x)) pattern for surfaces OUTSIDE the CV
+     document (toolbar, modals, popovers, page chrome).
+
+     themeStyle() in src/lib/mediaProject.ts writes fully-resolved values
+     (hex / rgb / gradients) for the SAME variable names as an inline style on
+     the `.grad-document` root. Because inline styles win the cascade, those
+     per-theme tokens override :root for everything inside the CV surface and
+     drive the active theme's art direction. The :root values here must stay
+     untouched so Tailwind utilities elsewhere keep working.
+     ───────────────────────────────────────────────────────────────────── */
   :root {
     --background: 230 25% 7%;
     --foreground: 0 0% 93%;
@@ -202,6 +215,142 @@
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   Theme Ambient Animations
+   Global keyframe utilities referenced by media-document.css /
+   editable-cv.css via animation-name, keyed off data-theme.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Nebula: slow orbiting radial gradients */
+@keyframes nebula-orbit {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(30px, -20px) rotate(180deg); }
+  100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+@keyframes nebula-particle-drift {
+  0% { transform: translateY(0) translateX(0); opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { transform: translateY(-100vh) translateX(20px); opacity: 0.3; }
+}
+
+@keyframes nebula-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Ember: warm flicker and heat glow */
+@keyframes ember-flicker {
+  0%, 100% { opacity: 0.6; }
+  10% { opacity: 0.8; }
+  20% { opacity: 0.5; }
+  30% { opacity: 0.9; }
+  50% { opacity: 0.7; }
+  70% { opacity: 0.85; }
+  90% { opacity: 0.55; }
+}
+
+@keyframes ember-heat {
+  0%, 100% { opacity: 0.4; transform: scaleY(1); }
+  50% { opacity: 0.6; transform: scaleY(1.02); }
+}
+
+/* Aurora: flowing light bands */
+@keyframes aurora-flow {
+  0% { transform: translateX(-30%) skewX(-5deg); opacity: 0.4; }
+  33% { transform: translateX(0%) skewX(0deg); opacity: 0.7; }
+  66% { transform: translateX(30%) skewX(5deg); opacity: 0.5; }
+  100% { transform: translateX(-30%) skewX(-5deg); opacity: 0.4; }
+}
+
+@keyframes aurora-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* Prism: spectral rotation */
+@keyframes prism-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes prism-spectral-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Shared: scroll indicator bounce */
+@keyframes scroll-hint {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(6px); opacity: 1; }
+}
+
+/* Shared: section reveal */
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Shared: line draw from center */
+@keyframes line-draw-center {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Shared: stamp reveal for certifications */
+@keyframes stamp-reveal {
+  0% { transform: scale(1.3); opacity: 0; }
+  60% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Shared: count-up pulse */
+@keyframes count-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Theme transition */
+@keyframes theme-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0.3; }
+}
+
+@keyframes theme-fade-in {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+/* ── Theme switch crossfade ── */
+.theme-transitioning {
+  pointer-events: none;
+}
+.theme-transitioning .grad-document {
+  animation: theme-fade-out 0.3s ease forwards, theme-fade-in 0.5s ease 0.35s forwards;
+}
+
+/* ── Scroll progress bar ── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  z-index: 9999;
+  pointer-events: none;
+  transform-origin: left;
+  transform: scaleX(var(--scroll-progress, 0));
+  background: var(--primary, #7C3AED);
+}
+
+/* ── Theme-specific scrollbar ── */
+.grad-document[data-theme="nebula"] ::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.4); }
+.grad-document[data-theme="ember"] ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); }
+.grad-document[data-theme="aurora"] ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.4); }
+.grad-document[data-theme="mono"] ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+.grad-document[data-theme="prism"] ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(168,85,247,0.4), rgba(236,72,153,0.4)); }
+
 /* ── Utilities ── */
 @layer utilities {
   .font-display {
@@ -283,5 +432,13 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .theme-transitioning .grad-document {
+    animation: none !important;
+  }
+
+  .scroll-progress {
+    display: none;
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
   Award, Briefcase, Check, Download, Eye, Film, Layers, Loader2,
   MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Upload, Users,
@@ -28,11 +28,15 @@ function focusField(fieldId: string) {
   requestAnimationFrame(() => (el as HTMLElement).focus({ preventScroll: true }));
 }
 
-const THEME_CHOICES: { id: GradSettings["theme"]; label: string }[] = [
-  { id: "nebula", label: "Tinh vân" },
-  { id: "ember", label: "Hoa lửa" },
-  { id: "aurora", label: "Cực quang" },
-];
+/** Visual theme gallery: live miniature previews with Vietnamese names + mood descriptors. */
+const THEME_GALLERY = [
+  { id: "nebula", label: "Tinh Vân", mood: "Vũ trụ tĩnh lặng", bg: "#0B0D17", accent: "#7C3AED", secondary: "#3B82F6" },
+  { id: "ember", label: "Hoa Lửa", mood: "Bản lĩnh tôi luyện", bg: "#1A1412", accent: "#F59E0B", secondary: "#EF4444" },
+  { id: "aurora", label: "Cực Quang", mood: "Dòng chảy ánh sáng", bg: "#0A1219", accent: "#06B6D4", secondary: "#10B981" },
+  { id: "mono", label: "Đơn Sắc", mood: "Tinh tế tối giản", bg: "#0A0A0A", accent: "#2563EB", secondary: "#737373" },
+  { id: "prism", label: "Lăng Kính", mood: "Quang phổ sáng tạo", bg: "#0D0D12", accent: "#A855F7", secondary: "#EC4899" },
+] as const;
+type ThemeId = GradSettings["theme"];
 const MOTION_CHOICES: { id: GradSettings["motion"]; label: string }[] = [
   { id: "immersive", label: "Sống động" },
   { id: "subtle", label: "Nhẹ nhàng" },
@@ -58,12 +62,15 @@ export default function LiveCV() {
   const hostRef = useRef<HTMLDivElement>(null);
   const restoreInput = useRef<HTMLInputElement>(null);
   const skipAutoDemo = useRef(false);
+  /** Remembered theme so the pre-workspace loading state can still be theme-aware. */
+  const lastKnownTheme = useRef<ThemeId>("nebula");
 
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [menu, setMenu] = useState<Menu>(null);
   const [exporting, setExporting] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [notice, setNotice] = useState("");
+  const [transitioning, setTransitioning] = useState(false);
 
   const issues = useMemo(() => (workspace ? projectIssues(workspace) : []), [workspace]);
   const blocking = useMemo(() => (workspace ? blockingIssues(workspace) : []), [workspace]);
@@ -75,6 +82,11 @@ export default function LiveCV() {
       ? `${workspace.profile.name} — CV của tôi`
       : "Tạo CV tươi mới — CVtify";
   }, [workspace?.profile.name]);
+
+  // Keep the last known theme so a subsequent load renders a matching loader.
+  useEffect(() => {
+    if (workspace) lastKnownTheme.current = workspace.settings.theme;
+  }, [workspace?.settings.theme]);
 
   // Preview mode layers the scroll motion onto the rendered static document.
   useEffect(() => {
@@ -97,20 +109,80 @@ export default function LiveCV() {
     [updateDraft],
   );
 
+  /** Crossfade to a new theme: intensity loss → token switch → settle (see .theme-transitioning). */
+  const switchTheme = useCallback(
+    (themeId: ThemeId) => {
+      if (themeId === workspace?.settings.theme || transitioning) return;
+      setTransitioning(true);
+      document.documentElement.classList.add("theme-transitioning");
+      window.setTimeout(() => {
+        setSettings({ theme: themeId });
+        window.setTimeout(() => {
+          document.documentElement.classList.remove("theme-transitioning");
+          setTransitioning(false);
+        }, 500);
+      }, 300);
+    },
+    [workspace?.settings.theme, transitioning, setSettings],
+  );
+
+  /** Theatrical randomizer: rapid cycle through themes, then settle on a fresh pick. */
+  function surpriseMe() {
+    if (transitioning || !workspace) return;
+    const themes = THEME_GALLERY.map((t) => t.id);
+    const others = themes.filter((t) => t !== workspace.settings.theme);
+    const pick = others[Math.floor(Math.random() * others.length)];
+    setTransitioning(true);
+    let cycleCount = 0;
+    const maxCycles = 8;
+    const cycleInterval = window.setInterval(() => {
+      setSettings({ theme: themes[Math.floor(Math.random() * themes.length)] });
+      cycleCount += 1;
+      if (cycleCount >= maxCycles) {
+        window.clearInterval(cycleInterval);
+        setSettings({ theme: pick });
+        window.setTimeout(() => setTransitioning(false), 400);
+      }
+    }, 80);
+  }
+
+  /** Roving-tabindex arrow navigation across gallery cards. */
+  function handleGalleryKey(e: KeyboardEvent<HTMLButtonElement>, currentIndex: number) {
+    const cards = e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(".theme-gallery-card");
+    if (!cards) return;
+    let nextIndex = currentIndex;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      nextIndex = (currentIndex + 1) % cards.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      nextIndex = (currentIndex - 1 + cards.length) % cards.length;
+    } else {
+      return;
+    }
+    e.preventDefault();
+    cards[nextIndex]?.focus();
+  }
+
   if (!workspace) {
     return (
       <main className="media-studio studio-loading">
-        <Film size={32} />
-        <h1>{loadingError ? "Không mở được CV của bạn" : "Đang mở CV trực tiếp…"}</h1>
         {loadingError ? (
           <>
+            <Film size={32} />
+            <h1>Không mở được CV của bạn</h1>
             <p role="alert">{loadingError}</p>
             <p>Bản nháp đã lưu của bạn chưa bị ghi đè. Hãy thử đóng các tab khác, hoặc tiếp tục trong phiên tạm thời.</p>
             <button type="button" className="studio-button" onClick={reload}>Thử lại</button>
             <button type="button" className="studio-button secondary" onClick={continueTemporarily}>Tiếp tục phiên tạm thời</button>
           </>
         ) : (
-          <Loader2 className="animate-spin" />
+          <div className="cv-loading" data-theme={lastKnownTheme.current}>
+            <div className="cv-loading-animation">
+              <span className="cv-loading-element" />
+              <span className="cv-loading-element" />
+              <span className="cv-loading-element" />
+            </div>
+            <p className="cv-loading-text">Đang mở CV trực tuyến…</p>
+          </div>
         )}
       </main>
     );
@@ -226,19 +298,20 @@ export default function LiveCV() {
 
           <div className="studio-header-actions">
             <div className="live-seg" role="group" aria-label="Chế độ chỉnh sửa">
-              <button type="button" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}><Pencil size={14} /> Sửa</button>
-              <button type="button" aria-pressed={mode === "preview"} onClick={() => setMode("preview")}><Eye size={14} /> Xem trước</button>
+              <button type="button" aria-label="Sửa" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}><Pencil size={14} /><span className="studio-btn-label">Sửa</span></button>
+              <button type="button" aria-label="Xem trước" aria-pressed={mode === "preview"} onClick={() => setMode("preview")}><Eye size={14} /><span className="studio-btn-label">Xem trước</span></button>
             </div>
 
             <div className="live-menu-wrap">
               <button
                 type="button"
                 className="live-pill"
+                aria-label="Mức độ hoàn thiện"
                 data-tone={blocking.length ? "warn" : "ok"}
                 aria-expanded={menu === "checklist"}
                 onClick={() => setMenu(menu === "checklist" ? null : "checklist")}
               >
-                {blocking.length ? <SlidersHorizontal size={14} /> : <Check size={14} />}{completeness}
+                {blocking.length ? <SlidersHorizontal size={14} /> : <Check size={14} />}<span className="studio-btn-label">{completeness}</span>
               </button>
               {menu === "checklist" && (
                 <>
@@ -271,7 +344,7 @@ export default function LiveCV() {
             </div>
 
             <div className="live-menu-wrap">
-              <button type="button" className="studio-button secondary" aria-expanded={menu === "add"} onClick={() => setMenu(menu === "add" ? null : "add")}><Plus size={16} /> Thêm</button>
+              <button type="button" className="studio-button secondary" aria-label="Thêm" aria-expanded={menu === "add"} onClick={() => setMenu(menu === "add" ? null : "add")}><Plus size={16} /><span className="studio-btn-label">Thêm</span></button>
               {menu === "add" && (
                 <>
                   <div className="live-backdrop" onClick={() => setMenu(null)} />
@@ -287,18 +360,71 @@ export default function LiveCV() {
             </div>
 
             <div className="live-menu-wrap">
-              <button type="button" className="studio-button secondary" aria-label="Giao diện" aria-expanded={menu === "appearance"} onClick={() => setMenu(menu === "appearance" ? null : "appearance")}><Palette size={16} /> Giao diện</button>
+              <button type="button" className="studio-button secondary" aria-label="Giao diện" aria-expanded={menu === "appearance"} onClick={() => setMenu(menu === "appearance" ? null : "appearance")}><Palette size={16} /><span className="studio-btn-label">Giao diện</span></button>
               {menu === "appearance" && (
                 <>
                   <div className="live-backdrop" onClick={() => setMenu(null)} />
-                  <div className="live-menu live-menu-wide" role="menu" aria-label="Giao diện">
+                  <div className="live-menu live-menu-wide live-menu-gallery" role="menu" aria-label="Giao diện">
                     <h4>Chủ đề</h4>
-                    <div className="live-choice-row" role="radiogroup" aria-label="Chủ đề">
-                      {THEME_CHOICES.map((choice) => (
-                        <button type="button" key={choice.id} role="radio" aria-checked={workspace.settings.theme === choice.id}
-                          className={`live-choice ${workspace.settings.theme === choice.id ? "selected" : ""}`}
-                          onClick={() => setSettings({ theme: choice.id })}>{choice.label}</button>
-                      ))}
+                    <div className="theme-gallery" role="radiogroup" aria-label="Chọn chủ đề">
+                      <div className="theme-gallery-grid">
+                        {THEME_GALLERY.map((theme, index) => {
+                          const active = workspace.settings.theme === theme.id;
+                          return (
+                            <button
+                              type="button"
+                              key={theme.id}
+                              className={`theme-gallery-card ${active ? "is-active" : ""}`}
+                              role="radio"
+                              aria-checked={active}
+                              aria-label={`${theme.label} — ${theme.mood}`}
+                              tabIndex={active ? 0 : -1}
+                              data-index={index}
+                              onClick={() => switchTheme(theme.id)}
+                              onKeyDown={(e) => handleGalleryKey(e, index)}
+                            >
+                              <div className="theme-preview" style={{ background: theme.bg }}>
+                                <div className="theme-preview-hero">
+                                  <div className="theme-preview-photo" style={{ borderColor: theme.accent }} />
+                                  <div
+                                    className="theme-preview-name"
+                                    style={
+                                      theme.id === "mono"
+                                        ? { background: "none", color: "#FAFAFA" }
+                                        : {
+                                            background: `linear-gradient(135deg, ${theme.accent}, ${theme.secondary})`,
+                                            WebkitBackgroundClip: "text",
+                                            WebkitTextFillColor: "transparent",
+                                          }
+                                    }
+                                  />
+                                </div>
+                                <div className="theme-preview-lines">
+                                  <div className="theme-preview-line" style={{ background: theme.accent, opacity: 0.4, width: "60%" }} />
+                                  <div className="theme-preview-line" style={{ background: theme.secondary, opacity: 0.2, width: "80%" }} />
+                                  <div className="theme-preview-line" style={{ background: theme.accent, opacity: 0.15, width: "45%" }} />
+                                </div>
+                                <div className="theme-preview-chips">
+                                  <span style={{ borderColor: `${theme.accent}40` }} />
+                                  <span style={{ borderColor: `${theme.secondary}40` }} />
+                                  <span style={{ borderColor: `${theme.accent}30` }} />
+                                </div>
+                                {theme.id !== "mono" && <div className={`theme-preview-ambient ${theme.id}`} />}
+                              </div>
+                              <div className="theme-gallery-label">
+                                <span className="theme-gallery-name">{theme.label}</span>
+                                <span className="theme-gallery-mood">{theme.mood}</span>
+                              </div>
+                              <span className="theme-gallery-number" aria-hidden="true">
+                                {String(index + 1).padStart(2, "0")}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button type="button" className="theme-surprise" onClick={surpriseMe} disabled={transitioning} aria-label="Chọn chủ đề ngẫu nhiên">
+                        <Sparkles size={14} /> Ngẫu hứng
+                      </button>
                     </div>
                     <h4>Chuyển động (ở chế độ Xem trước)</h4>
                     <div className="live-choice-row" role="radiogroup" aria-label="Chuyển động">
@@ -321,9 +447,9 @@ export default function LiveCV() {
               )}
             </div>
 
-            <button type="button" className="studio-button" disabled={busy} onClick={() => void exportHTML()}>
+            <button type="button" className="studio-button" aria-label="Tải HTML" disabled={busy} onClick={() => void exportHTML()}>
               {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              {exporting ? "Đang chuẩn bị…" : "Tải HTML"}
+              <span className="studio-btn-label">{exporting ? "Đang chuẩn bị…" : "Tải HTML"}</span>
             </button>
 
             <div className="live-menu-wrap">

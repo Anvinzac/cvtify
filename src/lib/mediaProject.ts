@@ -55,7 +55,7 @@ export const entryItemSchema = z.object({
 export type EntryItem = z.infer<typeof entryItemSchema>;
 
 export const gradSettingsSchema = z.object({
-  theme: z.enum(["nebula", "ember", "aurora"]),
+  theme: z.enum(["nebula", "ember", "aurora", "mono", "prism"]),
   motion: z.enum(["immersive", "subtle", "still"]),
   pace: z.enum(["compact", "detailed"]),
 });
@@ -221,21 +221,117 @@ export function monthLabel(dateStr: string): string {
  * Theming
  * ------------------------------------------------------------------ */
 
-const THEME_TOKENS: Record<GradSettings["theme"], {
-  background: string; foreground: string; primary: string; accent: string;
-  card: string; muted: string; border: string; mutedForeground: string;
-}> = {
+/** Full art-direction token set driving the visual identity of each theme. */
+export interface ThemeTokens {
+  // Core palette
+  background: string;
+  foreground: string;
+  primary: string;
+  accent: string;
+  card: string;
+  muted: string;
+  border: string;
+  mutedForeground: string;
+  // Visual tokens
+  surfaceGlow: string;
+  ambientGradient: string;
+  cardBorderGradient: string;
+  textGradient: string;
+  chipGlow: string;
+  // Art-direction tokens
+  radius: string;
+  displayFont: string;
+  bodyFont: string;
+  metadataFont: string;
+  sectionSpacing: string;
+  heroScale: string;
+  imageRadius: string;
+  density: "airy" | "balanced" | "dense";
+  composition: "cosmic" | "industrial" | "fluid" | "editorial" | "spectral";
+  motionDuration: string;
+  motionEase: string;
+}
+
+export const THEME_TOKENS: Record<GradSettings["theme"], ThemeTokens> = {
   nebula: {
     background: "#0B0D17", foreground: "#E8E6F0", primary: "#7C3AED", accent: "#3B82F6",
     card: "#13162A", muted: "#1C1F3A", border: "#252850", mutedForeground: "#8B8DA8",
+    surfaceGlow: "rgba(124, 58, 237, 0.15)",
+    ambientGradient: "radial-gradient(ellipse at 30% 20%, rgba(124,58,237,0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.06) 0%, transparent 50%)",
+    cardBorderGradient: "linear-gradient(135deg, rgba(124,58,237,0.4), rgba(59,130,246,0.4))",
+    textGradient: "linear-gradient(135deg, #E8E6F0 0%, #7C3AED 50%, #3B82F6 100%)",
+    chipGlow: "rgba(124, 58, 237, 0.3)",
+    radius: "20px",
+    displayFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    bodyFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    metadataFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    sectionSpacing: "5rem", heroScale: "1", imageRadius: "50%",
+    density: "airy", composition: "cosmic",
+    motionDuration: "0.9s", motionEase: "cubic-bezier(0.22, 1, 0.36, 1)",
   },
   ember: {
     background: "#1A1412", foreground: "#F0E8E0", primary: "#F59E0B", accent: "#EF4444",
     card: "#261E1A", muted: "#332822", border: "#4A3830", mutedForeground: "#A89080",
+    surfaceGlow: "rgba(245, 158, 11, 0.12)",
+    ambientGradient: "radial-gradient(ellipse at 50% 100%, rgba(245,158,11,0.06) 0%, transparent 60%)",
+    cardBorderGradient: "linear-gradient(180deg, rgba(245,158,11,0.3) 0%, transparent 100%)",
+    textGradient: "linear-gradient(135deg, #FFFFFF 0%, #F59E0B 100%)",
+    chipGlow: "rgba(245, 158, 11, 0.25)",
+    radius: "6px",
+    displayFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    bodyFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    metadataFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    sectionSpacing: "4rem", heroScale: "1", imageRadius: "4px",
+    density: "balanced", composition: "industrial",
+    motionDuration: "0.5s", motionEase: "cubic-bezier(0.16, 1, 0.3, 1)",
   },
   aurora: {
     background: "#0A1219", foreground: "#E0F0EC", primary: "#06B6D4", accent: "#10B981",
     card: "#111E28", muted: "#172A36", border: "#1F3A4A", mutedForeground: "#78A098",
+    surfaceGlow: "rgba(6, 182, 212, 0.12)",
+    ambientGradient: "radial-gradient(ellipse at 20% 50%, rgba(6,182,212,0.07) 0%, transparent 50%), radial-gradient(ellipse at 80% 30%, rgba(16,185,129,0.05) 0%, transparent 50%)",
+    cardBorderGradient: "linear-gradient(135deg, rgba(6,182,212,0.35), rgba(16,185,129,0.35))",
+    textGradient: "linear-gradient(135deg, #06B6D4 0%, #10B981 100%)",
+    chipGlow: "rgba(6, 182, 212, 0.3)",
+    radius: "16px",
+    displayFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    bodyFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    metadataFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    sectionSpacing: "4.5rem", heroScale: "1", imageRadius: "12px 12px 48px 48px",
+    density: "balanced", composition: "fluid",
+    motionDuration: "0.8s", motionEase: "cubic-bezier(0.33, 1, 0.68, 1)",
+  },
+  mono: {
+    background: "#0A0A0A", foreground: "#FAFAFA", primary: "#2563EB", accent: "#2563EB",
+    card: "#141414", muted: "#1A1A1A", border: "#222222", mutedForeground: "#737373",
+    surfaceGlow: "transparent",
+    ambientGradient: "none",
+    cardBorderGradient: "none",
+    textGradient: "none",
+    chipGlow: "transparent",
+    radius: "4px",
+    displayFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    bodyFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    metadataFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    sectionSpacing: "5.5rem", heroScale: "1", imageRadius: "0",
+    density: "airy", composition: "editorial",
+    motionDuration: "0.6s", motionEase: "cubic-bezier(0.16, 1, 0.3, 1)",
+  },
+  prism: {
+    background: "#0D0D12", foreground: "#F0EEF6", primary: "#A855F7", accent: "#EC4899",
+    card: "#16161E", muted: "#1E1E2A", border: "#2A2A3A", mutedForeground: "#8888A0",
+    surfaceGlow: "rgba(168, 85, 247, 0.1)",
+    ambientGradient: "conic-gradient(from 0deg at 50% 50%, rgba(168,85,247,0.04), rgba(236,72,153,0.04), rgba(59,130,246,0.04), rgba(16,185,129,0.04), rgba(168,85,247,0.04))",
+    cardBorderGradient: "conic-gradient(from 0deg, #A855F7, #EC4899, #3B82F6, #10B981, #A855F7)",
+    textGradient: "linear-gradient(90deg, #A855F7, #EC4899, #3B82F6, #10B981, #F59E0B, #A855F7)",
+    chipGlow: "rgba(168, 85, 247, 0.2)",
+    radius: "14px",
+    displayFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    bodyFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    metadataFont: '"Be Vietnam Pro", system-ui, sans-serif',
+    sectionSpacing: "4.5rem", heroScale: "1", imageRadius: "24px 4px 24px 4px",
+    density: "balanced", composition: "spectral",
+    motionDuration: "0.7s", motionEase: "cubic-bezier(0.34, 1.56, 0.64, 1)",
   },
 };
 
@@ -250,6 +346,22 @@ export function themeStyle(settings: GradSettings): CSSProperties {
     "--muted": t.muted,
     "--border": t.border,
     "--muted-foreground": t.mutedForeground,
+    "--surface-glow": t.surfaceGlow,
+    "--ambient-gradient": t.ambientGradient,
+    "--card-border-gradient": t.cardBorderGradient,
+    "--text-gradient": t.textGradient,
+    "--chip-glow": t.chipGlow,
+    "--radius": t.radius,
+    "--font-display": t.displayFont,
+    "--font-body": t.bodyFont,
+    "--font-metadata": t.metadataFont,
+    "--section-spacing": t.sectionSpacing,
+    "--hero-scale": t.heroScale,
+    "--image-radius": t.imageRadius,
+    "--density": t.density,
+    "--composition": t.composition,
+    "--motion-duration": t.motionDuration,
+    "--motion-ease": t.motionEase,
     colorScheme: "dark",
   } as CSSProperties;
 }

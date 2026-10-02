@@ -109,659 +109,2163 @@
   transform: translateY(0);
 }
 
-/* ── Section headings ── */
-.grad-heading {
-  font-family: var(--font-display);
-  font-size: clamp(1.4rem, 3.5vw, 1.75rem);
-  font-weight: 700;
-  color: var(--foreground, hsl(var(--foreground)));
-  margin-bottom: 28px;
-  padding-bottom: 12px;
+/* ── Section headings ──
+   .grad-heading is defined in the SECTION ARCHITECTURE block below. */
+
+/* ============================================
+   HERO — Full viewport editorial composition
+   Mobile-first: base = mobile, min-width 641px = desktop
+   ============================================ */
+
+/* Hero section is immediately visible (no scroll reveal). */
+.grad-section[data-section="hero"] {
+  opacity: 1;
+  transform: none;
+  padding-block: 0;
+}
+
+.grad-hero {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100svh;
+  min-height: 100vh; /* fallback */
+  padding: 3rem 1.5rem;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+@supports (min-height: 100svh) {
+  .grad-hero { min-height: 100svh; }
+}
+
+/* Ambient background layer */
+.grad-hero-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ambient-gradient, none);
+  pointer-events: none;
+}
+
+/* Brand mark */
+.grad-hero-brand {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 2;
+}
+
+.grad-hero-brand-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--foreground);
+  opacity: 0.4;
+}
+
+/* Hero content */
+.grad-hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  z-index: 1;
+  width: 100%;
+  order: 2; /* Below photo on mobile */
+}
+
+/* Hero name — dominant visual object */
+.grad-hero-name {
+  font-family: var(--font-display, "Be Vietnam Pro", system-ui, sans-serif);
+  font-size: clamp(2.8rem, 10vw, 4rem);
+  font-weight: 800;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
+  margin: 0;
+  padding: 0;
+  /* Gradient text — uses theme token */
+  background: var(--text-gradient, none);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Fallback for themes with no text gradient (mono) */
+.grad-document[data-theme="mono"] .grad-hero-name {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: var(--foreground);
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+/* Decorative rule under name */
+.grad-hero-rule {
+  width: 48px;
+  height: 1px;
+  background: var(--primary);
+  opacity: 0.5;
+  transform-origin: center;
+}
+
+/* Objective */
+.grad-hero-objective {
+  font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+  font-weight: 300;
+  color: var(--muted-foreground);
+  max-width: 32ch;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Meta (location) */
+.grad-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+}
+
+/* Contact links */
+.grad-hero-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.grad-hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: calc(var(--radius, 20px) * 0.75);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  color: var(--foreground);
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: border-color var(--motion-duration, 0.3s) var(--motion-ease, ease),
+              background var(--motion-duration, 0.3s) var(--motion-ease, ease);
+  min-height: 44px; /* Touch target */
+}
+
+.grad-hero-link:hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+}
+
+.grad-hero-link-text {
+  white-space: nowrap;
+}
+
+/* Photo frame */
+.grad-hero-photo-frame {
+  position: relative;
+  z-index: 1;
+  order: 1; /* Above content on mobile */
+  margin-bottom: 2rem;
+}
+
+.grad-hero-photo-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grad-hero-photo {
+  width: clamp(120px, 30vw, 160px);
+  height: clamp(120px, 30vw, 160px);
+  object-fit: cover;
+  border-radius: var(--image-radius, 50%);
+  border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  box-shadow: 0 0 40px var(--surface-glow, transparent);
+  transition: transform var(--motion-duration, 0.5s) var(--motion-ease, ease);
+}
+
+.grad-hero-photo--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 2rem;
+}
+
+/* Scroll indicator */
+.grad-hero-scroll {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+}
+
+.grad-hero-scroll-line {
+  display: block;
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(to bottom, var(--primary), transparent);
+  animation: scroll-hint 2s ease-in-out infinite;
+}
+
+.grad-hero-scroll[data-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ============================================
+   HERO — Desktop enhancements (min-width: 641px)
+   ============================================ */
+@media (min-width: 641px) {
+  .grad-hero {
+    padding: 4rem 3rem;
+    align-items: stretch;
+  }
+
+  .grad-hero-brand {
+    top: 2.5rem;
+    left: 3rem;
+  }
+
+  .grad-hero-content {
+    order: 1;
+    align-items: flex-start;
+    text-align: left;
+    flex: 1;
+    justify-content: center;
+    padding-right: 2rem;
+  }
+
+  .grad-hero-name {
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    line-height: 0.82;
+    letter-spacing: -0.055em;
+  }
+
+  .grad-hero-objective {
+    max-width: 40ch;
+  }
+
+  .grad-hero-contact {
+    justify-content: flex-start;
+  }
+
+  .grad-hero-photo-frame {
+    order: 2;
+    position: absolute;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-bottom: 0;
+  }
+
+  .grad-hero-photo {
+    width: clamp(200px, 22vw, 320px);
+    height: clamp(200px, 22vw, 320px);
+  }
+
+  .grad-hero-scroll {
+    bottom: 3rem;
+    left: auto;
+    right: 3rem;
+    transform: none;
+  }
+}
+
+/* Large desktop */
+@media (min-width: 1024px) {
+  .grad-hero-name {
+    font-size: clamp(4rem, 11vw, 11rem);
+  }
+
+  .grad-hero-photo-frame {
+    right: 10%;
+  }
+
+  .grad-hero-photo {
+    width: clamp(260px, 20vw, 380px);
+    height: clamp(260px, 20vw, 380px);
+  }
+}
+
+/* ============================================
+   HERO — Per-theme composition overrides
+   ============================================ */
+
+/* NEBULA: cosmic, centered, enormous whitespace */
+.grad-document[data-theme="nebula"] .grad-hero-rule {
+  width: 64px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  opacity: 0.7;
+}
+
+/* EMBER: industrial, left-aligned, solid */
+.grad-document[data-theme="ember"] .grad-hero-name {
+  font-weight: 900;
+}
+
+.grad-document[data-theme="ember"] .grad-hero-rule {
+  width: 40px;
+  height: 2px;
+  background: var(--primary);
+  opacity: 0.8;
+}
+
+.grad-document[data-theme="ember"] .grad-hero-link {
+  border-radius: 4px;
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* AURORA: fluid, soft curves */
+.grad-document[data-theme="aurora"] .grad-hero-rule {
+  width: 80px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  opacity: 0.6;
+  border-radius: 1px;
+}
+
+/* MONO: editorial, maximum restraint */
+.grad-document[data-theme="mono"] .grad-hero-rule {
+  width: 120px;
+  height: 1px;
+  background: var(--foreground);
+  opacity: 0.2;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-link {
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-photo {
+  border: none;
+  box-shadow: none;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-ambient {
+  display: none;
+}
+
+/* PRISM: spectral, experimental */
+.grad-document[data-theme="prism"] .grad-hero-rule {
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, #A855F7, #EC4899, #3B82F6, #10B981);
+  opacity: 0.8;
+}
+
+.grad-document[data-theme="prism"] .grad-hero-link {
+  border-image: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(236,72,153,0.3)) 1;
+  border-radius: 0;
+}
+
+/* ============================================
+   HERO — Theme-specific photo geometry
+   ============================================ */
+.grad-document[data-theme="nebula"] .grad-hero-photo {
+  border-radius: 50%;
+}
+
+.grad-document[data-theme="ember"] .grad-hero-photo {
+  border-radius: 4px;
+}
+
+.grad-document[data-theme="aurora"] .grad-hero-photo {
+  border-radius: 12px 12px 48px 48px;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-photo {
+  border-radius: 0;
+}
+
+.grad-document[data-theme="prism"] .grad-hero-photo {
+  border-radius: 24px 4px 24px 4px;
+}
+
+/* ============================================
+   HERO — Reduced motion
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .grad-hero-scroll-line {
+    animation: none;
+  }
+  .grad-hero-photo {
+    transition: none;
+  }
+  .grad-hero-link {
+    transition: none;
+  }
+}
+
+/* ============================================
+   HERO — Print
+   ============================================ */
+@media print {
+  .grad-hero {
+    min-height: auto;
+    padding: 2rem 0;
+    page-break-after: avoid;
+  }
+  .grad-hero-ambient,
+  .grad-hero-scroll,
+  .grad-hero-brand {
+    display: none;
+  }
+  .grad-hero-name {
+    font-size: 2.5rem;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    -webkit-text-fill-color: #000;
+    color: #000;
+  }
+  .grad-hero-photo {
+    width: 120px;
+    height: 120px;
+    border: 2px solid #ddd;
+    box-shadow: none;
+  }
+  .grad-hero-link {
+    border: 1px solid #ccc;
+    background: transparent;
+  }
+}
+
+/* ============================================
+   SECTION ARCHITECTURE — Editorial layout
+   Mobile-first
+   ============================================ */
+
+.grad-section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.grad-section-number {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--primary);
+  opacity: 0.35;
+  min-width: 1.5em;
+}
+
+.grad-heading {
+  font-family: var(--font-display, "Be Vietnam Pro", system-ui, sans-serif);
+  font-size: clamp(1.3rem, 3.5vw, 1.75rem);
+  font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--foreground);
+  margin: 0;
+  position: relative;
 }
 
 .grad-heading::after {
   content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 56px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary, hsl(var(--primary))), var(--accent, hsl(var(--accent))));
-  border-radius: 2px;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
-}
-
-.grad-section[data-visible="true"] .grad-heading::after {
-  transform: scaleX(1);
-}
-
-/* ── Hero / Profile section ── */
-.grad-hero {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  padding: 48px;
-  background: color-mix(in srgb, var(--card, hsl(var(--card))) 70%, transparent);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 40%, transparent);
-  border-radius: 24px;
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 color-mix(in srgb, var(--foreground, hsl(var(--foreground))) 5%, transparent);
-  margin-top: 40px;
-  min-height: 280px;
-  position: relative;
-  overflow: hidden;
-}
-
-.grad-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary, hsl(var(--primary))) 8%, transparent),
-    transparent 50%,
-    color-mix(in srgb, var(--accent, hsl(var(--accent))) 5%, transparent)
-  );
-  pointer-events: none;
-}
-
-.grad-hero-photo {
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 40%, transparent);
-  flex-shrink: 0;
-  transform: scale(0.9);
-  opacity: 0;
-  box-shadow:
-    0 0 40px color-mix(in srgb, var(--primary, hsl(var(--primary))) 20%, transparent),
-    0 8px 24px rgba(0, 0, 0, 0.3);
-  transition:
-    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s,
-    opacity 0.6s ease 0.1s,
-    box-shadow 0.4s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.grad-hero-photo[data-visible="true"] {
-  transform: scale(1);
-  opacity: 1;
-}
-
-.grad-hero-info {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  z-index: 1;
-}
-
-.grad-hero-name {
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 5vw, 2.8rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  background: linear-gradient(
-    135deg,
-    var(--foreground, hsl(var(--foreground))),
-    color-mix(in srgb, var(--primary, hsl(var(--primary))) 60%, var(--foreground, hsl(var(--foreground))))
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 8px;
-  line-height: 1.1;
-}
-
-.grad-hero-objective {
-  font-size: 0.95rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  margin-bottom: 20px;
-  line-height: 1.6;
-  max-width: 520px;
-}
-
-.grad-hero-contact {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 0.82rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-}
-
-.grad-hero-contact span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: color-mix(in srgb, var(--muted, hsl(var(--muted))) 50%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 30%, transparent);
-  border-radius: 20px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* ── Education section ── */
-.grad-education {
-  background: color-mix(in srgb, var(--card, hsl(var(--card))) 70%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 40%, transparent);
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.grad-education::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  display: block;
+  width: 40px;
   height: 2px;
-  background: linear-gradient(90deg, var(--primary, hsl(var(--primary))), var(--accent, hsl(var(--accent))));
+  background: var(--primary);
+  margin-top: 0.75rem;
+  transform-origin: left;
   opacity: 0.6;
 }
 
-.grad-edu-header {
+/* Section spacing uses theme token */
+.grad-section {
+  padding-block: var(--section-spacing, 4rem);
+}
+
+/* ============================================
+   EDUCATION — Timeline editorial
+   ============================================ */
+
+.grad-edu-timeline {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.grad-edu-period {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.grad-edu-content {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
 .grad-edu-school {
-  font-size: 1.15rem;
+  font-family: var(--font-display, "Be Vietnam Pro", system-ui, sans-serif);
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
   font-weight: 700;
-  color: var(--foreground, hsl(var(--foreground)));
+  color: var(--foreground);
+  margin: 0;
   letter-spacing: -0.01em;
 }
 
 .grad-edu-major {
   font-size: 0.95rem;
-  color: var(--primary, hsl(var(--primary)));
-  font-weight: 600;
+  color: var(--muted-foreground);
+  margin: 0;
+  font-weight: 400;
 }
 
 .grad-edu-meta {
   display: flex;
-  gap: 16px;
-  font-size: 0.85rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 .grad-edu-gpa {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 1.5rem;
   font-weight: 700;
-  color: var(--accent, hsl(var(--accent)));
-  text-shadow: 0 0 12px color-mix(in srgb, var(--accent, hsl(var(--accent))) 30%, transparent);
+  color: var(--primary);
+  letter-spacing: -0.02em;
 }
 
 .grad-edu-honors {
-  font-size: 0.88rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  font-style: italic;
-  margin-bottom: 18px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 500;
+  align-self: center;
 }
 
+/* Education photo */
+.grad-edu-photo-frame {
+  margin-top: 1.5rem;
+  overflow: hidden;
+  border-radius: var(--radius, 12px);
+}
+
+.grad-edu-photo {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--motion-duration, 0.5s) var(--motion-ease, ease);
+}
+
+/* Certificates — equal-cell grid so badges stop rendering as ragged
+   content-sized blobs (134/179/238px in one row). */
 .grad-certificates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-top: 2rem;
 }
 
 .grad-cert-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary, hsl(var(--primary))) 15%, transparent),
-    color-mix(in srgb, var(--accent, hsl(var(--accent))) 10%, transparent)
-  );
-  border: 1px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 25%, transparent);
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--primary, hsl(var(--primary)));
-  opacity: 0;
-  transform: scale(0.7) translateY(8px);
-  transition:
-    opacity 0.5s ease,
-    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.3s ease;
-}
-
-.grad-cert-badge[data-visible="true"] {
-  opacity: 1;
-  transform: scale(1) translateY(0);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius, 12px);
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  transition: transform var(--motion-duration, 0.3s) var(--motion-ease, ease),
+              box-shadow var(--motion-duration, 0.3s) var(--motion-ease, ease);
 }
 
 .grad-cert-badge:hover {
-  box-shadow: 0 0 16px color-mix(in srgb, var(--primary, hsl(var(--primary))) 25%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px var(--surface-glow, transparent);
+}
+
+.grad-cert-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foreground);
 }
 
 .grad-cert-score {
-  font-weight: 800;
-  color: var(--accent, hsl(var(--accent)));
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 600;
 }
 
 .grad-cert-issuer {
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
 }
 
-/* ── Education photo ── */
-.grad-edu-photo {
-  width: 100%;
-  max-height: 220px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-top: 18px;
-  opacity: 0;
-  transform: scale(0.95);
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 30%, transparent);
-  transition:
-    opacity 0.6s ease,
-    transform 0.6s ease;
-}
+/* ============================================
+   EXPERIENCE — Editorial rows
+   ============================================ */
 
-.grad-edu-photo[data-visible="true"] {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* ── Entry cards (activities, internships, part-time) ── */
 .grad-entries {
   display: flex;
   flex-direction: column;
-  gap: 18px;
 }
 
-.grad-entry-card {
-  background: color-mix(in srgb, var(--card, hsl(var(--card))) 70%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 35%, transparent);
-  border-radius: 16px;
-  padding: 28px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  position: relative;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(24px);
-  transition:
-    opacity 0.6s ease,
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+.grad-entry-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  padding-block: 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  transition: background var(--motion-duration, 0.3s) ease;
 }
 
-.grad-entry-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 3px;
-  background: linear-gradient(180deg, var(--primary, hsl(var(--primary))), var(--accent, hsl(var(--accent))));
-  border-radius: 0 2px 2px 0;
-  opacity: 0.7;
+.grad-entry-row:last-child {
+  border-bottom: none;
 }
 
-.grad-entry-card::after {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border-radius: 16px;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary, hsl(var(--primary))) 30%, transparent),
-    transparent 50%,
-    color-mix(in srgb, var(--accent, hsl(var(--accent))) 20%, transparent)
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
+.grad-entry-row:hover {
+  background: color-mix(in srgb, var(--card) 30%, transparent);
 }
 
-.grad-entry-card[data-visible="true"] {
-  opacity: 1;
-  transform: translateY(0);
+.grad-entry-period {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
-.grad-entry-card:hover {
-  border-color: color-mix(in srgb, var(--primary, hsl(var(--primary))) 30%, transparent);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.25),
-    0 0 20px color-mix(in srgb, var(--primary, hsl(var(--primary))) 8%, transparent);
-  transform: translateY(-3px);
+.grad-entry-period-text {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  white-space: nowrap;
 }
 
-.grad-entry-card:hover::after {
-  opacity: 1;
+.grad-entry-divider {
+  display: none; /* Hidden on mobile */
+}
+
+.grad-entry-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
 .grad-entry-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .grad-entry-title {
+  font-family: var(--font-display, "Be Vietnam Pro", system-ui, sans-serif);
   font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--foreground, hsl(var(--foreground)));
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
   letter-spacing: -0.01em;
 }
 
 .grad-entry-org {
-  font-size: 0.88rem;
-  color: var(--primary, hsl(var(--primary)));
-  font-weight: 600;
-}
-
-.grad-entry-period {
-  font-size: 0.78rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  white-space: nowrap;
-  padding: 4px 10px;
-  background: color-mix(in srgb, var(--muted, hsl(var(--muted))) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 30%, transparent);
-  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--primary);
+  font-weight: 500;
 }
 
 .grad-entry-location {
-  font-size: 0.8rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  margin-bottom: 10px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  font-style: italic;
 }
 
 .grad-entry-description {
   font-size: 0.9rem;
-  color: color-mix(in srgb, var(--foreground, hsl(var(--foreground))) 85%, transparent);
-  line-height: 1.65;
-  margin-bottom: 14px;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  margin: 0.5rem 0 0;
 }
 
 .grad-entry-highlights {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .grad-entry-highlights li {
-  font-size: 0.85rem;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  padding-left: 18px;
   position: relative;
-  margin-bottom: 6px;
-  line-height: 1.55;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 75%, transparent);
 }
 
 .grad-entry-highlights li::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 9px;
-  width: 6px;
-  height: 6px;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary, hsl(var(--primary))), var(--accent, hsl(var(--accent))));
-  box-shadow: 0 0 6px color-mix(in srgb, var(--primary, hsl(var(--primary))) 40%, transparent);
+  background: var(--primary);
+  opacity: 0.6;
 }
 
+/* Entry photos strip */
 .grad-entry-photos {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 0.5rem;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 0.75rem 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.grad-entry-photos::-webkit-scrollbar {
+  display: none;
 }
 
 .grad-entry-photos img {
-  width: 88px;
-  height: 66px;
+  width: 80px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 30%, transparent);
-  opacity: 0;
-  transform: scale(0.9);
-  transition:
-    opacity 0.5s ease,
-    transform 0.5s ease,
-    box-shadow 0.3s ease;
-}
-
-.grad-entry-photos img[data-visible="true"] {
-  opacity: 1;
-  transform: scale(1);
+  border-radius: calc(var(--radius, 12px) * 0.5);
+  flex-shrink: 0;
+  transition: transform var(--motion-duration, 0.3s) var(--motion-ease, ease);
 }
 
 .grad-entry-photos img:hover {
-  box-shadow: 0 0 16px color-mix(in srgb, var(--primary, hsl(var(--primary))) 20%, transparent);
   transform: scale(1.05);
 }
 
-/* ── Skills & Hobbies ── */
+/* ============================================
+   SKILLS — Typography-first visualization
+   ============================================ */
+
 .grad-skills-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
-.grad-chip-group h4 {
-  font-size: 0.82rem;
-  font-weight: 700;
+.grad-skill-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.grad-skill-category {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted-foreground, hsl(var(--muted-foreground)));
-  margin-bottom: 14px;
+  color: var(--muted-foreground);
+  margin: 0;
 }
 
 .grad-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .grad-chip {
-  padding: 7px 16px;
-  border-radius: 20px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  opacity: 0;
-  transform: scale(0.7) translateY(6px);
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.3s ease;
-}
-
-.grad-chip[data-visible="true"] {
-  opacity: 1;
-  transform: scale(1) translateY(0);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: calc(var(--radius, 12px) * 1.2);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--muted) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  transition: transform var(--motion-duration, 0.3s) var(--motion-ease, ease),
+              box-shadow var(--motion-duration, 0.3s) var(--motion-ease, ease),
+              border-color var(--motion-duration, 0.3s) ease;
+  min-height: 36px;
 }
 
 .grad-chip:hover {
-  transform: scale(1.05) translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--chip-glow, transparent);
+  border-color: var(--primary);
 }
 
 .grad-chip--skill {
-  background: color-mix(in srgb, var(--primary, hsl(var(--primary))) 12%, transparent);
-  color: var(--primary, hsl(var(--primary)));
-  border: 1px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 25%, transparent);
-  text-shadow: 0 0 8px color-mix(in srgb, var(--primary, hsl(var(--primary))) 20%, transparent);
-}
-
-.grad-chip--skill:hover {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--primary, hsl(var(--primary))) 20%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 .grad-chip--hobby {
-  background: color-mix(in srgb, var(--accent, hsl(var(--accent))) 12%, transparent);
-  color: var(--accent, hsl(var(--accent)));
-  border: 1px solid color-mix(in srgb, var(--accent, hsl(var(--accent))) 25%, transparent);
-  text-shadow: 0 0 8px color-mix(in srgb, var(--accent, hsl(var(--accent))) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .grad-chip--hobby:hover {
-  box-shadow: 0 0 14px color-mix(in srgb, var(--accent, hsl(var(--accent))) 20%, transparent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
-/* ── Responsive ── */
-@media (max-width: 640px) {
+/* Deterministic chip variation via data-chip-index */
+.grad-chip[data-chip-index="0"] { font-weight: 600; font-size: 0.85rem; }
+.grad-chip[data-chip-index="1"] { font-weight: 600; }
+.grad-chip[data-chip-index="2"] { opacity: 0.95; }
+.grad-chip[data-chip-index="3"] { opacity: 0.9; }
+.grad-chip[data-chip-index="4"] { opacity: 0.85; }
+
+/* ============================================
+   CONTACT / ENDING — Strong conclusion
+   ============================================ */
+
+.grad-section--ending {
+  padding-block: var(--section-spacing, 4rem) calc(var(--section-spacing, 4rem) * 1.5);
+}
+
+.grad-ending {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2rem;
+}
+
+.grad-ending-heading {
+  font-family: var(--font-display, "Be Vietnam Pro", system-ui, sans-serif);
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--foreground);
+  margin: 0;
+  opacity: 0.9;
+}
+
+.grad-ending-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.grad-ending-link {
+  font-size: 1rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: opacity 0.2s ease;
+}
+
+.grad-ending-link:hover {
+  opacity: 0.7;
+}
+
+.grad-ending-top {
+  margin-top: 3rem;
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
+  transition: color 0.2s ease;
+}
+
+.grad-ending-top:hover {
+  color: var(--foreground);
+}
+
+/* ============================================
+   DESKTOP ENHANCEMENTS — Content sections
+   ============================================ */
+@media (min-width: 641px) {
   .grad-container {
-    width: calc(100% - 32px);
+    width: min(820px, calc(100% - 48px));
   }
 
-  .grad-hero {
-    flex-direction: column;
-    text-align: center;
-    padding: 32px 24px;
-    gap: 24px;
+  .grad-section-header {
+    margin-bottom: 3rem;
   }
 
-  .grad-hero-contact {
-    justify-content: center;
+  .grad-section-number {
+    font-size: 0.8rem;
   }
 
-  .grad-hero-photo {
-    width: 120px;
-    height: 120px;
+  /* Education: two-column timeline */
+  .grad-edu-timeline {
+    grid-template-columns: 140px 1fr;
+    gap: 2rem;
   }
 
-  .grad-section {
-    padding-block: 36px;
+  .grad-edu-period {
+    text-align: right;
+    padding-top: 0.2rem;
   }
 
-  .grad-skills-section {
-    grid-template-columns: 1fr;
-    gap: 28px;
+  .grad-edu-photo {
+    height: 220px;
+  }
+
+  /* Experience: two-column editorial rows */
+  .grad-entry-row {
+    grid-template-columns: 140px 1fr;
+    gap: 2rem;
+    padding-block: 2rem;
+  }
+
+  .grad-entry-period {
+    text-align: right;
+    align-items: flex-end;
+    padding-top: 0.15rem;
+  }
+
+  .grad-entry-divider {
+    display: block;
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    opacity: 0.4;
   }
 
   .grad-entry-header {
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.75rem;
   }
 
-  .grad-edu-header {
-    flex-direction: column;
+  .grad-entry-title {
+    font-size: 1.15rem;
   }
 
-  .grad-entry-card {
-    padding: 22px;
+  .grad-entry-photos img {
+    width: 100px;
+    height: 75px;
+  }
+
+  /* Skills: two-column layout */
+  .grad-skills-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+
+  /* Ending */
+  .grad-ending-heading {
+    font-size: clamp(3rem, 7vw, 6rem);
+  }
+
+  .grad-ending-links {
+    flex-direction: row;
+    gap: 2rem;
   }
 }
 
-/* ── Print ── */
+/* Large desktop */
+@media (min-width: 1024px) {
+  .grad-edu-timeline {
+    grid-template-columns: 180px 1fr;
+  }
+
+  .grad-entry-row {
+    grid-template-columns: 180px 1fr;
+  }
+}
+
+/* ============================================
+   THEME ART DIRECTION — Full per-theme identity
+   Each theme looks like a different art director
+   interpreted the same person.
+   ============================================ */
+
+/* ────────────────────────────────────────────
+   THEME: NEBULA — Cosmic constellation identity
+   Ambient: CSS particle field (sparse, slow, deterministic)
+   ──────────────────────────────────────────── */
+
+.grad-document[data-theme="nebula"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(124,58,237,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 65%, rgba(59,130,246,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(124,58,237,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 40%, rgba(59,130,246,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 85% 75%, rgba(124,58,237,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 20% 90%, rgba(59,130,246,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 85%, rgba(124,58,237,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 15%, rgba(59,130,246,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 45%, rgba(124,58,237,0.2) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 75% 55%, rgba(59,130,246,0.15) 0%, transparent 100%);
+  animation: nebula-particle-drift 60s linear infinite;
+  opacity: 0.7;
+}
+
+.grad-document[data-theme="nebula"]::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 600px 400px at 30% 40%, rgba(124,58,237,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 70% 60%, rgba(59,130,246,0.04) 0%, transparent 70%);
+  animation: nebula-orbit 30s ease-in-out infinite;
+}
+
+.grad-document[data-theme="nebula"] .grad-cert-badge,
+.grad-document[data-theme="nebula"] .grad-chip {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  border-color: transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+
+.grad-document[data-theme="nebula"] .grad-cert-badge {
+  box-shadow:
+    0 0 0 1px rgba(124,58,237,0.2),
+    0 0 0 1px rgba(59,130,246,0.1) inset,
+    0 4px 24px rgba(124,58,237,0.05);
+}
+
+.grad-document[data-theme="nebula"] .grad-cert-badge:hover {
+  box-shadow:
+    0 0 0 1px rgba(124,58,237,0.4),
+    0 0 0 1px rgba(59,130,246,0.2) inset,
+    0 8px 32px rgba(124,58,237,0.1);
+}
+
+.grad-document[data-theme="nebula"] .grad-hero-name {
+  background-size: 200% auto;
+  animation: nebula-shimmer 8s ease-in-out infinite;
+}
+
+.grad-document[data-theme="nebula"] .grad-entry-row:hover {
+  background: color-mix(in srgb, rgba(124,58,237,0.04) 100%, transparent);
+  box-shadow: 0 0 40px rgba(124,58,237,0.03);
+}
+
+.grad-document[data-theme="nebula"] .grad-heading::after {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  box-shadow: 0 0 8px rgba(124,58,237,0.3);
+}
+
+.grad-document[data-theme="nebula"] .grad-edu-photo-frame {
+  border-radius: 20px;
+  box-shadow: 0 0 60px rgba(124,58,237,0.08);
+}
+
+.grad-document[data-theme="nebula"] .grad-chip:hover {
+  box-shadow: 0 4px 20px var(--chip-glow), 0 0 0 1px rgba(124,58,237,0.3);
+}
+
+.grad-document[data-theme="nebula"] .grad-ending-heading {
+  background: var(--text-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: nebula-shimmer 10s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────
+   THEME: EMBER — Forged industrial identity
+   Ambient: Warm lower-edge glow (distant heat)
+   ──────────────────────────────────────────── */
+
+.grad-document[data-theme="ember"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 110%, rgba(245,158,11,0.06) 0%, transparent 50%);
+}
+
+.grad-document[data-theme="ember"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+.grad-document[data-theme="ember"] .grad-cert-badge {
+  background: var(--card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-top: 2px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.grad-document[data-theme="ember"] .grad-cert-badge:hover {
+  border-top-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(245,158,11,0.1);
+  transform: translateY(-1px);
+}
+
+.grad-document[data-theme="ember"] .grad-hero-name {
+  background: linear-gradient(180deg, #FFFFFF 30%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.grad-document[data-theme="ember"] .grad-entry-row {
+  border-bottom: none;
+  position: relative;
+}
+
+.grad-document[data-theme="ember"] .grad-entry-row::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245,158,11,0.2) 20%, rgba(245,158,11,0.2) 80%, transparent);
+}
+
+.grad-document[data-theme="ember"] .grad-entry-row:last-child::after {
+  display: none;
+}
+
+.grad-document[data-theme="ember"] .grad-entry-row:hover {
+  background: rgba(245,158,11,0.02);
+}
+
+.grad-document[data-theme="ember"] .grad-chip {
+  border-radius: 3px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.grad-document[data-theme="ember"] .grad-chip:hover {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+  box-shadow: 0 2px 12px rgba(245,158,11,0.15);
+}
+
+.grad-document[data-theme="ember"] .grad-heading::after {
+  background: linear-gradient(90deg, var(--primary), transparent);
+  height: 2px;
+  width: 48px;
+}
+
+.grad-document[data-theme="ember"] .grad-section-number {
+  color: var(--primary);
+  opacity: 0.5;
+}
+
+.grad-document[data-theme="ember"] .grad-edu-photo-frame {
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.grad-document[data-theme="ember"] .grad-ending-heading {
+  background: linear-gradient(180deg, var(--foreground) 40%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.grad-document[data-theme="ember"] .grad-hero-scroll-line {
+  background: linear-gradient(to bottom, var(--primary), transparent);
+}
+
+/* ────────────────────────────────────────────
+   THEME: AURORA — Fluid atmospheric identity
+   Ambient: CSS aurora flowing light bands
+   ──────────────────────────────────────────── */
+
+.grad-document[data-theme="aurora"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(6,182,212,0.03) 30%, rgba(16,185,129,0.02) 60%, transparent 100%);
+  animation: aurora-pulse 12s ease-in-out infinite;
+}
+
+.grad-document[data-theme="aurora"]::after {
+  content: "";
+  position: fixed;
+  top: -20%;
+  left: -10%;
+  right: -10%;
+  height: 60%;
+  z-index: -3;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(6,182,212,0.05) 0%,
+    rgba(16,185,129,0.04) 30%,
+    rgba(6,182,212,0.03) 60%,
+    transparent 100%
+  );
+  filter: blur(60px);
+  animation: aurora-flow 20s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.grad-document[data-theme="aurora"] .grad-cert-badge {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--card) 40%, transparent);
+  border: 1px solid rgba(6,182,212,0.15);
+  box-shadow: 0 2px 16px rgba(6,182,212,0.04);
+}
+
+.grad-document[data-theme="aurora"] .grad-cert-badge:hover {
+  border-color: rgba(6,182,212,0.35);
+  box-shadow: 0 4px 24px rgba(6,182,212,0.08);
+}
+
+.grad-document[data-theme="aurora"] .grad-chip {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--card) 40%, transparent);
+  border-color: rgba(6,182,212,0.12);
+}
+
+.grad-document[data-theme="aurora"] .grad-chip:hover {
+  border-color: rgba(6,182,212,0.4);
+  box-shadow: 0 4px 16px rgba(6,182,212,0.12);
+}
+
+.grad-document[data-theme="aurora"] .grad-hero-name {
+  background-size: 200% auto;
+  animation: nebula-shimmer 12s ease-in-out infinite;
+}
+
+.grad-document[data-theme="aurora"] .grad-entry-row {
+  border-bottom-color: rgba(6,182,212,0.08);
+}
+
+.grad-document[data-theme="aurora"] .grad-entry-row:hover {
+  background: rgba(6,182,212,0.02);
+}
+
+.grad-document[data-theme="aurora"] .grad-heading::after {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  opacity: 0.7;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.grad-document[data-theme="aurora"] .grad-edu-photo-frame {
+  border-radius: 12px 12px 48px 48px;
+  box-shadow: 0 8px 40px rgba(6,182,212,0.06);
+}
+
+.grad-document[data-theme="aurora"] .grad-entry-photos img {
+  border-radius: 8px 8px 24px 24px;
+}
+
+.grad-document[data-theme="aurora"] .grad-ending-heading {
+  background: linear-gradient(135deg, var(--primary), var(--accent), var(--primary));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: nebula-shimmer 8s ease-in-out infinite;
+}
+
+.grad-document[data-theme="aurora"] .grad-hero-scroll-line {
+  background: linear-gradient(to bottom, var(--primary), var(--accent), transparent);
+}
+
+/* ────────────────────────────────────────────
+   THEME: MONO — Editorial Swiss restraint
+   Ambient: NOTHING. Zero decoration.
+   ──────────────────────────────────────────── */
+
+.grad-document[data-theme="mono"]::before,
+.grad-document[data-theme="mono"]::after {
+  display: none !important;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-ambient {
+  display: none;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-name {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  color: var(--foreground);
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-rule {
+  width: 120px;
+  height: 1px;
+  background: var(--foreground);
+  opacity: 0.15;
+  transform-origin: center;
+}
+
+.grad-document[data-theme="mono"] .grad-cert-badge {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+.grad-document[data-theme="mono"] .grad-cert-badge:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+
+.grad-document[data-theme="mono"] .grad-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.grad-document[data-theme="mono"] .grad-chip:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.grad-document[data-theme="mono"] .grad-entry-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.grad-document[data-theme="mono"] .grad-entry-row:hover {
+  background: transparent;
+}
+
+.grad-document[data-theme="mono"] .grad-entry-highlights li::before {
+  width: 8px;
+  height: 1px;
+  border-radius: 0;
+  background: var(--foreground);
+  opacity: 0.3;
+  top: 0.7em;
+}
+
+.grad-document[data-theme="mono"] .grad-heading::after {
+  background: var(--foreground);
+  opacity: 0.1;
+  height: 1px;
+  width: 60px;
+}
+
+.grad-document[data-theme="mono"] .grad-section-number {
+  opacity: 0.25;
+  color: var(--foreground);
+}
+
+.grad-document[data-theme="mono"] .grad-edu-photo-frame {
+  border-radius: 0;
+  border: 1px solid var(--border);
+}
+
+.grad-document[data-theme="mono"] .grad-entry-photos img {
+  border-radius: 0;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-photo {
+  border: none;
+  box-shadow: none;
+}
+
+.grad-document[data-theme="mono"] .grad-ending-heading {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: var(--foreground);
+  color: var(--foreground);
+  letter-spacing: 0.08em;
+  font-weight: 300;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-link {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.25rem 0;
+  min-height: auto;
+}
+
+.grad-document[data-theme="mono"] .grad-hero-link:hover {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+}
+
+.grad-document[data-theme="mono"] .grad-ending-link {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--border);
+}
+
+.grad-document[data-theme="mono"] .grad-ending-link:hover {
+  text-decoration-color: var(--primary);
+  color: var(--primary);
+}
+
+.grad-document[data-theme="mono"] .grad-hero-scroll-line {
+  background: var(--foreground);
+  opacity: 0.2;
+  width: 1px;
+}
+
+/* ────────────────────────────────────────────
+   THEME: PRISM — Spectral experimental identity
+   Ambient: Slowly rotating conic-gradient mesh
+   ──────────────────────────────────────────── */
+
+.grad-document[data-theme="prism"]::before {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: -2;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(168,85,247,0.03) 0deg,
+    rgba(236,72,153,0.03) 72deg,
+    rgba(59,130,246,0.03) 144deg,
+    rgba(16,185,129,0.03) 216deg,
+    rgba(245,158,11,0.03) 288deg,
+    rgba(168,85,247,0.03) 360deg
+  );
+  animation: prism-rotate 45s linear infinite;
+}
+
+.grad-document[data-theme="prism"] .grad-cert-badge {
+  position: relative;
+  background: var(--card);
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.grad-document[data-theme="prism"] .grad-cert-badge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  padding: 1px;
+  background: conic-gradient(from 0deg, #A855F7, #EC4899, #3B82F6, #10B981, #F59E0B, #A855F7);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: prism-rotate 6s linear infinite;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.grad-document[data-theme="prism"] .grad-cert-badge:hover::before {
+  opacity: 0.8;
+}
+
+.grad-document[data-theme="prism"] .grad-cert-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(168,85,247,0.1);
+}
+
+.grad-document[data-theme="prism"] .grad-chip {
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(168,85,247,0.15);
+}
+
+.grad-document[data-theme="prism"] .grad-chip:nth-child(5n+1) { border-color: rgba(168,85,247,0.3); }
+.grad-document[data-theme="prism"] .grad-chip:nth-child(5n+2) { border-color: rgba(236,72,153,0.3); }
+.grad-document[data-theme="prism"] .grad-chip:nth-child(5n+3) { border-color: rgba(59,130,246,0.3); }
+.grad-document[data-theme="prism"] .grad-chip:nth-child(5n+4) { border-color: rgba(16,185,129,0.3); }
+.grad-document[data-theme="prism"] .grad-chip:nth-child(5n+5) { border-color: rgba(245,158,11,0.3); }
+
+.grad-document[data-theme="prism"] .grad-chip:hover {
+  transform: translateY(-2px) rotate(1deg);
+  box-shadow: 0 4px 16px rgba(168,85,247,0.15);
+}
+
+.grad-document[data-theme="prism"] .grad-hero-name {
+  background-size: 300% auto;
+  animation: prism-spectral-shift 12s linear infinite;
+}
+
+.grad-document[data-theme="prism"] .grad-entry-row {
+  border-bottom: none;
+  position: relative;
+}
+
+.grad-document[data-theme="prism"] .grad-entry-row::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168,85,247,0.2), rgba(236,72,153,0.2), rgba(59,130,246,0.2), transparent);
+}
+
+.grad-document[data-theme="prism"] .grad-entry-row:last-child::after {
+  display: none;
+}
+
+.grad-document[data-theme="prism"] .grad-entry-row:hover {
+  background: rgba(168,85,247,0.02);
+}
+
+.grad-document[data-theme="prism"] .grad-heading::after {
+  background: linear-gradient(90deg, #A855F7, #EC4899, #3B82F6);
+  height: 2px;
+  width: 60px;
+  opacity: 0.7;
+}
+
+.grad-document[data-theme="prism"] .grad-edu-photo-frame {
+  border-radius: 14px;
+  box-shadow:
+    0 4px 24px rgba(168,85,247,0.06),
+    0 1px 3px rgba(236,72,153,0.04);
+}
+
+.grad-document[data-theme="prism"] .grad-entry-photos img:nth-child(odd) {
+  border-radius: 14px 4px 14px 4px;
+}
+
+.grad-document[data-theme="prism"] .grad-entry-photos img:nth-child(even) {
+  border-radius: 4px 14px 4px 14px;
+}
+
+.grad-document[data-theme="prism"] .grad-hero-photo {
+  border: none;
+  box-shadow:
+    0 0 0 2px rgba(168,85,247,0.2),
+    0 0 0 4px rgba(236,72,153,0.1),
+    0 0 40px rgba(168,85,247,0.08);
+}
+
+.grad-document[data-theme="prism"] .grad-ending-heading {
+  background: linear-gradient(90deg, #A855F7, #EC4899, #3B82F6, #10B981, #F59E0B, #A855F7);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: prism-spectral-shift 10s linear infinite;
+}
+
+.grad-document[data-theme="prism"] .grad-hero-scroll-line {
+  background: linear-gradient(to bottom, #A855F7, #EC4899, transparent);
+}
+
+.grad-document[data-theme="prism"] .grad-hero-link {
+  border-color: rgba(168,85,247,0.2);
+}
+
+.grad-document[data-theme="prism"] .grad-hero-link:hover {
+  border-color: rgba(236,72,153,0.4);
+  box-shadow: 0 2px 12px rgba(168,85,247,0.1);
+}
+
+/* ============================================
+   REDUCED MOTION — All theme ambient effects
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .grad-section {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .grad-cert-badge,
+  .grad-chip,
+  .grad-entry-photos img,
+  .grad-edu-photo {
+    transition: none !important;
+  }
+
+  .grad-cert-badge:hover,
+  .grad-chip:hover {
+    transform: none !important;
+  }
+
+  .grad-document[data-theme="nebula"]::before,
+  .grad-document[data-theme="nebula"]::after,
+  .grad-document[data-theme="aurora"]::before,
+  .grad-document[data-theme="aurora"]::after,
+  .grad-document[data-theme="prism"]::before {
+    animation: none !important;
+  }
+
+  .grad-document[data-theme="nebula"] .grad-hero-name,
+  .grad-document[data-theme="aurora"] .grad-hero-name,
+  .grad-document[data-theme="prism"] .grad-hero-name,
+  .grad-document[data-theme="nebula"] .grad-ending-heading,
+  .grad-document[data-theme="aurora"] .grad-ending-heading,
+  .grad-document[data-theme="prism"] .grad-ending-heading {
+    animation: none !important;
+  }
+
+  .grad-document[data-theme="prism"] .grad-cert-badge::before {
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   PRINT — Disable all theme ambient effects
+   ============================================ */
 @media print {
   .grad-document {
     background: white !important;
     color: #1a1a1a !important;
   }
 
-  .grad-document::before {
-    display: none;
+  .grad-document::before,
+  .grad-document::after {
+    display: none !important;
   }
 
   .grad-section {
     opacity: 1 !important;
     transform: none !important;
-    padding-block: 20px;
-  }
-
-  .grad-entry-card {
-    opacity: 1 !important;
-    transform: none !important;
+    padding-block: 1.5rem;
     break-inside: avoid;
+  }
+
+  .grad-section-number {
+    opacity: 0.5;
+  }
+
+  .grad-entry-row {
+    break-inside: avoid;
+    border-bottom-color: #ddd;
+  }
+
+  .grad-entry-row:hover {
+    background: transparent;
+  }
+
+  .grad-cert-badge {
+    border: 1px solid #ddd;
+    background: transparent;
     box-shadow: none;
-    border: 1px solid #e5e7eb;
-    backdrop-filter: none;
-    background: #fafafa !important;
   }
 
-  .grad-entry-card::before,
-  .grad-entry-card::after {
+  .grad-chip {
+    border: 1px solid #ddd;
+    background: transparent;
+  }
+
+  .grad-ending-top {
     display: none;
   }
 
-  .grad-hero {
-    box-shadow: none;
-    border: 1px solid #e5e7eb;
-    backdrop-filter: none;
-    background: #fafafa !important;
-  }
-
-  .grad-hero::before {
+  .grad-hero-scroll {
     display: none;
   }
 
-  .grad-education {
-    backdrop-filter: none;
-    background: #fafafa !important;
-    border: 1px solid #e5e7eb;
+  .grad-document[data-theme="nebula"] .grad-hero-name,
+  .grad-document[data-theme="ember"] .grad-hero-name,
+  .grad-document[data-theme="aurora"] .grad-hero-name,
+  .grad-document[data-theme="prism"] .grad-hero-name {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    -webkit-text-fill-color: #000 !important;
+    color: #000 !important;
+    animation: none !important;
   }
 
-  .grad-education::before {
-    display: none;
+  .grad-document[data-theme="prism"] .grad-cert-badge::before {
+    display: none !important;
   }
 
-  .grad-cert-badge,
-  .grad-chip,
-  .grad-hero-photo,
-  .grad-entry-photos img,
-  .grad-edu-photo {
-    opacity: 1 !important;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-
-  .grad-heading::after {
-    transform: scaleX(1) !important;
-  }
-
-  .grad-hero-name {
-    -webkit-text-fill-color: #1a1a1a;
-    background: none;
+  .grad-hero-ambient {
+    display: none !important;
   }
 }
 
-/* ── Reduced motion ── */
-@media (prefers-reduced-motion: reduce) {
-  .grad-section,
-  .grad-entry-card,
-  .grad-cert-badge,
-  .grad-chip,
-  .grad-hero-photo,
-  .grad-entry-photos img,
-  .grad-edu-photo {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
+/* ============================================
+   MOBILE PERFORMANCE — Simplify ambient on small screens
+   ============================================ */
+@media (max-width: 640px) {
+  .grad-document[data-theme="nebula"]::after {
+    animation: none;
+    opacity: 0.5;
   }
 
-  .grad-heading::after {
-    transform: scaleX(1) !important;
+  .grad-document[data-theme="aurora"]::after {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .grad-document[data-theme="prism"]::before {
+    animation-duration: 90s;
+  }
+
+  .grad-document[data-theme="prism"] .grad-cert-badge::before {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   MOTION — Scroll progress bar (created by mediaMotion.js)
+   ============================================ */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  z-index: 2147483000;
+  pointer-events: none;
+  transform: scaleX(var(--scroll-progress, 0));
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--primary, #7c6cff), var(--accent, #22d3ee));
+  will-change: transform;
+}
+
+/* stamp-reveal is defined in index.css for the app, but exported HTML only
+   inlines media-document.css — redefine it here so the export is self-contained. */
+@keyframes stamp-reveal {
+  0% { transform: scale(1.3); opacity: 0; }
+  60% { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================
+   MOTION — Hero entrance choreography
+   Elements start hidden; mediaMotion.js flips data-visible on a timed sequence.
+   SCOPED to the read-only / exported document via :not(.is-editing) — the live
+   editor animates the same .grad-* markup with framer-motion instead, so these
+   reveal rules must never apply there.
+   ============================================ */
+.grad-document:not(.is-editing) .grad-hero-ambient,
+.grad-document:not(.is-editing) .grad-hero-rule,
+.grad-document:not(.is-editing) .grad-hero-objective,
+.grad-document:not(.is-editing) .grad-hero-meta,
+.grad-document:not(.is-editing) .grad-hero-contact {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.6s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 0.6s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.grad-document:not(.is-editing) .grad-hero-ambient[data-visible="true"],
+.grad-document:not(.is-editing) .grad-hero-rule[data-visible="true"],
+.grad-document:not(.is-editing) .grad-hero-objective[data-visible="true"],
+.grad-document:not(.is-editing) .grad-hero-meta[data-visible="true"],
+.grad-document:not(.is-editing) .grad-hero-contact[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Photo frame — needs its own handling because it is absolutely centred on
+   desktop via translateY(-50%); we compose the reveal offset with that. */
+.grad-document:not(.is-editing) .grad-hero-photo-frame {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.6s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 0.6s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.grad-document:not(.is-editing) .grad-hero-photo-frame[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (min-width: 641px) {
+  .grad-document:not(.is-editing) .grad-hero-photo-frame {
+    transform: translateY(-50%) translateY(14px);
+  }
+  .grad-document:not(.is-editing) .grad-hero-photo-frame[data-visible="true"] {
+    transform: translateY(-50%);
+  }
+}
+
+/* Hero name fades as a whole; the per-letter spans (injected by JS) do the rest.
+   `.hero-entered` shows it immediately so the letter stagger stays visible. */
+.grad-document:not(.is-editing) .grad-hero-name {
+  opacity: 0;
+  transition: opacity 0.5s var(--motion-ease, ease);
+}
+
+.grad-document:not(.is-editing) .grad-hero-name[data-visible="true"],
+.grad-document:not(.is-editing) .hero-entered .grad-hero-name {
+  opacity: 1;
+}
+
+/* Scroll indicator fades in, then out once the reader scrolls. Resting opacity
+   is 0.5 (see base rule); data-hidden must win over data-visible. */
+.grad-document:not(.is-editing) .grad-hero-scroll {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.grad-document:not(.is-editing) .grad-hero-scroll[data-visible="true"] {
+  opacity: 0.5;
+}
+
+.grad-document:not(.is-editing) .grad-hero-scroll[data-hidden="true"] {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* ============================================
+   MOTION — Section sub-element choreography
+   ============================================ */
+.grad-document:not(.is-editing) .grad-section-number,
+.grad-document:not(.is-editing) .grad-heading,
+.grad-document:not(.is-editing) .grad-edu-timeline,
+.grad-document:not(.is-editing) .grad-entries,
+.grad-document:not(.is-editing) .grad-skills-section,
+.grad-document:not(.is-editing) .grad-certificates {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.5s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 0.5s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-section-number,
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-heading,
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-edu-timeline,
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-entries,
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-skills-section,
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-certificates {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Entry rows — stagger driven by transitionDelay set in JS. */
+.grad-document:not(.is-editing) .grad-entry-row {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.5s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    transform 0.5s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1)),
+    background 0.3s ease;
+}
+
+.grad-document:not(.is-editing) .grad-entry-row[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Certification badges — stamp in. No `forwards` fill so the hover transform
+   keeps working after the animation completes. */
+.grad-document:not(.is-editing) .grad-cert-badge {
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s var(--motion-ease, ease),
+    box-shadow 0.3s ease;
+}
+
+.grad-document:not(.is-editing) .grad-cert-badge[data-visible="true"] {
+  opacity: 1;
+  transform: scale(1);
+  animation: stamp-reveal 0.5s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+/* Chips — pop in. */
+.grad-document:not(.is-editing) .grad-chip {
+  opacity: 0;
+  transform: scale(0.9) translateY(8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s var(--motion-ease, ease),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.grad-document:not(.is-editing) .grad-chip[data-visible="true"] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Images — clip-path wipe reveal. The pre-reveal state keeps scale(1):
+   the old scale(1.04) made un-revealed photos 4% oversized inside their
+   overflow:hidden frames, so the frame reported scrollWidth > clientWidth
+   until the observer flipped data-visible. */
+.grad-document:not(.is-editing) .grad-entry-photos img,
+.grad-document:not(.is-editing) .grad-edu-photo {
+  opacity: 0;
+  transform: scale(1);
+  clip-path: inset(0 0 100% 0);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s var(--motion-ease, ease),
+    clip-path 0.6s var(--motion-ease, ease);
+}
+
+.grad-document:not(.is-editing) .grad-entry-photos img[data-visible="true"],
+.grad-document:not(.is-editing) .grad-edu-photo[data-visible="true"] {
+  opacity: 1;
+  transform: scale(1);
+  clip-path: inset(0 0 0% 0);
+}
+
+/* Contact / ending block. */
+.grad-document:not(.is-editing) .grad-ending {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s var(--motion-ease, ease);
+}
+
+.grad-document:not(.is-editing) .grad-section[data-visible="true"] .grad-ending,
+.grad-document:not(.is-editing) .grad-ending[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   MOTION — Reduced motion: force everything visible
+   (photo frame excluded from `transform: none` so desktop centring survives)
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .grad-document:not(.is-editing) .grad-hero-ambient,
+  .grad-document:not(.is-editing) .grad-hero-rule,
+  .grad-document:not(.is-editing) .grad-hero-objective,
+  .grad-document:not(.is-editing) .grad-hero-meta,
+  .grad-document:not(.is-editing) .grad-hero-contact,
+  .grad-document:not(.is-editing) .grad-hero-scroll,
+  .grad-document:not(.is-editing) .grad-hero-name,
+  .grad-document:not(.is-editing) .grad-section-number,
+  .grad-document:not(.is-editing) .grad-heading,
+  .grad-document:not(.is-editing) .grad-edu-timeline,
+  .grad-document:not(.is-editing) .grad-entries,
+  .grad-document:not(.is-editing) .grad-skills-section,
+  .grad-document:not(.is-editing) .grad-certificates,
+  .grad-document:not(.is-editing) .grad-entry-row,
+  .grad-document:not(.is-editing) .grad-cert-badge,
+  .grad-document:not(.is-editing) .grad-chip,
+  .grad-document:not(.is-editing) .grad-entry-photos img,
+  .grad-document:not(.is-editing) .grad-edu-photo,
+  .grad-document:not(.is-editing) .grad-ending {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
     transition: none !important;
+    animation: none !important;
+  }
+
+  .grad-document:not(.is-editing) .grad-hero-photo-frame {
+    opacity: 1 !important;
+    clip-path: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   MOTION — Still mode: everything visible, nothing animated
+   ============================================ */
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-ambient,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-rule,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-objective,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-meta,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-contact,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-scroll,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-name,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-section-number,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-heading,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-edu-timeline,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-entries,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-skills-section,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-certificates,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-entry-row,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-cert-badge,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-chip,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-entry-photos img,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-edu-photo,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-ending {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+.grad-document[data-motion="still"]:not(.is-editing) .grad-hero-photo-frame {
+  opacity: 1 !important;
+  clip-path: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (min-width: 641px) {
+  .grad-document[data-motion="still"]:not(.is-editing) .grad-hero-photo-frame {
+    transform: translateY(-50%) !important;
+  }
+}
+
+/* ============================================
+   MOTION — Mobile: shorten travel, drop the stamp ceremony
+   ============================================ */
+@media (max-width: 640px) {
+  .grad-document:not(.is-editing) .grad-entry-row {
+    transform: translateY(12px);
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s ease,
+      background 0.3s ease;
+  }
+
+  .grad-document:not(.is-editing) .grad-cert-badge[data-visible="true"] {
+    animation: none;
+  }
+}
+
+/* ============================================
+   CUSTOM CURSOR — Desktop only, minimal
+   ============================================ */
+
+.has-custom-cursor,
+.has-custom-cursor * {
+  cursor: none !important;
+}
+
+.custom-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--foreground, #fff);
+  pointer-events: none;
+  z-index: 99999;
+  mix-blend-mode: difference;
+  transition: width 0.2s ease, height 0.2s ease, margin 0.2s ease;
+  will-change: transform;
+}
+
+.custom-cursor.is-interactive {
+  width: 8px;
+  height: 8px;
+  margin: -1px;
+}
+
+.custom-cursor.is-image {
+  width: 10px;
+  height: 10px;
+  margin: -2px;
+}
+
+.custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.3);
+  pointer-events: none;
+  z-index: 99998;
+  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, margin 0.3s ease;
+  will-change: transform;
+}
+
+.custom-cursor-ring.is-interactive {
+  width: 44px;
+  height: 44px;
+  margin: -6px;
+  border-color: var(--primary, rgba(124,58,237,0.5));
+}
+
+.custom-cursor-ring.is-image {
+  width: 56px;
+  height: 56px;
+  margin: -12px;
+  border-color: rgba(255,255,255,0.2);
+}
+
+/* Hide on touch/reduced-motion */
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .custom-cursor,
+  .custom-cursor-ring {
+    display: none !important;
+  }
+  .has-custom-cursor,
+  .has-custom-cursor * {
+    cursor: auto !important;
+  }
+}
+
+/* ============================================
+   PRINT — Hide cursor + scroll progress
+   ============================================ */
+@media print {
+  .custom-cursor,
+  .custom-cursor-ring,
+  .scroll-progress {
+    display: none !important;
+  }
+
+  .has-custom-cursor,
+  .has-custom-cursor * {
+    cursor: auto !important;
   }
 }
