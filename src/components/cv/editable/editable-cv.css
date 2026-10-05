@@ -485,10 +485,14 @@
   background: hsl(var(--primary) / 0.05);
 }
 
-/* ── Popovers (dates, photo settings) ── */
+/* ── In-place editors (dates, photo settings) ──
+   Both of these used to open a floating .cv-popover, which on phones was a
+   panel fixed to the bottom of the viewport — far from whatever you tapped.
+   They now edit in place, so nothing is left to position or to dismiss. */
 .cv-period {
-  position: relative;
   display: inline-block;
+  min-width: 0;
+  scroll-margin-block: 16px;
 }
 
 .cv-period-trigger {
@@ -498,27 +502,69 @@
   margin-left: -6px;
   border-radius: 5px;
   cursor: pointer;
+  text-align: inherit;
 }
 
 .cv-period-trigger:hover {
   background: hsl(var(--primary) / 0.08);
 }
 
-.cv-popover {
-  position: absolute;
-  z-index: 50;
-  top: calc(100% + 8px);
-  left: 0;
-  min-width: 236px;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 40%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--card, hsl(var(--card))) 95%, transparent);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
-  display: grid;
-  gap: 11px;
+/* The fields replace the label inside its own column, so they wrap to as many
+   rows as that column allows rather than widening it. */
+.cv-period-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: inherit;
+  margin-left: -4px;
+}
+
+.cv-period-input {
+  /* 190px basis: a month input needs ~175px to render "February 2023" plus its
+     picker icon without truncating, so anything narrower than two of them side
+     by side wraps to one per row instead of clipping the year. */
+  flex: 1 1 190px;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 45%, transparent);
+  border-radius: 7px;
+  padding: 5px 7px;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 12px;
+  line-height: 1.4;
+  color-scheme: dark;
+}
+
+.cv-period-input:focus-visible {
+  outline: 2px solid var(--primary, hsl(var(--primary)));
+  outline-offset: 1px;
+}
+
+.cv-period-input:disabled {
+  opacity: 0.45;
+}
+
+.cv-period-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 11px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cv-period-current input {
+  accent-color: hsl(var(--primary));
+  width: 14px;
+  height: 14px;
+  margin: 0;
 }
 
 .cv-pop-label {
@@ -563,40 +609,14 @@
   cursor: pointer;
 }
 
-.cv-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: hsl(var(--foreground));
-  cursor: pointer;
-}
-
-.cv-check input {
-  accent-color: hsl(var(--primary));
-  width: 15px;
-  height: 15px;
-}
-
-.cv-pop-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.cv-pop-done {
-  border: 0;
-  border-radius: 8px;
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  padding: 7px 16px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
+/* (.cv-check / .cv-pop-actions / .cv-pop-done went with the date popover —
+   an in-place editor commits as you change it and needs no "Done" button.) */
 
 .cv-photo-pop {
-  position: static;
-  box-shadow: none;
+  display: grid;
+  gap: 11px;
+  padding: 14px;
+  border-radius: 12px;
   min-width: 0;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--background));
@@ -1240,11 +1260,16 @@
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent, hsl(var(--accent))) 15%, transparent);
 }
 
+/* The VIEWPORT is the scroll container, so scroll-padding has to sit on the
+   root: on .live-page (which scrolls nothing) it did nothing, and anchor jumps
+   and scrollIntoView() both landed behind the sticky toolbar. Only the editor
+   stylesheet declares this, so the exported document is unaffected. */
+html {
+  scroll-padding-top: calc(var(--media-nav-height, 82px) + 24px);
+}
+
 .live-page {
   min-height: 100vh;
-  /* Anchor jumps (hero scroll hint, future in-page links) must clear the
-     sticky edit-mode toolbar. */
-  scroll-padding-top: calc(var(--media-nav-height, 82px) + 24px);
 }
 
 .live-page .grad-heading {
@@ -1400,16 +1425,17 @@
     display: none;
   }
 
-  /* Popover inputs at 16px: anything smaller triggers iOS focus zoom, which
-     made the date/photo forms "too small to see" on phones. The 10px
-     sub-labels go with them — they failed the 11px micro-text floor. */
-  .cv-popover .cv-pop-input,
-  .cv-popover .cv-select {
+  /* 16px inputs: anything smaller triggers iOS focus zoom, which made these
+     forms "too small to see" on phones. The 10px sub-labels go with them —
+     they failed the 11px micro-text floor. */
+  .cv-photo-pop .cv-pop-input,
+  .cv-photo-pop .cv-select,
+  .cv-period-input {
     font-size: 16px;
     min-height: 40px;
   }
 
-  .cv-popover .cv-pop-label {
+  .cv-photo-pop .cv-pop-label {
     font-size: 12px;
   }
 
@@ -1417,6 +1443,8 @@
     display: none;
   }
 
+  /* Toolbar menus stay bottom-anchored: they belong to the toolbar, not to a
+     spot in the document, so there is no "in place" for them to be. */
   .live-menu,
   .live-checklist {
     position: fixed;
@@ -1425,15 +1453,6 @@
     left: 12px;
     right: 12px;
     width: auto;
-  }
-
-  .cv-popover {
-    position: fixed;
-    top: auto;
-    bottom: 12px;
-    left: 12px;
-    right: 12px;
-    min-width: 0;
   }
 }
 

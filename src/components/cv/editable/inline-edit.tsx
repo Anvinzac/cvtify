@@ -260,37 +260,101 @@ interface InlinePeriodProps {
   current: boolean;
   onChange: (fields: { start?: string; end?: string; current?: boolean }) => void;
   disabled?: boolean;
+  /** Education has no "still here" state, and its onChange ignores `current`. */
+  allowCurrent?: boolean;
 }
 
-/** A compact month-range popover so dates stay structured (YYYY-MM) yet editable in place. */
-export function InlinePeriod({ id, start, end, current, onChange, disabled }: InlinePeriodProps) {
+/**
+ * A month range edited IN PLACE: tapping the dates swaps the label for the
+ * month inputs in the same spot, inside the same column.
+ *
+ * It used to open a floating panel, which on a phone was pinned to the bottom
+ * of the viewport — tap a date at the top of the screen and the controls
+ * appeared ~700px away, so the eye had to cross the whole page and then find
+ * its way back. The inputs stay `type="month"`, so each platform still offers
+ * its own native month picker and the value stays structured (YYYY-MM).
+ */
+export function InlinePeriod({ id, start, end, current, onChange, disabled, allowCurrent = true }: InlinePeriodProps) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
+  const startField = useRef<HTMLInputElement>(null);
+
+  // Editing in place only helps if the place is on screen: a date tapped just
+  // under the sticky toolbar would otherwise expand behind it. `nearest` means
+  // this is a no-op whenever the row is already clear of it.
+  useEffect(() => {
+    if (!open) return;
+    // Focus is taken manually rather than with autoFocus, which scrolls the
+    // focused input flush to the viewport top and ignores scroll-padding —
+    // it was yanking the page up by exactly the row's offset and leaving the
+    // editor behind the sticky toolbar. preventScroll + an explicit `nearest`
+    // scroll puts the row where it should be, and is a no-op when it is
+    // already fully visible. A frame first, because the fields are taller than
+    // the label they replaced, so the row's geometry settles on reflow.
+    const frame = requestAnimationFrame(() => {
+      startField.current?.focus({ preventScroll: true });
+      wrap.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
+    const close = () => {
+      setOpen(false);
+      // Hand focus back to the trigger the edit replaced, not to the top of the page.
+      requestAnimationFrame(() => wrap.current?.querySelector<HTMLButtonElement>(".cv-period-trigger")?.focus());
+    };
     const onDown = (event: MouseEvent) => { if (wrap.current && !wrap.current.contains(event.target as Node)) setOpen(false); };
-    const onKey = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const onKey = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") close(); };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
 
   const label = `${monthLabel(start)} — ${current ? "Nay" : monthLabel(end)}`;
+
+  if (!open) {
+    return (
+      <span className="cv-period" ref={wrap}>
+        <button
+          type="button" id={id} className="cv-editable cv-period-trigger media-date" disabled={disabled}
+          aria-label={`Sửa thời gian: ${label}`}
+          onClick={() => setOpen(true)}
+        >
+          {label}
+        </button>
+      </span>
+    );
+  }
+
   return (
-    <span className="cv-period" ref={wrap}>
-      <button type="button" id={id} className="cv-editable cv-period-trigger media-date" disabled={disabled}
-        aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{label}</button>
-      {open && (
-        <span className="cv-popover" role="dialog" aria-label="Chỉnh sửa ngày">
-          <label className="cv-pop-field"><span>Tháng bắt đầu</span>
-            <input type="month" value={start} min="1000-01" max="9999-12" autoFocus onChange={(e) => onChange({ start: e.target.value })} /></label>
-          <label className="cv-pop-field"><span>Tháng kết thúc</span>
-            <input type="month" value={end} disabled={current} min={start || "1000-01"} max="9999-12" onChange={(e) => onChange({ end: e.target.value })} /></label>
-          <label className="cv-check"><input type="checkbox" checked={current} onChange={(e) => onChange({ current: e.target.checked })} /> Tôi đang làm việc tại đây</label>
-          <span className="cv-pop-actions"><button type="button" className="cv-pop-done" onClick={() => setOpen(false)}>Xong</button></span>
-        </span>
-      )}
+    <span
+      className="cv-period" ref={wrap} data-editing="true"
+      // Tabbing out of the group commits and closes, same as clicking away.
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node)) setOpen(false);
+      }}
+    >
+      <span className="cv-period-fields" role="group" aria-label="Khoảng thời gian">
+        <input
+          ref={startField}
+          className="cv-period-input" type="month" value={start} min="1000-01" max="9999-12"
+          aria-label="Tháng bắt đầu" title="Tháng bắt đầu"
+          onChange={(event) => onChange({ start: event.target.value })}
+        />
+        <input
+          className="cv-period-input" type="month" value={end} disabled={current}
+          min={start || "1000-01"} max="9999-12" aria-label="Tháng kết thúc" title="Tháng kết thúc"
+          onChange={(event) => onChange({ end: event.target.value })}
+        />
+        {allowCurrent && (
+          <label className="cv-period-current">
+            <input type="checkbox" checked={current} onChange={(event) => onChange({ current: event.target.checked })} />
+            Đến nay
+          </label>
+        )}
+      </span>
     </span>
   );
 }

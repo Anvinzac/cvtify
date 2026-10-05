@@ -329,7 +329,7 @@ export function EditableGradCV({ project, samples, onChange, expanded = false }:
                   <div className="grad-entry-period">
                     <InlinePeriod
                       id="education-period"
-                      start={education.startDate} end={education.endDate} current={false}
+                      start={education.startDate} end={education.endDate} current={false} allowCurrent={false}
                       onChange={({ start, end }) =>
                         onChange((draft) => ({
                           ...draft,

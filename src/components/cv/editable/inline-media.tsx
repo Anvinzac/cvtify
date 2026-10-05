@@ -101,7 +101,7 @@ export function CoverControls({ photo, onChange, id, budget, onBusy, disabled }:
       {photo && (
         <details className="cv-photo-details">
           <summary className="cv-photo-summary">Mô tả &amp; khung ảnh</summary>
-          <div className="cv-popover cv-photo-pop">
+          <div className="cv-photo-pop">
             <label className="cv-pop-label">Mô tả ảnh<span>Dành cho trình đọc màn hình</span></label>
             <InlineText id={`alt-${photo.id}`} as="div" className="cv-pop-input" multiline value={photo.alt} maxLength={300}
               placeholder="Ảnh này thể hiện điều gì?" ariaLabel="Mô tả ảnh đại diện" disabled={disabled}
