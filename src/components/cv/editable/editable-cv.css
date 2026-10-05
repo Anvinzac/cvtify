@@ -665,14 +665,9 @@
   opacity: 0.7;
 }
 
-/* ── Photo track (edit mode) ── */
-/* 260px tracks: the inline alt/caption form does not fit a 210px card and
-   was rendering at ~165px content width with text 1px from the edge. */
-.grad-document.is-editing .cv-track .grad-entry-photos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-}
+/* ── Photo track (edit mode) ──
+   (The grid lives on .media-photo-stack, which is what PhotoTrack renders;
+   an older rule targeted .grad-entry-photos here and never matched.) */
 
 .cv-photo {
   position: relative;
@@ -972,9 +967,38 @@
     0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
+/* The toolbar sits OUTSIDE .grad-document, so it never inherited the theme
+   tokens: .studio-header's light `#fafbf7` stayed, and `.studio-button`'s
+   white gradient fell back to the light-mode token — the "Tải HTML" button
+   rendered white-on-cream over a dark CV. .live-page now carries the theme
+   tokens; these rules make the chrome actually use them. */
+.media-studio.live-toolbar,
 .live-toolbar .studio-header {
+  color-scheme: dark;
+  color: var(--foreground, hsl(var(--foreground)));
+}
+
+.live-toolbar .studio-header {
+  background: transparent;
+  border-bottom: 0;
+  /* Wrap rather than clip: at 1440px the action row overflowed and the
+     download button disappeared behind the overflow menu. */
   flex-wrap: wrap;
   gap: 12px;
+  padding-inline: clamp(16px, 3.5%, 48px);
+  min-height: 0;
+}
+
+.live-toolbar .studio-header-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* The right-hand action group is the one that overflows; let it take the whole
+   row once brand + actions no longer fit side by side. */
+.live-toolbar .studio-header > .studio-header-actions:last-child {
+  flex: 1 1 auto;
+  justify-content: flex-end;
 }
 
 .live-toolbar .studio-brand {
@@ -1701,13 +1725,84 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  /* >= half the hero drift budget, so the parallax never slides the portrait
+     into its own controls. */
+  gap: calc(var(--hero-drift-range, 32px) / 2 + 14px);
   flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .grad-hero-photo-wrap .cv-cover-controls {
   margin-top: 0;
   max-width: none;
+  width: 100%;
+}
+
+.grad-hero-photo-wrap .cv-cover-bar {
+  justify-content: center;
+}
+
+/* The editor's portrait column also holds its controls, so it needs a little
+   more room than the preview's. */
+@media (min-width: 641px) {
+  .grad-document.is-editing .grad-hero-photo-frame {
+    width: clamp(210px, 24vw, 330px);
+  }
+}
+
+/* ── Per-photo settings disclosure ──
+   Alt text and focal point are settings, not CV content. Rendered open for
+   every photo they stacked forms down the page and buried the document; as a
+   disclosure the editor reads as the CV again. focusField() opens the
+   enclosing <details> before focusing, so checklist jumps still work. */
+.cv-photo-details {
+  min-width: 0;
+}
+
+/* .cv-popover / .cv-photo-pop declare `display: grid`, which beats the UA's
+   rule for a closed <details> — without this the panel stayed laid out (and
+   overlapping the content below) with the disclosure shut. */
+.cv-photo-details:not([open]) > :not(summary) {
+  display: none;
+}
+
+.cv-photo-details > .cv-photo-pop {
+  margin-top: 6px;
+}
+
+.cv-photo-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 4px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.cv-photo-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cv-photo-summary::before {
+  content: "›";
+  display: inline-block;
+  font-size: 13px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.cv-photo-details[open] > .cv-photo-summary::before {
+  transform: rotate(90deg);
+}
+
+.cv-photo-summary:hover {
+  color: hsl(var(--primary));
 }
 
 .grad-entry-controls {
@@ -1717,7 +1812,15 @@
   flex-shrink: 0;
 }
 
-.grad-certificates .cv-add-inline,
+/* The add button is not a certificate: as a grid cell it was sized like one
+   and wrapped its label across two lines. Give it its own full-width row. */
+.grad-certificates .cv-add-inline {
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-self: start;
+  margin-top: 4px;
+}
+
 .grad-certificates .cv-list-remove {
   align-self: center;
 }

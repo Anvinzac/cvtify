@@ -13,9 +13,26 @@
  *
  * Self-contained: also embedded verbatim in exported HTML via a `?raw` import.
  * Returns a disposer function that tears everything down.
+ *
+ * `options` turns individual effects off. Everything defaults to ON so the
+ * preview document and the exported HTML keep their full choreography; the
+ * live EDITOR opts out of every effect that would fight React or the caret
+ * (see EDITOR_MOTION below) while keeping the scroll parallax.
  */
-export function attachMediaMotion(root) {
+export function attachMediaMotion(root, options) {
   if (!root) return () => {};
+
+  const {
+    reveals = true, // IntersectionObserver reveal choreography (opacity/transform)
+    heroName = true, // rewrites the h1's text nodes — never in an editable document
+    gpaCountUp = true, // rewrites the GPA text node
+    cardTilt = true, // pointer tilt on entry cards
+    cursor = true, // custom dot cursor
+    pointerParallax = true, // hero photo follows the pointer
+    progressBar = true, // fixed scroll-progress bar
+    heroDrift = true, // hero photo + ambient scroll parallax
+    scrollHint = true, // fade the "scroll down" indicator away
+  } = options || {};
 
   const motionMode = root.dataset.motion || "immersive";
 
@@ -41,6 +58,9 @@ export function attachMediaMotion(root) {
   ].join(", ");
 
   const forceVisible = () => {
+    // When the caller owns visibility (the editor reveals with framer-motion),
+    // stamping data-visible would double up two competing animation systems.
+    if (!reveals) return;
     root.querySelectorAll(REVEAL_SELECTOR).forEach((el) => {
       el.setAttribute("data-visible", "true");
     });
@@ -101,7 +121,7 @@ export function attachMediaMotion(root) {
   // own text intact so `background-clip: text` keeps working. Solid-text themes
   // (mono) have no gradient, so the per-character letter reveal is safe there.
   const heroNameEl = root.querySelector("[data-hero-name]");
-  if (heroNameEl && heroNameEl.textContent.trim()) {
+  if (heroName && heroNameEl && heroNameEl.textContent.trim()) {
     const text = heroNameEl.textContent;
     const nameCS = window.getComputedStyle(heroNameEl);
     const fill = (
@@ -177,33 +197,34 @@ export function attachMediaMotion(root) {
   };
 
   // ── Scroll progress bar (2px, fixed to the top of the viewport) ──
-  const progressBar = document.createElement("div");
-  progressBar.className = "scroll-progress";
-  progressBar.setAttribute("aria-hidden", "true");
-  progressBar.style.setProperty("--scroll-progress", "0");
+  if (progressBar) {
+  const progressBarEl = document.createElement("div");
+  progressBarEl.className = "scroll-progress";
+  progressBarEl.setAttribute("aria-hidden", "true");
+  progressBarEl.style.setProperty("--scroll-progress", "0");
   // Theme-aware gradient: read the document's tokens (they live on .grad-document,
   // not on <body>, so they don't cascade to the bar automatically).
   try {
     const cs = window.getComputedStyle(root);
     const primary = cs.getPropertyValue("--primary").trim();
     const accent = cs.getPropertyValue("--accent").trim();
-    if (primary) progressBar.style.background = `linear-gradient(90deg, ${primary}, ${accent || primary})`;
+    if (primary) progressBarEl.style.background = `linear-gradient(90deg, ${primary}, ${accent || primary})`;
   } catch (_) {
     /* fall back to the CSS default gradient */
   }
-  document.body.appendChild(progressBar);
+  document.body.appendChild(progressBarEl);
   cleanups.push(() => {
-    if (progressBar.parentNode) progressBar.parentNode.removeChild(progressBar);
+    if (progressBarEl.parentNode) progressBarEl.parentNode.removeChild(progressBarEl);
   });
 
   const docEl = document.documentElement;
-  const updateScrollProgress = () => {
+  frameTasks.push(() => {
     const scrollTop = window.scrollY || docEl.scrollTop || 0;
     const docHeight = docEl.scrollHeight - window.innerHeight;
     const progress = docHeight > 0 ? Math.min(Math.max(scrollTop / docHeight, 0), 1) : 0;
-    progressBar.style.setProperty("--scroll-progress", String(progress));
-  };
-  frameTasks.push(updateScrollProgress);
+    progressBarEl.style.setProperty("--scroll-progress", String(progress));
+  });
+  }
 
   // ── Hero parallax drift (scroll) + pointer interaction ──
   const heroPhoto = root.querySelector("[data-hero-photo]");
@@ -213,26 +234,52 @@ export function attachMediaMotion(root) {
   let pointerY = 0;
   let pointerActive = false;
 
-  if (motionMode === "immersive" && heroPhoto) {
+  if (heroDrift && motionMode === "immersive" && heroPhoto) {
+    // The photo column reserves `--hero-drift` worth of breathing room, so the
+    // drift can never push the portrait into the copy below it.
+    const range = parseFloat(
+      window.getComputedStyle(root).getPropertyValue("--hero-drift-range")
+    ) || 50;
     frameTasks.push(() => {
       const rect = heroPhoto.getBoundingClientRect();
       const viewH = window.innerHeight;
       if (rect.top < viewH && rect.bottom > 0) {
         const progress = (viewH - rect.top) / (viewH + rect.height);
-        const drift = (progress - 0.5) * 50; // max ±25px
-        heroPhoto.style.transform = `scale(1) translateY(${drift}px)`;
+        const drift = (progress - 0.5) * range;
+        heroPhoto.style.transform = `translateY(${drift.toFixed(2)}px)`;
       }
     });
   }
 
-  if (canHover && motionMode === "immersive" && heroFrame) {
+  // Ambient wash drifts at a slower rate than the portrait — the depth cue
+  // that makes the hero read as parallax rather than a single moving layer.
+  // Written as a custom property, not as `transform`: the entrance reveal owns
+  // the ambient layer's transform, and an inline one would cancel it. CSS
+  // composes the two (see --hero-ambient-shift in media-document.css).
+  const heroAmbient = root.querySelector(".grad-hero-ambient");
+  if (heroDrift && motionMode !== "still" && heroAmbient) {
+    let lastShift = null;
+    frameTasks.push(() => {
+      const scrollTop = window.scrollY || 0;
+      if (scrollTop > window.innerHeight * 1.5) return;
+      const shift = Math.round(scrollTop * 0.12);
+      if (shift === lastShift) return;
+      lastShift = shift;
+      heroAmbient.style.setProperty("--hero-ambient-shift", `${shift}px`);
+    });
+    cleanups.push(() => {
+      heroAmbient.style.removeProperty("--hero-ambient-shift");
+    });
+  }
+
+  if (pointerParallax && canHover && motionMode === "immersive" && heroFrame) {
     const applyPointer = () => {
       if (!heroReady || !pointerActive) return;
       const rect = root.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       const x = ((pointerX - rect.left) / rect.width - 0.5) * 16; // ±8px
       const y = ((pointerY - rect.top) / rect.height - 0.5) * 16;
-      heroFrame.style.transform = `translateY(-50%) translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`;
+      heroFrame.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px)`;
     };
     frameTasks.push(applyPointer);
 
@@ -259,7 +306,7 @@ export function attachMediaMotion(root) {
   // ── Scroll indicator fade (hide once the reader starts scrolling) ──
   let scrollHintHidden = false;
   const onFirstScroll = () => {
-    if (scrollHintHidden) return;
+    if (!scrollHint || scrollHintHidden) return;
     if ((window.scrollY || 0) < 8) return;
     scrollHintHidden = true;
     const scrollEl = root.querySelector(".grad-hero-scroll");
@@ -312,7 +359,7 @@ export function attachMediaMotion(root) {
     }, last + 700);
     cleanups.push(() => clearTimeout(readyTimer));
   };
-  heroChoreography();
+  if (reveals) heroChoreography();
 
   // ── Section reveal choreography (number → heading → content stagger) ──
   const revealSection = (section) => {
@@ -334,7 +381,7 @@ export function attachMediaMotion(root) {
   };
 
   // ── GPA count-up ──
-  const gpaEl = root.querySelector("[data-gpa]");
+  const gpaEl = gpaCountUp ? root.querySelector("[data-gpa]") : null;
   const gpaOriginal = gpaEl ? gpaEl.textContent : "";
   let gpaRaf = null;
   const animateGPA = () => {
@@ -359,6 +406,7 @@ export function attachMediaMotion(root) {
     gpaRaf = requestAnimationFrame(update);
   };
 
+  if (reveals) {
   // 1. Section reveal — fade + slide at 10% intersection.
   const sectionObs = new IntersectionObserver(
     (entries) => {
@@ -475,9 +523,10 @@ export function attachMediaMotion(root) {
     });
   }, 2500);
   cleanups.push(() => clearTimeout(revealFailsafe));
+  }
 
   // ── Card tilt (desktop, hover-capable, max 3°) ──
-  if (canHover) {
+  if (cardTilt && canHover) {
     const bound = [];
     root.querySelectorAll("[data-entry-card]").forEach((card) => {
       let rect = null;
@@ -513,7 +562,6 @@ export function attachMediaMotion(root) {
   }
 
   // Kick the frame loop once so the progress bar and parallax start correct.
-  updateScrollProgress();
   scheduleFrame();
 
   // === Custom Cursor (desktop, hover-capable only) ===
@@ -522,6 +570,7 @@ export function attachMediaMotion(root) {
   let cursorRaf = null;
 
   function initCursor() {
+    if (!cursor) return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 641px)").matches) return;
     if (motionMode === "still") return;
 
@@ -612,5 +661,24 @@ export function attachMediaMotion(root) {
     }
   };
 }
+
+/**
+ * The option set the LIVE EDITOR attaches with. Everything that rewrites text
+ * nodes (hero-name split, GPA count-up), competes with framer-motion's own
+ * reveals, or gets in the way of placing a caret (card tilt, the dot cursor,
+ * pointer parallax over the photo's edit controls) is off; the scroll parallax
+ * — the reason the preview feels alive — stays on.
+ */
+export const EDITOR_MOTION = {
+  reveals: false,
+  heroName: false,
+  gpaCountUp: false,
+  cardTilt: false,
+  cursor: false,
+  pointerParallax: false,
+  progressBar: true,
+  heroDrift: true,
+  scrollHint: true,
+};
 
 export default attachMediaMotion;

@@ -16,11 +16,12 @@ export function createMediaHTML(input: GradProject): string {
   const description = project.profile.objective.trim() || project.education.major.trim() || project.profile.name.trim();
   const markup = renderToStaticMarkup(<GradCVDocument project={project} />);
   // Import the controller as source so the download needs neither a bundler nor React.
-  // mediaMotion.js exposes both a named `export function` and an `export default`,
-  // so strip both to produce a plain inline script.
+  // The module uses ES export syntax (a named function, a named const and a
+  // default re-export) that a classic inline <script> cannot parse, so drop
+  // every export keyword and the default re-export line.
   const script = motionSource
-    .replace("export function attachMediaMotion", "function attachMediaMotion")
-    .replace("export default attachMediaMotion;", "");
+    .replace(/^export default attachMediaMotion;$/m, "")
+    .replace(/^export (?=(function|const|let|var|class)\s)/gm, "");
   return `<!doctype html>
 <html lang="vi">
 <head>

@@ -23,9 +23,11 @@ export function GradCVDocument({ project }: { project: GradProject }) {
       data-motion={settings.motion}
       style={style}
     >
-      <div className="grad-container">
-        {/* Hero / Profile — full-viewport editorial composition */}
-        <section className="grad-section" data-section="hero">
+      {/* Hero / Profile — full-viewport editorial composition.
+          Deliberately OUTSIDE .grad-container: the hero is a two-column
+          composition and the 820px reading measure left the name column too
+          narrow for it, so the name ran over the portrait. */}
+      <section className="grad-section" data-section="hero">
           <div className="grad-hero">
             {/* Ambient background layer — theme specific */}
             <div className="grad-hero-ambient" aria-hidden="true" />
@@ -85,9 +87,10 @@ export function GradCVDocument({ project }: { project: GradProject }) {
             <div className="grad-hero-scroll" aria-hidden="true">
               <span className="grad-hero-scroll-line" />
             </div>
-          </div>
-        </section>
+        </div>
+      </section>
 
+      <div className="grad-container">
         {/* Education — 01 */}
         <section className="grad-section" data-section="education">
           <div className="grad-section-header">

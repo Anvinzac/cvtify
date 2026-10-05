@@ -6,6 +6,10 @@
 
 /* ── Root document ── */
 .grad-document {
+  /* How far the portrait may drift on scroll. mediaMotion.js reads this off
+     the document root, and the hero reserves the same budget as spacing, so
+     the parallax can never push the portrait over anything around it. */
+  --hero-drift-range: 32px;
   font-family: var(--font-body);
   color: var(--foreground, hsl(var(--foreground)));
   background: var(--background, hsl(var(--background)));
@@ -130,10 +134,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* min-height, never height: the editor's photo controls and long objectives
+     have to be able to grow the hero instead of being clipped by it. */
   min-height: 100svh;
   min-height: 100vh; /* fallback */
-  padding: 3rem 1.5rem;
-  overflow: hidden;
+  padding: 4.5rem 1.5rem 5.5rem;
+  /* `clip` behaves like hidden but creates no scroll container, so the ambient
+     wash is still trimmed while a focused field can scroll into view. */
+  overflow: clip;
   isolation: isolate;
 }
 
@@ -141,13 +149,16 @@
   .grad-hero { min-height: 100svh; }
 }
 
-/* Ambient background layer */
+/* Ambient background layer. --hero-ambient-shift is the scroll parallax
+   offset written by mediaMotion.js; every rule that transforms this element
+   composes it in so the drift and the entrance reveal coexist. */
 .grad-hero-ambient {
   position: absolute;
   inset: 0;
   z-index: -1;
   background: var(--ambient-gradient, none);
   pointer-events: none;
+  transform: translate3d(0, var(--hero-ambient-shift, 0px), 0);
 }
 
 /* Brand mark */
@@ -179,8 +190,12 @@
   order: 2; /* Below photo on mobile */
 }
 
-/* Hero name — dominant visual object */
+/* Hero name — dominant visual object.
+   max-width + the inherited `overflow-wrap: anywhere` are the backstop: however
+   long a single name is, it breaks inside its own column instead of running
+   over the portrait beside it. */
 .grad-hero-name {
+  max-width: 100%;
   font-family: var(--font-display, "Be Vietnam Pro", system-ui, sans-serif);
   font-size: clamp(2.8rem, 10vw, 4rem);
   font-weight: 800;
@@ -276,6 +291,8 @@
   z-index: 1;
   order: 1; /* Above content on mobile */
   margin-bottom: 2rem;
+  /* Headroom for the scroll drift (see --hero-drift-range). */
+  padding-block: calc(var(--hero-drift-range, 32px) / 2);
 }
 
 .grad-hero-photo-wrap {
@@ -335,9 +352,19 @@
    HERO — Desktop enhancements (min-width: 641px)
    ============================================ */
 @media (min-width: 641px) {
+  /* Two real columns. The portrait used to be `position: absolute; right: 8%`,
+     which took it out of flow and let the (very large) name run straight under
+     it — the hero overlap this grid removes. Both tracks are `minmax(0, …)` so
+     a long name wraps instead of widening its track. */
   .grad-hero {
-    padding: 4rem 3rem;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: clamp(2rem, 5vw, 4.5rem);
+    padding: 5rem 3rem 6rem;
+    /* The hero sits outside .grad-container, so it carries its own measure. */
+    max-width: 1400px;
+    margin-inline: auto;
   }
 
   .grad-hero-brand {
@@ -346,18 +373,22 @@
   }
 
   .grad-hero-content {
-    order: 1;
+    order: 0;
+    grid-column: 1;
+    min-width: 0;
     align-items: flex-start;
     text-align: left;
-    flex: 1;
     justify-content: center;
-    padding-right: 2rem;
+    padding-right: 0;
   }
 
+  /* Capped against the column, not the viewport: at 1440px this is ~92px,
+     which leaves the longest Vietnamese given name a wide margin inside its
+     track. The old clamp(…, 11rem) was 176px and overran the portrait. */
   .grad-hero-name {
-    font-size: clamp(3.5rem, 9vw, 8rem);
-    line-height: 0.82;
-    letter-spacing: -0.055em;
+    font-size: clamp(3rem, 6.4vw, 7rem);
+    line-height: 0.86;
+    letter-spacing: -0.045em;
   }
 
   .grad-hero-objective {
@@ -369,17 +400,18 @@
   }
 
   .grad-hero-photo-frame {
-    order: 2;
-    position: absolute;
-    right: 8%;
-    top: 50%;
-    transform: translateY(-50%);
+    order: 0;
+    grid-column: 2;
+    justify-self: end;
+    align-self: center;
     margin-bottom: 0;
+    width: clamp(200px, 22vw, 320px);
   }
 
   .grad-hero-photo {
-    width: clamp(200px, 22vw, 320px);
-    height: clamp(200px, 22vw, 320px);
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
   }
 
   .grad-hero-scroll {
@@ -392,17 +424,24 @@
 
 /* Large desktop */
 @media (min-width: 1024px) {
+  .grad-document {
+    --hero-drift-range: 44px;
+  }
+
   .grad-hero-name {
-    font-size: clamp(4rem, 11vw, 11rem);
+    font-size: clamp(3.5rem, 7vw, 8.5rem);
   }
 
   .grad-hero-photo-frame {
-    right: 10%;
-  }
-
-  .grad-hero-photo {
     width: clamp(260px, 20vw, 380px);
-    height: clamp(260px, 20vw, 380px);
+  }
+}
+
+/* Below the grid breakpoint the scroll indicator sits in the hero's bottom
+   padding; without the reserve it lands on the contact chips. */
+@media (max-width: 640px) {
+  .grad-hero-scroll {
+    bottom: 1.25rem;
   }
 }
 
@@ -1896,7 +1935,18 @@
    editor animates the same .grad-* markup with framer-motion instead, so these
    reveal rules must never apply there.
    ============================================ */
-.grad-document:not(.is-editing) .grad-hero-ambient,
+/* The ambient wash reveals on opacity ALONE. Its transform belongs to the
+   scroll parallax, and a 0.6s transition on it would smear every frame of the
+   drift; a 12px entrance slide on a full-bleed gradient is invisible anyway. */
+.grad-document:not(.is-editing) .grad-hero-ambient {
+  opacity: 0;
+  transition: opacity 0.6s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.grad-document:not(.is-editing) .grad-hero-ambient[data-visible="true"] {
+  opacity: 1;
+}
+
 .grad-document:not(.is-editing) .grad-hero-rule,
 .grad-document:not(.is-editing) .grad-hero-objective,
 .grad-document:not(.is-editing) .grad-hero-meta,
@@ -1908,7 +1958,6 @@
     transform 0.6s var(--motion-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
-.grad-document:not(.is-editing) .grad-hero-ambient[data-visible="true"],
 .grad-document:not(.is-editing) .grad-hero-rule[data-visible="true"],
 .grad-document:not(.is-editing) .grad-hero-objective[data-visible="true"],
 .grad-document:not(.is-editing) .grad-hero-meta[data-visible="true"],

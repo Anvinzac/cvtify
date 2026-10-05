@@ -6,12 +6,12 @@ import {
 import { useMediaProject } from "@/context/MediaProjectContext";
 import { EditableGradCV } from "@/components/cv/editable/EditableMediaCV";
 import { GradCVDocument } from "@/components/cv/MediaCVDocument";
-import attachMediaMotion from "@/components/cv/mediaMotion.js";
+import attachMediaMotion, { EDITOR_MOTION } from "@/components/cv/mediaMotion.js";
 import { downloadFile, filenameFor } from "@/lib/mediaStorage";
 import { demoProject, demoSamples } from "@/lib/demoProject";
 import {
   blockingIssues, emptyCertificate, emptyEntry, emptyProject, MAX_BACKUP_BYTES,
-  parseProject, projectIssues, type GradSettings,
+  parseProject, projectIssues, themeStyle, type GradSettings,
 } from "@/lib/mediaProject";
 import "@/components/cv/media-document.css";
 import "@/components/cv/editable/editable-cv.css";
@@ -88,11 +88,23 @@ export default function LiveCV() {
     if (workspace) lastKnownTheme.current = workspace.settings.theme;
   }, [workspace?.settings.theme]);
 
-  // Preview mode layers the scroll motion onto the rendered static document.
+  // Both modes get the scroll motion. Preview runs the full choreography;
+  // edit runs the parallax-only subset (EDITOR_MOTION) so the document the
+  // user is typing into behaves like the finished one without any of the
+  // effects that rewrite text nodes or steal the caret.
+  //
+  // The dependency list is deliberately narrow: re-attaching on every
+  // keystroke would restart the parallax mid-scroll. Only the things the
+  // script actually reads at attach time are listed.
+  const heroPhotoId = workspace?.profile.photo?.id ?? "";
+  const motionLevel = workspace?.settings.motion;
+  const themeId = workspace?.settings.theme;
+  const hasWorkspace = !!workspace;
   useEffect(() => {
-    if (mode !== "preview" || !workspace) return;
-    return attachMediaMotion(hostRef.current?.querySelector("[data-media-document]"));
-  }, [mode, workspace]);
+    if (!hasWorkspace) return;
+    const node = hostRef.current?.querySelector("[data-media-document]");
+    return attachMediaMotion(node, mode === "edit" ? EDITOR_MOTION : undefined);
+  }, [mode, hasWorkspace, heroPhotoId, motionLevel, themeId]);
 
   // First run (or an untouched blank draft): seed the demo persona so visitors
   // immediately see what the CV offers. "Tạo CV mới" still yields a blank page.
@@ -285,7 +297,13 @@ export default function LiveCV() {
         : "Lỗi lưu";
 
   return (
-    <div ref={hostRef} className="live-page" data-mode={mode}>
+    <div
+      ref={hostRef}
+      className="live-page"
+      data-mode={mode}
+      data-theme={workspace.settings.theme}
+      style={themeStyle(workspace.settings)}
+    >
       <div className="media-studio live-toolbar no-print">
         <div className="studio-header">
           <div className="studio-header-actions" style={{ gap: 14 }}>

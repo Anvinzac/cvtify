@@ -177,9 +177,11 @@ export function EditableGradCV({ project, samples, onChange }: EditableGradCVPro
 
   return (
     <div className="grad-document is-editing" data-editable data-media-document data-theme={settings.theme} data-motion={settings.motion} style={style}>
-      <div className="grad-container">
-        {/* ---------- Hero / profile — full-viewport editorial composition ---------- */}
-        <RevealSection className="grad-section" section="hero" theme={settings.theme}>
+      {/* ---------- Hero / profile — full-viewport editorial composition ----------
+          Outside .grad-container, exactly as in GradCVDocument: the hero is a
+          two-column composition, and the 820px reading measure squeezed the
+          name column until the name overlapped the portrait. */}
+      <RevealSection className="grad-section" section="hero" theme={settings.theme}>
           <div className="grad-hero">
             {/* Ambient background layer — theme specific */}
             <div className="grad-hero-ambient" aria-hidden="true" />
@@ -217,12 +219,15 @@ export function EditableGradCV({ project, samples, onChange }: EditableGradCVPro
               </div>
             </div>
 
-            {/* Portrait */}
+            {/* Portrait — `data-hero-photo` is what mediaMotion.js drives the
+                scroll parallax from, so the editor's portrait moves exactly
+                like the preview's. */}
             <div className="grad-hero-photo-frame">
               <div className="grad-hero-photo-wrap">
-                {profile.photo && (
+                {profile.photo ? (
                   <img
                     className="grad-hero-photo"
+                    data-hero-photo
                     src={profile.photo.src}
                     alt={profile.photo.alt || profile.name}
                     style={{ objectPosition: profile.photo.position }}
@@ -230,6 +235,10 @@ export function EditableGradCV({ project, samples, onChange }: EditableGradCVPro
                     height={profile.photo.height}
                     decoding="async"
                   />
+                ) : (
+                  <div className="grad-hero-photo grad-hero-photo--empty" data-hero-photo>
+                    <span aria-hidden="true">✦</span>
+                  </div>
                 )}
                 <CoverControls
                   photo={profile.photo}
@@ -244,9 +253,10 @@ export function EditableGradCV({ project, samples, onChange }: EditableGradCVPro
             <div className="grad-hero-scroll" aria-hidden="true">
               <span className="grad-hero-scroll-line" />
             </div>
-          </div>
-        </RevealSection>
+        </div>
+      </RevealSection>
 
+      <div className="grad-container">
         {/* ---------- Education — 01 ---------- */}
         <RevealSection className="grad-section" section="education" theme={settings.theme}>
           <div className="grad-section-header">

@@ -99,17 +99,20 @@ export function CoverControls({ photo, onChange, id, budget, onBusy, disabled }:
           onClick={() => { if (window.confirm("Xóa ảnh đại diện?")) onChange(null); }}><Trash2 size={13} /> Xóa</button>}
       </div>
       {photo && (
-        <div className="cv-popover cv-photo-pop">
-          <label className="cv-pop-label">Mô tả ảnh<span>Dành cho trình đọc màn hình</span></label>
-          <InlineText id={`alt-${photo.id}`} as="div" className="cv-pop-input" multiline value={photo.alt} maxLength={300}
-            placeholder="Ảnh này thể hiện điều gì?" ariaLabel="Mô tả ảnh đại diện" disabled={disabled}
-            onChange={(alt) => onChange({ ...photo, alt })} />
-          <label className="cv-pop-label">Chú thích<span>Dòng tùy chọn dưới ảnh</span></label>
-          <InlineText as="div" className="cv-pop-input" multiline value={photo.caption} maxLength={300}
-            placeholder="Thêm chú thích ngắn" ariaLabel="Chú thích ảnh đại diện" disabled={disabled}
-            onChange={(caption) => onChange({ ...photo, caption })} />
-          <FocusSelect value={photo.position} disabled={disabled} onChange={(position) => onChange({ ...photo, position })} />
-        </div>
+        <details className="cv-photo-details">
+          <summary className="cv-photo-summary">Mô tả &amp; khung ảnh</summary>
+          <div className="cv-popover cv-photo-pop">
+            <label className="cv-pop-label">Mô tả ảnh<span>Dành cho trình đọc màn hình</span></label>
+            <InlineText id={`alt-${photo.id}`} as="div" className="cv-pop-input" multiline value={photo.alt} maxLength={300}
+              placeholder="Ảnh này thể hiện điều gì?" ariaLabel="Mô tả ảnh đại diện" disabled={disabled}
+              onChange={(alt) => onChange({ ...photo, alt })} />
+            <label className="cv-pop-label">Chú thích<span>Dòng tùy chọn dưới ảnh</span></label>
+            <InlineText as="div" className="cv-pop-input" multiline value={photo.caption} maxLength={300}
+              placeholder="Thêm chú thích ngắn" ariaLabel="Chú thích ảnh đại diện" disabled={disabled}
+              onChange={(caption) => onChange({ ...photo, caption })} />
+            <FocusSelect value={photo.position} disabled={disabled} onChange={(position) => onChange({ ...photo, position })} />
+          </div>
+        </details>
       )}
       <ErrorList errors={errors} />
     </div>
@@ -162,7 +165,7 @@ export function PhotoTrack({ id, photos, label = "Ảnh", maxPhotos = 4, budget,
             <div className="cv-photo-frame">
               <img src={photo.src} alt={photo.alt || `Ảnh ${i + 1} — chưa có mô tả`} width={photo.width} height={photo.height}
                 loading="lazy" decoding="async" style={{ objectPosition: photo.position }} />
-              <span className="cv-photo-index">{String(i + 1).padStart(2, "0")}</span>
+              {photos.length > 1 && <span className="cv-photo-index">{String(i + 1).padStart(2, "0")}</span>}
               <div className="cv-photo-tools">
                 <button type="button" className="cv-tool" disabled={disabled || i === 0} aria-label="Chuyển lên trước" onClick={() => move(i, -1)}><ArrowLeft size={13} /></button>
                 <button type="button" className="cv-tool" disabled={disabled || i === photos.length - 1} aria-label="Chuyển ra sau" onClick={() => move(i, 1)}><ArrowRight size={13} /></button>
@@ -172,16 +175,24 @@ export function PhotoTrack({ id, photos, label = "Ảnh", maxPhotos = 4, budget,
             <figcaption className="cv-photo-fields">
               <InlineText as="span" className="cv-photo-caption" value={photo.caption} maxLength={300} disabled={disabled}
                 placeholder="Thêm chú thích…" ariaLabel={`Chú thích ảnh ${i + 1}`} onChange={(caption) => patch(photo.id, { caption })} />
-              <div className="cv-photo-pop">
-                <label className="cv-pop-label">Mô tả ảnh<span>Dành cho trình đọc màn hình</span></label>
-                <InlineText id={`alt-${photo.id}`} as="div" className="cv-pop-input" multiline value={photo.alt} maxLength={300} disabled={disabled}
-                  placeholder="Ảnh này thể hiện điều gì?" ariaLabel={`Mô tả ảnh ${i + 1}`} onChange={(alt) => patch(photo.id, { alt })} />
-                <FocusSelect value={photo.position} disabled={disabled} onChange={(position) => patch(photo.id, { position })} />
-              </div>
+              {/* Alt text and focal point are per-photo settings, not content.
+                  Kept open, every photo stacked a form under the CV and buried
+                  the document itself; collapsed, the page reads as the CV. */}
+              <details className="cv-photo-details">
+                <summary className="cv-photo-summary">Mô tả &amp; khung ảnh</summary>
+                <div className="cv-photo-pop">
+                  <label className="cv-pop-label">Mô tả ảnh<span>Dành cho trình đọc màn hình</span></label>
+                  <InlineText id={`alt-${photo.id}`} as="div" className="cv-pop-input" multiline value={photo.alt} maxLength={300} disabled={disabled}
+                    placeholder="Ảnh này thể hiện điều gì?" ariaLabel={`Mô tả ảnh ${i + 1}`} onChange={(alt) => patch(photo.id, { alt })} />
+                  <FocusSelect value={photo.position} disabled={disabled} onChange={(position) => patch(photo.id, { position })} />
+                </div>
+              </details>
             </figcaption>
           </figure>
         ))}
-        {!disabled && (
+        {/* A full dropzone that only says "no room left" is a dead tile taking a
+            whole grid cell; once the set is full the photos speak for it. */}
+        {!disabled && (capacity > 0 || photos.length === 0) && (
           <button type="button" className="cv-photo-add" disabled={busy || capacity === 0} onClick={() => input.current?.click()}
             onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("is-dragging"); }}
             onDragLeave={(e) => e.currentTarget.classList.remove("is-dragging")}
