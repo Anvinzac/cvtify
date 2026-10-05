@@ -490,9 +490,16 @@
    panel fixed to the bottom of the viewport — far from whatever you tapped.
    They now edit in place, so nothing is left to position or to dismiss. */
 .cv-period {
+  /* The anchor the picker positions against. */
+  position: relative;
   display: inline-block;
   min-width: 0;
   scroll-margin-block: 16px;
+}
+
+.cv-period[data-editing="true"] .cv-period-trigger {
+  background: color-mix(in srgb, var(--primary, hsl(var(--primary))) 14%, transparent);
+  color: var(--primary, hsl(var(--primary)));
 }
 
 .cv-period-trigger {
@@ -509,108 +516,213 @@
   background: hsl(var(--primary) / 0.08);
 }
 
-/* The fields replace the label inside its own column, so they wrap to as many
-   rows as that column allows rather than widening it. */
-.cv-period-fields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  justify-content: inherit;
-  margin-left: -4px;
+/* ── Month-range picker ──
+   An anchored popover, not an in-flow panel: the period column is 140–180px
+   and a 3×4 grid needs ~250px. It is positioned against the date itself (and
+   flipped/slid to stay on screen), never against the viewport — a panel pinned
+   to the bottom of the phone screen is what this replaced. */
+.cv-cal-panel {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 252px;
+  max-width: calc(100vw - 16px);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 35%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card, hsl(var(--card))) 97%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
+  cursor: auto;
 }
 
-.cv-period-input {
-  /* 190px basis: a month input needs ~175px to render "February 2023" plus its
-     picker icon without truncating, so anything narrower than two of them side
-     by side wraps to one per row instead of clipping the year. */
-  flex: 1 1 190px;
-  min-width: 0;
-  max-width: 100%;
-  border: 1px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 45%, transparent);
+.cv-cal-panel[data-place="above"] {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* Which end of the range you are setting. */
+.cv-cal-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--muted, hsl(var(--muted))) 55%, transparent);
+}
+
+.cv-cal-tab {
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  border: 0;
   border-radius: 7px;
-  padding: 5px 7px;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  padding: 5px 4px;
+  background: transparent;
+  color: var(--muted-foreground, hsl(var(--muted-foreground)));
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cv-cal-tab small {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.cv-cal-tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--primary, hsl(var(--primary))) 18%, transparent);
+  color: var(--primary, hsl(var(--primary)));
+}
+
+.cv-cal-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cv-cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 26px;
+}
+
+.cv-cal-title {
   font-family: var(--font-metadata, var(--font-body));
   font-size: 12px;
-  line-height: 1.4;
-  color-scheme: dark;
+  font-weight: 600;
+  color: var(--foreground, hsl(var(--foreground)));
 }
 
-.cv-period-input:focus-visible {
+.cv-cal-nav,
+.cv-cal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 7px;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--muted-foreground, hsl(var(--muted-foreground)));
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.cv-cal-back {
+  font-size: 12px;
+  color: var(--primary, hsl(var(--primary)));
+}
+
+.cv-cal-nav:hover,
+.cv-cal-back:hover {
+  background: color-mix(in srgb, var(--primary, hsl(var(--primary))) 12%, transparent);
+  color: var(--primary, hsl(var(--primary)));
+}
+
+/* Both steps share one 3×4 frame, so the months read as a zoom into the year
+   cell rather than as a different screen. */
+.cv-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.cv-cal-cell {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 9px 2px;
+  background: color-mix(in srgb, var(--muted, hsl(var(--muted))) 40%, transparent);
+  color: var(--foreground, hsl(var(--foreground)));
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.cv-cal-cell:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary, hsl(var(--primary))) 16%, transparent);
+  color: var(--primary, hsl(var(--primary)));
+}
+
+.cv-cal-cell[aria-pressed="true"] {
+  background: var(--primary, hsl(var(--primary)));
+  border-color: var(--primary, hsl(var(--primary)));
+  color: #fff;
+}
+
+/* The current year gets a marker, not a highlight — the selection is what the
+   filled cell means. */
+.cv-cal-cell[data-now]:not([aria-pressed="true"]) {
+  border-color: color-mix(in srgb, var(--primary, hsl(var(--primary))) 45%, transparent);
+}
+
+.cv-cal-cell:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.cv-cal-cell:focus-visible {
   outline: 2px solid var(--primary, hsl(var(--primary)));
   outline-offset: 1px;
 }
 
-.cv-period-input:disabled {
-  opacity: 0.45;
+/* Tapping a year zooms its label out and the months in behind it; stepping
+   back reverses the direction. Entrance-only, so there is nothing to
+   orchestrate and nothing that can be left mid-animation. */
+@keyframes cv-cal-zoom-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to { opacity: 1; transform: none; }
 }
 
-.cv-period-current {
+@keyframes cv-cal-zoom-out {
+  from { opacity: 0; transform: scale(1.22); }
+  to { opacity: 1; transform: none; }
+}
+
+.cv-cal-grid[data-step="month"] {
+  animation: cv-cal-zoom-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cv-cal-grid[data-step="year"] {
+  animation: cv-cal-zoom-out 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cv-cal-current {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
+  gap: 7px;
+  padding-top: 2px;
   font-family: var(--font-metadata, var(--font-body));
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground, hsl(var(--muted-foreground)));
   cursor: pointer;
-  white-space: nowrap;
 }
 
-.cv-period-current input {
-  accent-color: hsl(var(--primary));
-  width: 14px;
-  height: 14px;
+.cv-cal-current input {
+  accent-color: var(--primary, hsl(var(--primary)));
+  width: 15px;
+  height: 15px;
   margin: 0;
 }
 
-.cv-pop-label {
-  display: grid;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: hsl(var(--foreground));
+@media (prefers-reduced-motion: reduce) {
+  .cv-cal-grid {
+    animation: none;
+  }
 }
-
-.cv-pop-label > span {
-  font-weight: 400;
-  font-size: 10px;
-  color: hsl(var(--muted-foreground));
-}
-
-.cv-pop-input,
-.cv-select {
-  border: 1px solid hsl(var(--border));
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-size: 13px;
-  width: 100%;
-}
-
-.cv-pop-input[aria-multiline="true"] {
-  min-height: 56px;
-  line-height: 1.6;
-}
-
-/* Inputs are also .cv-editable, whose 0.08em inline padding (specificity
-   0,2,0 via .grad-document) was collapsing the 12px horizontal padding to
-   ~1px — text sat flush against the input border. Restore it. */
-.grad-document .cv-pop-input.cv-editable {
-  padding-inline: 12px;
-  margin-inline: 0;
-}
-
-.cv-select {
-  cursor: pointer;
-}
-
-/* (.cv-check / .cv-pop-actions / .cv-pop-done went with the date popover —
-   an in-place editor commits as you change it and needs no "Done" button.) */
 
 .cv-photo-pop {
   display: grid;
@@ -1427,12 +1539,18 @@ html {
 
   /* 16px inputs: anything smaller triggers iOS focus zoom, which made these
      forms "too small to see" on phones. The 10px sub-labels go with them —
-     they failed the 11px micro-text floor. */
+     they failed the 11px micro-text floor. (The month picker has no text
+     input, so iOS zoom cannot be triggered from it at all.) */
   .cv-photo-pop .cv-pop-input,
-  .cv-photo-pop .cv-select,
-  .cv-period-input {
+  .cv-photo-pop .cv-select {
     font-size: 16px;
     min-height: 40px;
+  }
+
+  /* Comfortable thumb targets for the picker grids. */
+  .cv-cal-cell {
+    padding: 12px 2px;
+    font-size: 13px;
   }
 
   .cv-photo-pop .cv-pop-label {
