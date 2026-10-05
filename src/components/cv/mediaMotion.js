@@ -367,7 +367,7 @@ export function attachMediaMotion(root, options) {
     const number = section.querySelector(".grad-section-number");
     const heading = section.querySelector(".grad-heading");
     const content = section.querySelectorAll(
-      ".grad-edu-timeline, .grad-entries, .grad-skills-section, .grad-certificates, .grad-ending"
+      ".grad-education, .grad-edu-timeline, .grad-entries, .grad-skills-section, .grad-ending"
     );
     if (motionMode === "immersive") {
       setDelay(number, 0);
@@ -525,10 +525,50 @@ export function attachMediaMotion(root, options) {
   cleanups.push(() => clearTimeout(revealFailsafe));
   }
 
+  // ── Disclosure handling ──
+  // Anything inside a collapsed <details> never intersects the viewport, so its
+  // IntersectionObserver never fires and it stays at opacity 0 — open an item
+  // and its photos would be invisible. Reveal a disclosure's contents the
+  // moment it opens, and run the GPA count-up then rather than on a hidden node.
+  if (reveals) {
+    const onToggle = (event) => {
+      const host = event.target;
+      if (!host || !host.open) return;
+      host.querySelectorAll(REVEAL_SELECTOR).forEach((el) => el.setAttribute("data-visible", "true"));
+      if (gpaCountUp && host.querySelector("[data-gpa]")) animateGPA();
+    };
+    // `toggle` does not bubble, so listen in the capture phase.
+    root.addEventListener("toggle", onToggle, true);
+    cleanups.push(() => root.removeEventListener("toggle", onToggle, true));
+  }
+
+  // Printing must not silently drop everything the reader collapsed. Open every
+  // disclosure for the print, then restore exactly what was open before.
+  const beforePrint = () => {
+    root.querySelectorAll("details:not([open])").forEach((el) => {
+      el.setAttribute("open", "");
+      el.dataset.printOpened = "true";
+    });
+  };
+  const afterPrint = () => {
+    root.querySelectorAll("details[data-print-opened]").forEach((el) => {
+      el.removeAttribute("open");
+      delete el.dataset.printOpened;
+    });
+  };
+  window.addEventListener("beforeprint", beforePrint);
+  window.addEventListener("afterprint", afterPrint);
+  cleanups.push(() => {
+    window.removeEventListener("beforeprint", beforePrint);
+    window.removeEventListener("afterprint", afterPrint);
+  });
+
   // ── Card tilt (desktop, hover-capable, max 3°) ──
   if (cardTilt && canHover) {
     const bound = [];
-    root.querySelectorAll("[data-entry-card]").forEach((card) => {
+    // Not on [data-entry-card] any more: those are now disclosures the reader
+    // clicks, and a tilting click target reads as a glitch, not as polish.
+    root.querySelectorAll(".grad-cert-badge").forEach((card) => {
       let rect = null;
       const onEnter = () => {
         rect = card.getBoundingClientRect(); // cache once — no layout reads while moving

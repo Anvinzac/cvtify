@@ -1,5 +1,6 @@
 import type { GradProject, EntryItem } from "@/lib/mediaProject";
-import { themeStyle, splitItems, lines, monthLabel } from "@/lib/mediaProject";
+import { themeStyle, splitItems, lines, monthLabel, detailSummary } from "@/lib/mediaProject";
+import { DetailCue } from "./detail-cue";
 import "./media-document.css";
 
 /**
@@ -8,12 +9,29 @@ import "./media-document.css";
  * scroll animation is layered on afterwards by mediaMotion.js, which flips
  * `data-visible="true"` on the elements it observes.
  *
+ * READING MODEL — two tiers:
+ *   Overview (always in the scroll): every heading, and for each item its
+ *     period, title, organisation and ONE short description. A recruiter can
+ *     scan the whole CV in one pass without opening anything.
+ *   Detail (behind a tap): location, highlights, photos; for education the
+ *     GPA, honours and certificates. Native <details>/<summary>, so it needs
+ *     no JavaScript, is keyboard operable, and survives the HTML export.
+ *
  * The root carries `data-media-document` (how the host finds it to attach
  * motion) and `data-motion` (the motion level the script should apply).
+ *
+ * `expanded` force-opens every disclosure — the in-app "expand all" control
+ * and printing both use it.
  */
-export function GradCVDocument({ project }: { project: GradProject }) {
+export function GradCVDocument({ project, expanded = false }: { project: GradProject; expanded?: boolean }) {
   const { profile, education, activities, internships, partTimeJobs, skills, hobbies, settings } = project;
   const style = themeStyle(settings);
+  const eduDetail = detailSummary([
+    education.gpa && "GPA",
+    education.honors && "danh hiệu",
+    education.certificates.length ? `${education.certificates.length} chứng chỉ` : "",
+    education.photo && "ảnh",
+  ]);
 
   return (
     <div
@@ -60,6 +78,11 @@ export function GradCVDocument({ project }: { project: GradProject }) {
                     <span className="grad-hero-link-text">{profile.phone}</span>
                   </a>
                 )}
+                {profile.dob && (
+                  <span className="grad-hero-link">
+                    <span className="grad-hero-link-text">{profile.dob}</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -98,17 +121,25 @@ export function GradCVDocument({ project }: { project: GradProject }) {
             <h2 className="grad-heading" data-section-heading>Học Vấn</h2>
           </div>
           <div className="grad-education">
-            <div className="grad-edu-timeline">
-              <div className="grad-edu-period">
-                {(education.startDate || education.endDate) && (
-                  <span>
-                    {monthLabel(education.startDate)} — {monthLabel(education.endDate)}
+            <details className="grad-entry" data-entry-card open={expanded || undefined}>
+              <summary className="grad-entry-summary">
+                <span className="grad-entry-period">
+                  {(education.startDate || education.endDate) && (
+                    <span className="grad-entry-period-text">
+                      {monthLabel(education.startDate)} — {monthLabel(education.endDate)}
+                    </span>
+                  )}
+                </span>
+                <span className="grad-entry-body">
+                  <span className="grad-entry-headline">
+                    <h3 className="grad-edu-school">{education.school}</h3>
                   </span>
-                )}
-              </div>
-              <div className="grad-edu-content">
-                <h3 className="grad-edu-school">{education.school}</h3>
-                <p className="grad-edu-major">{education.major}</p>
+                  <span className="grad-edu-major">{education.major}</span>
+                  {eduDetail && <DetailCue label={eduDetail} />}
+                </span>
+              </summary>
+
+              <div className="grad-entry-detail">
                 <div className="grad-edu-meta">
                   {education.gpa && (
                     <span className="grad-edu-gpa" data-gpa={education.gpa}>
@@ -119,35 +150,35 @@ export function GradCVDocument({ project }: { project: GradProject }) {
                     <span className="grad-edu-honors">{education.honors}</span>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {education.photo && (
-              <div className="grad-edu-photo-frame">
-                <img
-                  className="grad-edu-photo"
-                  src={education.photo.src}
-                  alt={education.photo.alt || "Ảnh trường"}
-                  style={{ objectPosition: education.photo.position }}
-                  width={education.photo.width}
-                  height={education.photo.height}
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-            )}
-
-            {education.certificates.length > 0 && (
-              <div className="grad-certificates">
-                {education.certificates.map((cert) => (
-                  <div className="grad-cert-badge" key={cert.id} data-entry-card>
-                    <span className="grad-cert-name">{cert.name}</span>
-                    {cert.score && <span className="grad-cert-score">{cert.score}</span>}
-                    {cert.issuer && <span className="grad-cert-issuer">{cert.issuer}</span>}
+                {education.certificates.length > 0 && (
+                  <div className="grad-certificates">
+                    {education.certificates.map((cert) => (
+                      <div className="grad-cert-badge" key={cert.id}>
+                        <span className="grad-cert-name">{cert.name}</span>
+                        {cert.score && <span className="grad-cert-score">{cert.score}</span>}
+                        {cert.issuer && <span className="grad-cert-issuer">{cert.issuer}</span>}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {education.photo && (
+                  <div className="grad-edu-photo-frame">
+                    <img
+                      className="grad-edu-photo"
+                      src={education.photo.src}
+                      alt={education.photo.alt || "Ảnh trường"}
+                      style={{ objectPosition: education.photo.position }}
+                      width={education.photo.width}
+                      height={education.photo.height}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </div>
+                )}
               </div>
-            )}
+            </details>
           </div>
         </section>
 
@@ -160,7 +191,7 @@ export function GradCVDocument({ project }: { project: GradProject }) {
             </div>
             <div className="grad-entries">
               {activities.map((entry, i) => (
-                <EntryRow key={entry.id} entry={entry} isLast={i === activities.length - 1} />
+                <EntryRow key={entry.id} entry={entry} isLast={i === activities.length - 1} expanded={expanded} />
               ))}
             </div>
           </section>
@@ -175,7 +206,7 @@ export function GradCVDocument({ project }: { project: GradProject }) {
             </div>
             <div className="grad-entries">
               {internships.map((entry, i) => (
-                <EntryRow key={entry.id} entry={entry} isLast={i === internships.length - 1} />
+                <EntryRow key={entry.id} entry={entry} isLast={i === internships.length - 1} expanded={expanded} />
               ))}
             </div>
           </section>
@@ -190,7 +221,7 @@ export function GradCVDocument({ project }: { project: GradProject }) {
             </div>
             <div className="grad-entries">
               {partTimeJobs.map((entry, i) => (
-                <EntryRow key={entry.id} entry={entry} isLast={i === partTimeJobs.length - 1} />
+                <EntryRow key={entry.id} entry={entry} isLast={i === partTimeJobs.length - 1} expanded={expanded} />
               ))}
             </div>
           </section>
@@ -260,27 +291,46 @@ export function GradCVDocument({ project }: { project: GradProject }) {
   );
 }
 
-/** Editorial experience row shared by activities, internships and part-time jobs. */
-function EntryRow({ entry, isLast }: { entry: EntryItem; isLast: boolean }) {
+/**
+ * One experience item, shared by activities, internships and part-time jobs.
+ *
+ * The summary is the overview tier: period, title, organisation and the short
+ * description (clamped to two lines while collapsed — CSS releases the clamp
+ * when it opens, so the text lives in exactly one place). Location, highlights
+ * and photos are the detail tier.
+ */
+function EntryRow({ entry, isLast, expanded }: { entry: EntryItem; isLast: boolean; expanded?: boolean }) {
   const highlights = lines(entry.highlights).filter(Boolean);
   const hasPeriod = entry.startDate || entry.endDate || entry.current;
+  const lead = entry.description.trim() || highlights[0] || "";
+  const cue = detailSummary([
+    highlights.length ? `${highlights.length} điểm nổi bật` : "",
+    entry.photos.length ? `${entry.photos.length} ảnh` : "",
+    entry.location && "địa điểm",
+  ]);
   return (
-    <article className="grad-entry-row" data-entry-card>
-      <div className="grad-entry-period">
-        {hasPeriod && (
-          <span className="grad-entry-period-text">
-            {monthLabel(entry.startDate)} — {entry.current ? "Nay" : monthLabel(entry.endDate)}
+    <details className="grad-entry" data-entry-card open={expanded || undefined}>
+      <summary className="grad-entry-summary">
+        <span className="grad-entry-period">
+          {hasPeriod && (
+            <span className="grad-entry-period-text">
+              {monthLabel(entry.startDate)} — {entry.current ? "Nay" : monthLabel(entry.endDate)}
+            </span>
+          )}
+          {!isLast && <span className="grad-entry-divider" aria-hidden="true" />}
+        </span>
+        <span className="grad-entry-body">
+          <span className="grad-entry-headline">
+            <h3 className="grad-entry-title">{entry.title}</h3>
+            <span className="grad-entry-org">{entry.organization}</span>
           </span>
-        )}
-        {!isLast && <span className="grad-entry-divider" aria-hidden="true" />}
-      </div>
-      <div className="grad-entry-content">
-        <header className="grad-entry-header">
-          <h3 className="grad-entry-title">{entry.title}</h3>
-          <span className="grad-entry-org">{entry.organization}</span>
-        </header>
+          {lead && <span className="grad-entry-lead">{lead}</span>}
+          {cue && <DetailCue label={cue} />}
+        </span>
+      </summary>
+
+      <div className="grad-entry-detail">
         {entry.location && <span className="grad-entry-location">{entry.location}</span>}
-        {entry.description && <p className="grad-entry-description">{entry.description}</p>}
         {highlights.length > 0 && (
           <ul className="grad-entry-highlights">
             {highlights.map((h, i) => (
@@ -305,7 +355,7 @@ function EntryRow({ entry, isLast }: { entry: EntryItem; isLast: boolean }) {
           </div>
         )}
       </div>
-    </article>
+    </details>
   );
 }
 

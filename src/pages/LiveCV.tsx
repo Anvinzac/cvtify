@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
-  Award, Briefcase, Check, Download, Eye, Film, Layers, Loader2,
+  Award, Briefcase, Check, ChevronsDownUp, ChevronsUpDown, Download, Eye, Film, Layers, Loader2,
   MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Upload, Users,
 } from "lucide-react";
 import { useMediaProject } from "@/context/MediaProjectContext";
@@ -19,13 +19,27 @@ import "@/components/studio/studio.css";
 
 type Menu = null | "add" | "appearance" | "tools" | "checklist";
 
-/** Focus a field by id, opening any collapsed <details> wrapper first. */
+/**
+ * Focus a field by id, expanding whatever hides it first.
+ *
+ * Two collapse mechanisms have to be handled: real <details> (photo settings,
+ * and every item in the read-only document) and the editor's controlled
+ * Collapsible, whose detail body is `hidden` until its toggle is clicked. The
+ * click goes through React state, so the field is not focusable until the next
+ * render — hence the double rAF.
+ */
 function focusField(fieldId: string) {
   const el = document.getElementById(fieldId);
   if (!el) return;
   el.closest("details")?.setAttribute("open", "");
-  el.scrollIntoView({ block: "center", behavior: "smooth" });
-  requestAnimationFrame(() => (el as HTMLElement).focus({ preventScroll: true }));
+  const collapsible = el.closest<HTMLElement>('[data-collapsible][data-open="false"]');
+  collapsible?.querySelector<HTMLButtonElement>("[data-collapse-toggle]")?.click();
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      (el as HTMLElement).focus({ preventScroll: true });
+    }),
+  );
 }
 
 /** Visual theme gallery: live miniature previews with Vietnamese names + mood descriptors. */
@@ -66,6 +80,8 @@ export default function LiveCV() {
   const lastKnownTheme = useRef<ThemeId>("nebula");
 
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  /** "Expand all": force every item's detail tier open, in either mode. */
+  const [expanded, setExpanded] = useState(false);
   const [menu, setMenu] = useState<Menu>(null);
   const [exporting, setExporting] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -320,6 +336,17 @@ export default function LiveCV() {
               <button type="button" aria-label="Xem trước" aria-pressed={mode === "preview"} onClick={() => setMode("preview")}><Eye size={14} /><span className="studio-btn-label">Xem trước</span></button>
             </div>
 
+            <button
+              type="button"
+              className="live-pill"
+              aria-pressed={expanded}
+              aria-label={expanded ? "Thu gọn tất cả" : "Mở rộng tất cả"}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? <ChevronsDownUp size={14} /> : <ChevronsUpDown size={14} />}
+              <span className="studio-btn-label">{expanded ? "Thu gọn" : "Mở rộng"}</span>
+            </button>
+
             <div className="live-menu-wrap">
               <button
                 type="button"
@@ -512,8 +539,8 @@ export default function LiveCV() {
 
       <div className="live-content">
         {mode === "edit"
-          ? <EditableGradCV project={workspace} samples={samples} onChange={updateDraft} />
-          : <GradCVDocument project={workspace} />}
+          ? <EditableGradCV project={workspace} samples={samples} onChange={updateDraft} expanded={expanded} />
+          : <GradCVDocument project={workspace} expanded={expanded} />}
       </div>
     </div>
   );

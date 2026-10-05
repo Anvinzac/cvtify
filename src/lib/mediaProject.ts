@@ -201,6 +201,16 @@ export function splitItems(value: string, sep?: string): string[] {
     });
 }
 
+/**
+ * Joins the non-empty parts of an item's detail inventory ("3 điểm nổi bật ·
+ * 2 ảnh"), or "" when the item has no detail tier at all. Naming the contents
+ * is the point: a bare chevron makes a reader tap to find out whether tapping
+ * was worth it, which is the scanning cost the overview exists to remove.
+ */
+export function detailSummary(parts: (string | false | null | undefined)[]): string {
+  return parts.filter((part): part is string => !!part && part.trim().length > 0).join(" · ");
+}
+
 /** Splits newline-separated highlights into clean bullet lines. */
 export const lines = (value: string) =>
   value

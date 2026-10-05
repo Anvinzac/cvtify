@@ -40,6 +40,16 @@
   display: none !important;
 }
 
+/* A `display:` declaration on a direct child of <details> overrides the UA rule
+   that hides it while closed. Chrome still skips PAINTING the content, so this
+   looks fine while being wrong: the panel keeps a full layout box (measured at
+   466px tall inside a 140px item), which lands in hit-testing and in the
+   document's box geometry. Every collapsible panel here sets a display, so the
+   rule is stated once for all of them. */
+.grad-document details:not([open]) > :not(summary) {
+  display: none;
+}
+
 .grad-document h1,
 .grad-document h2,
 .grad-document h3,
@@ -671,6 +681,7 @@
 }
 
 .grad-edu-major {
+  display: block;
   font-size: 0.95rem;
   color: var(--muted-foreground);
   margin: 0;
@@ -768,21 +779,159 @@
   flex-direction: column;
 }
 
-.grad-entry-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.5rem;
-  padding-block: 1.5rem;
+/* ── Two-tier item ──
+   .grad-entry-summary is the OVERVIEW tier and is always in the scroll.
+   .grad-entry-detail is the DETAIL tier and only exists once opened.
+   The read-only document builds this from <details>/<summary>; the editor
+   builds the same classes from a div + toggle button (a <summary> would
+   swallow clicks meant for a contentEditable). Both are styled here. */
+.grad-entry {
+  display: block;
+  padding-block: 1.25rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
   transition: background var(--motion-duration, 0.3s) ease;
 }
 
-.grad-entry-row:last-child {
+.grad-entries > *:last-child .grad-entry,
+.grad-entry:last-child {
   border-bottom: none;
 }
 
-.grad-entry-row:hover {
+.grad-entry:hover {
   background: color-mix(in srgb, var(--card) 30%, transparent);
+}
+
+.grad-entry-summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  cursor: pointer;
+  /* Kill the UA disclosure triangle; .grad-entry-cue is the affordance. */
+  list-style: none;
+}
+
+.grad-entry-summary::-webkit-details-marker,
+.grad-entry-summary::marker {
+  display: none;
+  content: "";
+}
+
+.grad-entry-summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* The editor's summary is not clickable as a whole — its toggle button is. */
+.grad-document.is-editing .grad-entry-summary {
+  cursor: auto;
+}
+
+.grad-entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.grad-entry-headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* The one short description. Clamped to two lines while collapsed so every
+   item costs the reader the same glance; the clamp is released on open, which
+   is why the text is written once and never duplicated into the detail tier. */
+.grad-entry-lead {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--foreground) 72%, transparent);
+  margin-top: 0.15rem;
+}
+
+.grad-entry[open] .grad-entry-lead,
+.grad-entry[data-open="true"] .grad-entry-lead {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+/* ── Detail cue ── */
+.grad-entry-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+  opacity: 0.75;
+  transition: opacity var(--motion-duration, 0.3s) ease;
+}
+
+.grad-entry-summary:hover .grad-entry-cue {
+  opacity: 1;
+}
+
+.grad-entry-cue-chevron {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transition: transform var(--motion-duration, 0.3s) var(--motion-ease, ease);
+}
+
+/* The read-only document draws its own chevron (no icon library in the export). */
+.grad-entry > .grad-entry-summary .grad-entry-cue-chevron {
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  width: 7px;
+  height: 7px;
+  transform: rotate(-45deg);
+  margin-bottom: 1px;
+}
+
+.grad-entry[open] > .grad-entry-summary .grad-entry-cue-chevron {
+  transform: rotate(45deg);
+}
+
+.grad-entry-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  grid-column: 1 / -1;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.grad-entry-shell {
+  min-width: 0;
+}
+
+.grad-entry[data-open="true"] .grad-entry-toggle .grad-entry-cue-chevron {
+  transform: rotate(90deg);
+}
+
+/* ── Detail tier ── */
+.grad-entry-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  margin-top: 0.85rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 45%, transparent);
 }
 
 .grad-entry-period {
@@ -1055,8 +1204,10 @@
     width: min(820px, calc(100% - 48px));
   }
 
+  /* 2rem, not 3: the overview tier makes each section only a few lines tall,
+     and the old rhythm left a visibly empty band under every heading. */
   .grad-section-header {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
 
   .grad-section-number {
@@ -1079,10 +1230,24 @@
   }
 
   /* Experience: two-column editorial rows */
-  .grad-entry-row {
+  .grad-entry {
+    padding-block: 1.75rem;
+  }
+
+  .grad-entry-summary {
     grid-template-columns: 140px 1fr;
-    gap: 2rem;
-    padding-block: 2rem;
+    gap: 0.5rem 2rem;
+  }
+
+  /* Line the editor's toggle up with the content column, where the read-only
+     document draws its cue. */
+  .grad-entry-summary > .grad-entry-toggle {
+    grid-column: 2;
+  }
+
+  /* The detail tier lines up under the content column, not the date column. */
+  .grad-entry-detail {
+    margin-left: calc(140px + 2rem);
   }
 
   .grad-entry-period {
@@ -1138,8 +1303,12 @@
     grid-template-columns: 180px 1fr;
   }
 
-  .grad-entry-row {
+  .grad-entry-summary {
     grid-template-columns: 180px 1fr;
+  }
+
+  .grad-entry-detail {
+    margin-left: calc(180px + 2rem);
   }
 }
 
@@ -1216,7 +1385,7 @@
   animation: nebula-shimmer 8s ease-in-out infinite;
 }
 
-.grad-document[data-theme="nebula"] .grad-entry-row:hover {
+.grad-document[data-theme="nebula"] .grad-entry:hover {
   background: color-mix(in srgb, rgba(124,58,237,0.04) 100%, transparent);
   box-shadow: 0 0 40px rgba(124,58,237,0.03);
 }
@@ -1293,12 +1462,12 @@
   -webkit-text-fill-color: transparent;
 }
 
-.grad-document[data-theme="ember"] .grad-entry-row {
+.grad-document[data-theme="ember"] .grad-entry {
   border-bottom: none;
   position: relative;
 }
 
-.grad-document[data-theme="ember"] .grad-entry-row::after {
+.grad-document[data-theme="ember"] .grad-entry::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -1308,11 +1477,11 @@
   background: linear-gradient(90deg, transparent, rgba(245,158,11,0.2) 20%, rgba(245,158,11,0.2) 80%, transparent);
 }
 
-.grad-document[data-theme="ember"] .grad-entry-row:last-child::after {
+.grad-document[data-theme="ember"] .grad-entry:last-child::after {
   display: none;
 }
 
-.grad-document[data-theme="ember"] .grad-entry-row:hover {
+.grad-document[data-theme="ember"] .grad-entry:hover {
   background: rgba(245,158,11,0.02);
 }
 
@@ -1423,11 +1592,11 @@
   animation: nebula-shimmer 12s ease-in-out infinite;
 }
 
-.grad-document[data-theme="aurora"] .grad-entry-row {
+.grad-document[data-theme="aurora"] .grad-entry {
   border-bottom-color: rgba(6,182,212,0.08);
 }
 
-.grad-document[data-theme="aurora"] .grad-entry-row:hover {
+.grad-document[data-theme="aurora"] .grad-entry:hover {
   background: rgba(6,182,212,0.02);
 }
 
@@ -1522,11 +1691,11 @@
   color: var(--primary);
 }
 
-.grad-document[data-theme="mono"] .grad-entry-row {
+.grad-document[data-theme="mono"] .grad-entry {
   border-bottom: 1px solid var(--border);
 }
 
-.grad-document[data-theme="mono"] .grad-entry-row:hover {
+.grad-document[data-theme="mono"] .grad-entry:hover {
   background: transparent;
 }
 
@@ -1686,12 +1855,12 @@
   animation: prism-spectral-shift 12s linear infinite;
 }
 
-.grad-document[data-theme="prism"] .grad-entry-row {
+.grad-document[data-theme="prism"] .grad-entry {
   border-bottom: none;
   position: relative;
 }
 
-.grad-document[data-theme="prism"] .grad-entry-row::after {
+.grad-document[data-theme="prism"] .grad-entry::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -1701,11 +1870,11 @@
   background: linear-gradient(90deg, transparent, rgba(168,85,247,0.2), rgba(236,72,153,0.2), rgba(59,130,246,0.2), transparent);
 }
 
-.grad-document[data-theme="prism"] .grad-entry-row:last-child::after {
+.grad-document[data-theme="prism"] .grad-entry:last-child::after {
   display: none;
 }
 
-.grad-document[data-theme="prism"] .grad-entry-row:hover {
+.grad-document[data-theme="prism"] .grad-entry:hover {
   background: rgba(168,85,247,0.02);
 }
 
@@ -1830,12 +1999,12 @@
     opacity: 0.5;
   }
 
-  .grad-entry-row {
+  .grad-entry {
     break-inside: avoid;
     border-bottom-color: #ddd;
   }
 
-  .grad-entry-row:hover {
+  .grad-entry:hover {
     background: transparent;
   }
 
@@ -2045,7 +2214,7 @@
 }
 
 /* Entry rows — stagger driven by transitionDelay set in JS. */
-.grad-document:not(.is-editing) .grad-entry-row {
+.grad-document:not(.is-editing) .grad-entry {
   opacity: 0;
   transform: translateY(20px);
   transition:
@@ -2054,7 +2223,7 @@
     background 0.3s ease;
 }
 
-.grad-document:not(.is-editing) .grad-entry-row[data-visible="true"] {
+.grad-document:not(.is-editing) .grad-entry[data-visible="true"] {
   opacity: 1;
   transform: translateY(0);
 }
@@ -2147,7 +2316,7 @@
   .grad-document:not(.is-editing) .grad-entries,
   .grad-document:not(.is-editing) .grad-skills-section,
   .grad-document:not(.is-editing) .grad-certificates,
-  .grad-document:not(.is-editing) .grad-entry-row,
+  .grad-document:not(.is-editing) .grad-entry,
   .grad-document:not(.is-editing) .grad-cert-badge,
   .grad-document:not(.is-editing) .grad-chip,
   .grad-document:not(.is-editing) .grad-entry-photos img,
@@ -2184,7 +2353,7 @@
 .grad-document[data-motion="still"]:not(.is-editing) .grad-entries,
 .grad-document[data-motion="still"]:not(.is-editing) .grad-skills-section,
 .grad-document[data-motion="still"]:not(.is-editing) .grad-certificates,
-.grad-document[data-motion="still"]:not(.is-editing) .grad-entry-row,
+.grad-document[data-motion="still"]:not(.is-editing) .grad-entry,
 .grad-document[data-motion="still"]:not(.is-editing) .grad-cert-badge,
 .grad-document[data-motion="still"]:not(.is-editing) .grad-chip,
 .grad-document[data-motion="still"]:not(.is-editing) .grad-entry-photos img,
@@ -2214,7 +2383,7 @@
    MOTION — Mobile: shorten travel, drop the stamp ceremony
    ============================================ */
 @media (max-width: 640px) {
-  .grad-document:not(.is-editing) .grad-entry-row {
+  .grad-document:not(.is-editing) .grad-entry {
     transform: translateY(12px);
     transition:
       opacity 0.4s ease,

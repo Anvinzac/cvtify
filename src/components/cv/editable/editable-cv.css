@@ -1760,13 +1760,6 @@
   min-width: 0;
 }
 
-/* .cv-popover / .cv-photo-pop declare `display: grid`, which beats the UA's
-   rule for a closed <details> — without this the panel stayed laid out (and
-   overlapping the content below) with the disclosure shut. */
-.cv-photo-details:not([open]) > :not(summary) {
-  display: none;
-}
-
 .cv-photo-details > .cv-photo-pop {
   margin-top: 6px;
 }
@@ -2145,15 +2138,27 @@
    (complements the existing .cv-editable glow)
    ============================================ */
 
+/* The delete control belongs at the item's edge, not in the reading flow —
+   stacked inside the headline it split the title from its description. */
+.grad-document.is-editing .grad-entry-summary {
+  position: relative;
+}
+
+.grad-document.is-editing .grad-entry-headline > .cv-list-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
 /* Subtle outline on the entry row under the pointer (edit mode only) */
-.grad-document.is-editing .grad-entry-row:hover {
+.grad-document.is-editing .grad-entry:hover {
   outline: 1px solid color-mix(in srgb, var(--primary, hsl(var(--primary))) 15%, transparent);
   outline-offset: 4px;
   border-radius: calc(var(--radius, 12px) * 0.5);
 }
 
 /* Surrounding content quiets while a field is focused */
-.grad-document.is-editing:has(.cv-editable:focus) .grad-entry-row:not(:has(.cv-editable:focus)) {
+.grad-document.is-editing:has(.cv-editable:focus) .grad-entry:not(:has(.cv-editable:focus)) {
   opacity: 0.6;
   transition: opacity 0.3s ease;
 }
