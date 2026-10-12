@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
   Award, Briefcase, Check, ChevronsDownUp, ChevronsUpDown, Download, Eye, Film, Layers, Loader2,
-  MonitorPlay, MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Upload, Users,
+  MonitorPlay, MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Target, Upload, Users,
 } from "lucide-react";
 import { useMediaProject } from "@/context/MediaProjectContext";
 import { CreditChip } from "@/components/auth/CreditChip";
+import { JobTailorModal } from "@/components/cv/editable/JobTailorModal";
 import { EditableGradCV } from "@/components/cv/editable/EditableMediaCV";
 import { GradCVDocument } from "@/components/cv/MediaCVDocument";
 import { SpotlightDeck } from "@/components/cv/showcase/spotlight-deck";
@@ -92,6 +93,7 @@ export default function LiveCV() {
   /** An entry just added from the toolbar, for the deck to scroll to and focus. */
   const [focusEntryId, setFocusEntryId] = useState<string | undefined>();
   const [menu, setMenu] = useState<Menu>(null);
+  const [tailorOpen, setTailorOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [notice, setNotice] = useState("");
@@ -517,6 +519,8 @@ export default function LiveCV() {
                 <>
                   <div className="live-backdrop" onClick={() => setMenu(null)} />
                   <div className="live-menu" role="menu" aria-label="Thêm thao tác">
+                    <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={() => { setMenu(null); setTailorOpen(true); }}><Target size={16} /> Chỉnh CV theo công việc (AI)</button>
+                    <div className="live-menu-sep" />
                     <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={loadDemo}><Sparkles size={16} /> Tải CV mẫu</button>
                     <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={backup}><Download size={16} /> Sao lưu JSON</button>
                     <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={() => restoreInput.current?.click()}><Upload size={16} /> Khôi phục</button>
