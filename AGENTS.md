@@ -1,0 +1,2 @@
+- AI generation runs only in the `ai-suggest` backend function, which spends credits atomically via `spend_credits` (refunding on failure); never call AI providers from the browser — keeps the credit balance trustworthy.
+- Sign-in is requested lazily via `useAuth().requireSignIn()` at advanced features; never gate the CV editor behind login — users explore first and their local draft is kept.
