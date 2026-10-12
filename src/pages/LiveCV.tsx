@@ -544,6 +544,8 @@ export default function LiveCV() {
         />
       </div>
 
+      {tailorOpen && <JobTailorModal onClose={() => setTailorOpen(false)} />}
+
       {(notice || error) && (
         <div className="live-notice no-print">
           <p className={`media-export-notice ${error ? "is-error" : ""}`} role="status">
