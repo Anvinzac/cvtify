@@ -56,6 +56,16 @@ describe("createMediaHTML", () => {
     expect(css).toContain(".grad-document details:not([open]) > :not(summary)");
   });
 
+  it("keeps the three experience sections — the spotlight deck must not reach the export", () => {
+    // GradCVDocument takes the deck as a SLOT, and createMediaHTML passes none.
+    // If the deck were imported instead, it and framer-motion would be pulled
+    // into the mediaExport chunk and the download would change shape.
+    expect(html).toContain("Hoạt Động");
+    expect(html).toContain("Thực Tập");
+    expect(html).toContain("Làm Thêm");
+    expect(html).not.toContain("grad-deck");
+  });
+
   it("renders the hero outside the reading container so the name cannot overlap the portrait", () => {
     const heroIndex = html.indexOf('data-section="hero"');
     const containerIndex = html.indexOf('class="grad-container"');

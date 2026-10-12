@@ -3,9 +3,9 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { InlineList, InlinePeriod, InlineText } from "./inline-edit";
 import { budgetFor, CoverControls, PhotoTrack, type MediaBudget } from "./inline-media";
-import { AIAssistButton } from "./AIAssistButton";
-import type { EntryItem, GradProject, MediaPhoto } from "@/lib/mediaProject";
-import { detailSummary, emptyCertificate, emptyEntry, themeStyle } from "@/lib/mediaProject";
+import type { GradProject, MediaPhoto } from "@/lib/mediaProject";
+import { detailSummary, emptyCertificate, themeStyle } from "@/lib/mediaProject";
+import { SpotlightDeck } from "../showcase/spotlight-deck";
 import "./editable-cv.css";
 
 /** Cubic-bezier easing shared by every reveal (typed tuple keeps framer-motion happy). */
@@ -25,8 +25,6 @@ const THEME_SPRINGS: Record<string, { stiffness: number; damping: number; mass: 
 const DEFAULT_SPRING = { stiffness: 80, damping: 20, mass: 0.8 };
 const springFor = (theme?: string) => (theme && THEME_SPRINGS[theme]) || DEFAULT_SPRING;
 
-/** The three experience buckets share one entry-card template. */
-type EntrySectionKey = "activities" | "internships" | "partTimeJobs";
 
 /**
  * The editor's stand-in for <details>/<summary>.
@@ -100,43 +98,6 @@ function RevealSection({ children, className, section, theme }: { children: Reac
   );
 }
 
-/** Reveals its children one after another as the section scrolls into view. */
-function StaggerContainer({ children, className }: { children: React.ReactNode; className?: string }) {
-  const reduced = useReducedMotion();
-  return (
-    <motion.div
-      className={className}
-      initial={reduced ? undefined : "hidden"}
-      whileInView={reduced ? undefined : "show"}
-      viewport={{ once: true, amount: 0.08 }}
-      variants={reduced ? undefined : { show: { transition: { staggerChildren: 0.06 } } }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/** A single staggered child (used for entry rows). */
-function StaggerItem({ children, className, entryCard, theme }: { children: React.ReactNode; className?: string; entryCard?: boolean; theme?: string }) {
-  const reduced = useReducedMotion();
-  const spring = springFor(theme);
-  return (
-    <motion.div
-      className={className}
-      data-entry-card={entryCard ? "" : undefined}
-      variants={reduced ? undefined : {
-        hidden: { opacity: 0, y: 24, scale: 0.97 },
-        show: {
-          opacity: 1, y: 0, scale: 1,
-          transition: { type: "spring", stiffness: spring.stiffness, damping: spring.damping, mass: spring.mass },
-        },
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 /** Splits text into per-character spans for staggered letter reveal. */
 function AnimatedText({ text, className, id }: { text: string; className?: string; id?: string }) {
   const reduced = useReducedMotion();
@@ -169,6 +130,9 @@ interface EditableGradCVProps {
   onChange: (updater: (draft: GradProject) => GradProject) => void;
   /** Force every item open — the toolbar's "expand all", shared with preview. */
   expanded?: boolean;
+  /** An entry the toolbar just added: the deck scrolls to it and focuses it. */
+  focusEntryId?: string;
+  onFocusHandled?: () => void;
 }
 
 /**
@@ -177,7 +141,7 @@ interface EditableGradCVProps {
  * inline editor and every photo frame is a dropzone. Motion is handled here by
  * framer-motion (not mediaMotion.js) so the editing surface stays scroll-reactive.
  */
-export function EditableGradCV({ project, samples, onChange, expanded = false }: EditableGradCVProps) {
+export function EditableGradCV({ project, samples, onChange, expanded = false, focusEntryId, onFocusHandled }: EditableGradCVProps) {
   const { profile, education, activities, internships, partTimeJobs, skills, hobbies, settings } = project;
   const style = themeStyle(settings);
   const budget: MediaBudget = useMemo(() => budgetFor(project), [project]);
@@ -195,18 +159,6 @@ export function EditableGradCV({ project, samples, onChange, expanded = false }:
 
   const updateEducation = <K extends keyof GradProject["education"]>(field: K, value: GradProject["education"][K]) =>
     onChange((draft) => ({ ...draft, education: { ...draft.education, [field]: value } }));
-
-  const patchEntry = (section: EntrySectionKey, entryId: string, patch: Partial<EntryItem>) =>
-    onChange((draft) => ({
-      ...draft,
-      [section]: draft[section].map((e) => (e.id === entryId ? { ...e, ...patch } : e)),
-    }) as GradProject);
-
-  const addEntry = (section: EntrySectionKey) =>
-    onChange((draft) => ({ ...draft, [section]: [...draft[section], emptyEntry()] }) as GradProject);
-
-  const removeEntry = (section: EntrySectionKey, entryId: string) =>
-    onChange((draft) => ({ ...draft, [section]: draft[section].filter((e) => e.id !== entryId) }) as GradProject);
 
   /* ----- certificates ----- */
   const updateCert = (certId: string, patch: Partial<Omit<GradProject["education"]["certificates"][number], "id">>) =>
@@ -394,36 +346,22 @@ export function EditableGradCV({ project, samples, onChange, expanded = false }:
           </div>
         </RevealSection>
 
-        {/* ---------- Experience buckets ---------- */}
-        <EntrySection
-          title="Hoạt Động" number="02" dataSection="activities" section="activities" entries={activities} samples={samples.activities}
-          addLabel="+ Thêm hoạt động" budget={budget} theme={settings.theme} expanded={expanded}
-          emptyTitle="Câu chuyện hoạt động" emptySubtitle="sẽ xuất hiện tại đây."
-          onAdd={() => addEntry("activities")}
-          onRemove={(id) => removeEntry("activities", id)}
-          onPatch={(id, patch) => patchEntry("activities", id, patch)}
-        />
-        <EntrySection
-          title="Thực Tập" number="03" dataSection="internships" section="internships" entries={internships} samples={samples.internships}
-          addLabel="+ Thêm kỳ thực tập" budget={budget} theme={settings.theme} expanded={expanded}
-          emptyTitle="Hành trình thực tập" emptySubtitle="sẽ xuất hiện tại đây."
-          onAdd={() => addEntry("internships")}
-          onRemove={(id) => removeEntry("internships", id)}
-          onPatch={(id, patch) => patchEntry("internships", id, patch)}
-        />
-        <EntrySection
-          title="Làm Thêm" number="04" dataSection="parttime" section="partTimeJobs" entries={partTimeJobs} samples={samples.partTimeJobs}
-          addLabel="+ Thêm công việc" budget={budget} theme={settings.theme} expanded={expanded}
-          emptyTitle="Kinh nghiệm làm thêm" emptySubtitle="sẽ xuất hiện tại đây."
-          onAdd={() => addEntry("partTimeJobs")}
-          onRemove={(id) => removeEntry("partTimeJobs", id)}
-          onPatch={(id, patch) => patchEntry("partTimeJobs", id, patch)}
+        {/* ---------- Experience — one spotlight conveyor ---------- */}
+        <SpotlightDeck
+          project={project}
+          samples={samples}
+          onChange={onChange}
+          editable
+          number="02"
+          title="Hành Trình"
+          focusEntryId={focusEntryId}
+          onFocusHandled={onFocusHandled}
         />
 
         {/* ---------- Skills & hobbies — 05 ---------- */}
         <RevealSection className="grad-section" section="skills" theme={settings.theme}>
           <div className="grad-section-header">
-            <span className="grad-section-number" aria-hidden="true">05</span>
+            <span className="grad-section-number" aria-hidden="true">03</span>
             <h2 className="grad-heading" data-section-heading>Kỹ Năng &amp; Sở Thích</h2>
           </div>
           <div className="grad-skills-section">
@@ -478,151 +416,6 @@ export function EditableGradCV({ project, samples, onChange, expanded = false }:
         )}
       </div>
     </div>
-  );
-}
-
-interface EntrySectionProps {
-  title: string;
-  number: string;
-  dataSection: string;
-  section: EntrySectionKey;
-  entries: EntryItem[];
-  samples: EntryItem[];
-  addLabel: string;
-  budget: MediaBudget;
-  theme?: string;
-  expanded?: boolean;
-  emptyTitle?: string;
-  emptySubtitle?: string;
-  onAdd: () => void;
-  onRemove: (entryId: string) => void;
-  onPatch: (entryId: string, patch: Partial<EntryItem>) => void;
-}
-
-/** One experience bucket (activities / internships / part-time jobs) — shared editorial row template. */
-function EntrySection({ title, number, dataSection, section, entries, samples, addLabel, budget, theme, expanded, emptyTitle, emptySubtitle, onAdd, onRemove, onPatch }: EntrySectionProps) {
-  return (
-    <RevealSection className="grad-section" section={dataSection} theme={theme}>
-      <div className="grad-section-header">
-        <span className="grad-section-number" aria-hidden="true">{number}</span>
-        <h2 className="grad-heading" data-section-heading>{title}</h2>
-      </div>
-      {entries.length === 0 ? (
-        <div className="cv-empty-state">
-          <p className="cv-empty-title">{emptyTitle || "Chưa có nội dung"}</p>
-          <p className="cv-empty-subtitle">{emptySubtitle || "sẽ xuất hiện tại đây."}</p>
-        </div>
-      ) : (
-      <StaggerContainer className="grad-entries">
-        {entries.map((entry, idx) => (
-          <StaggerItem key={entry.id} className="grad-entry-shell" entryCard theme={theme}>
-            <EntryRowEditor
-              entry={entry}
-              sample={samples[idx]}
-              isLast={idx === entries.length - 1}
-              budget={budget}
-              expanded={expanded}
-              onRemove={() => onRemove(entry.id)}
-              onPatch={(patch) => onPatch(entry.id, patch)}
-            />
-          </StaggerItem>
-        ))}
-      </StaggerContainer>
-      )}
-      <button type="button" className="cv-add-entry" onClick={onAdd} id={`add-${section}`}>{addLabel}</button>
-    </RevealSection>
-  );
-}
-
-/**
- * One editable experience item, mirroring GradCVDocument's EntryRow.
- *
- * Overview (always visible): period, title, organisation, short description.
- * Detail (behind the toggle): location, highlights, photos and the AI helpers
- * that act on them. The description is edited in the summary and nowhere else,
- * so there is exactly one editor per field.
- */
-function EntryRowEditor({
-  entry, sample, isLast, budget, expanded, onRemove, onPatch,
-}: {
-  entry: EntryItem;
-  sample?: EntryItem;
-  isLast: boolean;
-  budget: MediaBudget;
-  expanded?: boolean;
-  onRemove: () => void;
-  onPatch: (patch: Partial<EntryItem>) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const highlightCount = entry.highlights.split("\n").filter((line) => line.trim()).length;
-  const cue = detailSummary([
-    highlightCount ? `${highlightCount} điểm nổi bật` : "",
-    entry.photos.length ? `${entry.photos.length} ảnh` : "",
-    entry.location.trim() && "địa điểm",
-  ]);
-
-  return (
-    <Collapsible
-      cue={cue}
-      open={expanded || open}
-      onToggle={() => setOpen((v) => !v)}
-      summary={
-        <>
-          <div className="grad-entry-period">
-            <InlinePeriod
-              id={`${entry.id}-period`}
-              start={entry.startDate} end={entry.endDate} current={entry.current}
-              onChange={({ start, end, current }) =>
-                onPatch({
-                  ...(start !== undefined ? { startDate: start } : {}),
-                  ...(end !== undefined ? { endDate: end } : {}),
-                  ...(current !== undefined ? { current } : {}),
-                })
-              }
-            />
-            {!isLast && <span className="grad-entry-divider" aria-hidden="true" />}
-          </div>
-          <div className="grad-entry-body">
-            <div className="grad-entry-headline">
-              <InlineText as="h3" className="grad-entry-title" id={`${entry.id}-title`}
-                value={entry.title} onChange={(v) => onPatch({ title: v })}
-                sample={sample?.title} placeholder="Tên vị trí / hoạt động" ariaLabel="Tên vị trí" maxLength={200} />
-              <InlineText as="span" className="grad-entry-org" id={`${entry.id}-organization`}
-                value={entry.organization} onChange={(v) => onPatch({ organization: v })}
-                sample={sample?.organization} placeholder="Tổ chức" ariaLabel="Tổ chức" maxLength={200} />
-              <button type="button" className="cv-list-remove" onClick={onRemove} aria-label="Xóa mục">×</button>
-            </div>
-            <InlineText as="span" className="grad-entry-lead" id={`${entry.id}-description`}
-              value={entry.description} onChange={(v) => onPatch({ description: v })}
-              sample={sample?.description} placeholder="Một dòng mô tả ngắn gọn..." ariaLabel="Mô tả ngắn" multiline maxLength={2000} />
-            <AIAssistButton context="summary" currentValue={entry.description} role={entry.title} organization={entry.organization}
-              onApply={(description) => onPatch({ description })} />
-          </div>
-        </>
-      }
-    >
-      <InlineText as="span" className="grad-entry-location" id={`${entry.id}-location`}
-        value={entry.location} onChange={(v) => onPatch({ location: v })}
-        sample={sample?.location} placeholder="Địa điểm" ariaLabel="Địa điểm" maxLength={200} />
-      <InlineList
-        value={entry.highlights}
-        onChange={(v) => onPatch({ highlights: v })}
-        separator={"\n"} variant="bullets"
-        itemPlaceholder="Thêm điểm nổi bật..." addLabel="+ Thêm"
-        className="grad-entry-highlights" id={`${entry.id}-highlights`}
-        sample={sample?.highlights} ariaLabel="Điểm nổi bật" maxLength={4000}
-      />
-      <AIAssistButton context="highlights" currentValue={entry.highlights} role={entry.title} organization={entry.organization}
-        onApply={(highlights) => onPatch({ highlights })} />
-      <PhotoTrack
-        id={`photos-${entry.id}`}
-        photos={entry.photos}
-        onChange={(photos) => onPatch({ photos })}
-        maxPhotos={4}
-        budget={budget}
-        label="Thêm ảnh"
-      />
-    </Collapsible>
   );
 }
 

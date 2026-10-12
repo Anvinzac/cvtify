@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { GradProject, EntryItem } from "@/lib/mediaProject";
 import { themeStyle, splitItems, lines, monthLabel, detailSummary } from "@/lib/mediaProject";
 import { DetailCue } from "./detail-cue";
@@ -23,7 +24,17 @@ import "./media-document.css";
  * `expanded` force-opens every disclosure — the in-app "expand all" control
  * and printing both use it.
  */
-export function GradCVDocument({ project, expanded = false }: { project: GradProject; expanded?: boolean }) {
+export function GradCVDocument({ project, expanded = false, experienceSlot }: {
+  project: GradProject;
+  expanded?: boolean;
+  /**
+   * Replaces the three experience sections wholesale. Passed as a SLOT rather
+   * than imported, so the spotlight deck and framer-motion never reach the
+   * code-split mediaExport chunk — createMediaHTML omits it and gets the
+   * unchanged document.
+   */
+  experienceSlot?: ReactNode;
+}) {
   const { profile, education, activities, internships, partTimeJobs, skills, hobbies, settings } = project;
   const style = themeStyle(settings);
   const eduDetail = detailSummary([
@@ -182,49 +193,53 @@ export function GradCVDocument({ project, expanded = false }: { project: GradPro
           </div>
         </section>
 
-        {/* Activities — 02 */}
-        {activities.length > 0 && (
-          <section className="grad-section" data-section="activities">
-            <div className="grad-section-header">
-              <span className="grad-section-number" aria-hidden="true">02</span>
-              <h2 className="grad-heading" data-section-heading>Hoạt Động</h2>
-            </div>
-            <div className="grad-entries">
-              {activities.map((entry, i) => (
-                <EntryRow key={entry.id} entry={entry} isLast={i === activities.length - 1} expanded={expanded} />
-              ))}
-            </div>
-          </section>
-        )}
+        {experienceSlot ?? (
+          <>
+          {/* Activities — 02 */}
+          {activities.length > 0 && (
+            <section className="grad-section" data-section="activities">
+              <div className="grad-section-header">
+                <span className="grad-section-number" aria-hidden="true">02</span>
+                <h2 className="grad-heading" data-section-heading>Hoạt Động</h2>
+              </div>
+              <div className="grad-entries">
+                {activities.map((entry, i) => (
+                  <EntryRow key={entry.id} entry={entry} isLast={i === activities.length - 1} expanded={expanded} />
+                ))}
+              </div>
+            </section>
+          )}
 
-        {/* Internships — 03 */}
-        {internships.length > 0 && (
-          <section className="grad-section" data-section="internships">
-            <div className="grad-section-header">
-              <span className="grad-section-number" aria-hidden="true">03</span>
-              <h2 className="grad-heading" data-section-heading>Thực Tập</h2>
-            </div>
-            <div className="grad-entries">
-              {internships.map((entry, i) => (
-                <EntryRow key={entry.id} entry={entry} isLast={i === internships.length - 1} expanded={expanded} />
-              ))}
-            </div>
-          </section>
-        )}
+          {/* Internships — 03 */}
+          {internships.length > 0 && (
+            <section className="grad-section" data-section="internships">
+              <div className="grad-section-header">
+                <span className="grad-section-number" aria-hidden="true">03</span>
+                <h2 className="grad-heading" data-section-heading>Thực Tập</h2>
+              </div>
+              <div className="grad-entries">
+                {internships.map((entry, i) => (
+                  <EntryRow key={entry.id} entry={entry} isLast={i === internships.length - 1} expanded={expanded} />
+                ))}
+              </div>
+            </section>
+          )}
 
-        {/* Part-time Jobs — 04 */}
-        {partTimeJobs.length > 0 && (
-          <section className="grad-section" data-section="parttime">
-            <div className="grad-section-header">
-              <span className="grad-section-number" aria-hidden="true">04</span>
-              <h2 className="grad-heading" data-section-heading>Làm Thêm</h2>
-            </div>
-            <div className="grad-entries">
-              {partTimeJobs.map((entry, i) => (
-                <EntryRow key={entry.id} entry={entry} isLast={i === partTimeJobs.length - 1} expanded={expanded} />
-              ))}
-            </div>
-          </section>
+          {/* Part-time Jobs — 04 */}
+          {partTimeJobs.length > 0 && (
+            <section className="grad-section" data-section="parttime">
+              <div className="grad-section-header">
+                <span className="grad-section-number" aria-hidden="true">04</span>
+                <h2 className="grad-heading" data-section-heading>Làm Thêm</h2>
+              </div>
+              <div className="grad-entries">
+                {partTimeJobs.map((entry, i) => (
+                  <EntryRow key={entry.id} entry={entry} isLast={i === partTimeJobs.length - 1} expanded={expanded} />
+                ))}
+              </div>
+            </section>
+          )}
+          </>
         )}
 
         {/* Skills & Hobbies — 05 */}

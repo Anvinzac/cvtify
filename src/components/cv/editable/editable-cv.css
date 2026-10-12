@@ -522,9 +522,14 @@
    flipped/slid to stay on screen), never against the viewport — a panel pinned
    to the bottom of the phone screen is what this replaced. */
 .cv-cal-panel {
-  position: absolute;
-  z-index: 60;
-  top: calc(100% + 6px);
+  /* Fixed, and portalled to <body>: the deck's spotlight card scrolls, and an
+     absolutely-positioned popover cannot escape a scroll container. Outside
+     .grad-document there is also no `isolation: isolate` to trap the z-index,
+     so it can sit above the sticky toolbar rather than being nudged clear of
+     it. Coordinates come from InlinePeriod's place(). */
+  position: fixed;
+  z-index: 90;
+  top: 0;
   left: 0;
   width: 252px;
   max-width: calc(100vw - 16px);
@@ -539,11 +544,6 @@
   -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
   cursor: auto;
-}
-
-.cv-cal-panel[data-place="above"] {
-  top: auto;
-  bottom: calc(100% + 6px);
 }
 
 /* Which end of the range you are setting. */

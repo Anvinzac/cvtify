@@ -201,6 +201,43 @@ export function splitItems(value: string, sep?: string): string[] {
     });
 }
 
+/** The three experience buckets, in the order the CV presents them. */
+export const ENTRY_BUCKETS = [
+  { key: "activities", label: "Hoạt động" },
+  { key: "internships", label: "Thực tập" },
+  { key: "partTimeJobs", label: "Làm thêm" },
+] as const;
+
+export type EntryBucketKey = (typeof ENTRY_BUCKETS)[number]["key"];
+
+export interface JourneyEntry {
+  entry: EntryItem;
+  /** Which array it came from — the deck writes edits back through this. */
+  bucket: EntryBucketKey;
+  /** "Hoạt động" / "Thực tập" / "Làm thêm", shown as the card's kicker. */
+  bucketLabel: string;
+  /** Index within its own bucket, for sample lookups. */
+  indexInBucket: number;
+}
+
+/**
+ * The three experience buckets flattened into one journey, in document order.
+ *
+ * The spotlight deck presents them as a single run of items, so the heading
+ * that used to separate them ("Hoạt Động" / "Thực Tập" / "Làm Thêm") travels
+ * with each entry as a kicker instead of being lost.
+ */
+export function journeyEntries(project: GradProject): JourneyEntry[] {
+  return ENTRY_BUCKETS.flatMap(({ key, label }) =>
+    project[key].map((entry, indexInBucket) => ({
+      entry,
+      bucket: key,
+      bucketLabel: label,
+      indexInBucket,
+    })),
+  );
+}
+
 /**
  * Joins the non-empty parts of an item's detail inventory ("3 điểm nổi bật ·
  * 2 ảnh"), or "" when the item has no detail tier at all. Naming the contents

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
   Award, Briefcase, Check, ChevronsDownUp, ChevronsUpDown, Download, Eye, Film, Layers, Loader2,
-  MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Upload, Users,
+  MonitorPlay, MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Upload, Users,
 } from "lucide-react";
 import { useMediaProject } from "@/context/MediaProjectContext";
 import { EditableGradCV } from "@/components/cv/editable/EditableMediaCV";
 import { GradCVDocument } from "@/components/cv/MediaCVDocument";
+import { SpotlightDeck } from "@/components/cv/showcase/spotlight-deck";
 import attachMediaMotion, { EDITOR_MOTION } from "@/components/cv/mediaMotion.js";
 import { downloadFile, filenameFor } from "@/lib/mediaStorage";
 import { demoProject, demoSamples } from "@/lib/demoProject";
@@ -79,9 +80,16 @@ export default function LiveCV() {
   /** Remembered theme so the pre-workspace loading state can still be theme-aware. */
   const lastKnownTheme = useRef<ThemeId>("nebula");
 
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  /**
+   * edit     — the live editor; experience entries ride the spotlight conveyor.
+   * preview  — the scannable two-tier document, and what the download mirrors.
+   * showcase — the conveyor's read-only twin, for reading the CV through.
+   */
+  const [mode, setMode] = useState<"edit" | "preview" | "showcase">("edit");
   /** "Expand all": force every item's detail tier open, in either mode. */
   const [expanded, setExpanded] = useState(false);
+  /** An entry just added from the toolbar, for the deck to scroll to and focus. */
+  const [focusEntryId, setFocusEntryId] = useState<string | undefined>();
   const [menu, setMenu] = useState<Menu>(null);
   const [exporting, setExporting] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -221,7 +229,10 @@ export default function LiveCV() {
     updateDraft((d) => ({ ...d, [bucket]: [...d[bucket], entry] }));
     setMenu(null);
     setMode("edit");
-    requestAnimationFrame(() => focusField(`${entry.id}-title`));
+    // Experience entries live in the spotlight deck, where only the active
+    // card is rendered — focusField() could not find this one. The deck scrolls
+    // to it and focuses it instead.
+    setFocusEntryId(entry.id);
   }
   function addCertificate() {
     updateDraft((d) => ({ ...d, education: { ...d.education, certificates: [...d.education.certificates, emptyCertificate()] } }));
@@ -334,6 +345,7 @@ export default function LiveCV() {
             <div className="live-seg" role="group" aria-label="Chế độ chỉnh sửa">
               <button type="button" aria-label="Sửa" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}><Pencil size={14} /><span className="studio-btn-label">Sửa</span></button>
               <button type="button" aria-label="Xem trước" aria-pressed={mode === "preview"} onClick={() => setMode("preview")}><Eye size={14} /><span className="studio-btn-label">Xem trước</span></button>
+              <button type="button" aria-label="Trình chiếu" aria-pressed={mode === "showcase"} onClick={() => setMode("showcase")}><MonitorPlay size={14} /><span className="studio-btn-label">Trình chiếu</span></button>
             </div>
 
             <button
@@ -538,9 +550,20 @@ export default function LiveCV() {
       )}
 
       <div className="live-content">
-        {mode === "edit"
-          ? <EditableGradCV project={workspace} samples={samples} onChange={updateDraft} expanded={expanded} />
-          : <GradCVDocument project={workspace} expanded={expanded} />}
+        {mode === "edit" ? (
+          <EditableGradCV
+            project={workspace} samples={samples} onChange={updateDraft} expanded={expanded}
+            focusEntryId={focusEntryId} onFocusHandled={() => setFocusEntryId(undefined)}
+          />
+        ) : mode === "showcase" ? (
+          <GradCVDocument
+            project={workspace}
+            expanded={expanded}
+            experienceSlot={<SpotlightDeck project={workspace} number="02" title="Hành Trình" />}
+          />
+        ) : (
+          <GradCVDocument project={workspace} expanded={expanded} />
+        )}
       </div>
     </div>
   );

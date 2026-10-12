@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { demoProject, demoSamples } from "@/lib/demoProject";
-import { parseProject, projectIssues, blockingIssues } from "@/lib/mediaProject";
+import { parseProject, projectIssues, blockingIssues, journeyEntries } from "@/lib/mediaProject";
 
 describe("demoProject", () => {
   it("produces a valid GradProject that passes schema validation", () => {
@@ -49,5 +49,23 @@ describe("demoProject", () => {
     const samples = demoSamples();
     expect(samples.profile.name).toBeTruthy();
     expect(samples.education.school).toBeTruthy();
+  });
+});
+
+describe("journeyEntries", () => {
+  it("flattens the three buckets in document order, tagged with their bucket", () => {
+    const items = journeyEntries(demoProject());
+    expect(items).toHaveLength(6);
+    expect(items.map((i) => i.bucket)).toEqual([
+      "activities", "activities", "activities", "internships", "partTimeJobs", "partTimeJobs",
+    ]);
+    expect(items.map((i) => i.bucketLabel)).toEqual([
+      "Hoạt động", "Hoạt động", "Hoạt động", "Thực tập", "Làm thêm", "Làm thêm",
+    ]);
+  });
+
+  it("keeps each entry's index within its own bucket, for sample lookups", () => {
+    const items = journeyEntries(demoProject());
+    expect(items.map((i) => i.indexInBucket)).toEqual([0, 1, 2, 0, 0, 1]);
   });
 });

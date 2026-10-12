@@ -1,4 +1,5 @@
 import { createElement, useCallback, useEffect, useLayoutEffect, useRef, useState, type ElementType, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { MonthPicker } from "./month-picker";
 import { Check, Pencil, X } from "lucide-react";
 import { monthLabel } from "@/lib/mediaProject";
@@ -285,64 +286,68 @@ export function InlinePeriod({ id, start, end, current, onChange, disabled, allo
     requestAnimationFrame(() => wrap.current?.querySelector<HTMLButtonElement>(".cv-period-trigger")?.focus());
   }, []);
 
+  /**
+   * Position the panel against the trigger, in viewport coordinates.
+   *
+   * It is rendered through a portal to <body> because the spotlight deck
+   * scrolls its card, and an absolutely-positioned popover cannot escape a
+   * scroll container — on a phone the lower half of the grid was clipped away
+   * and unclickable. A body portal also leaves `.grad-document`'s
+   * `isolation: isolate` behind, so the panel can simply out-stack the sticky
+   * toolbar instead of nudging the page out from under it.
+   */
+  const place = useCallback(() => {
+    const el = panel.current;
+    const anchor = wrap.current;
+    if (!el || !anchor) return;
+    const a = anchor.getBoundingClientRect();
+    const margin = 8;
+    // What the sticky chrome needs at the top — the same figure the rest of the
+    // app scrolls by.
+    const safeTop = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    const h = el.offsetHeight;
+    const w = el.offsetWidth;
+
+    let top = a.bottom + 6;
+    const noRoomBelow = top + h > window.innerHeight - margin;
+    if (noRoomBelow && a.top - 6 - h >= safeTop) top = a.top - 6 - h;
+    top = Math.max(safeTop, Math.min(top, Math.max(safeTop, window.innerHeight - h - margin)));
+
+    const left = Math.max(margin, Math.min(a.left, window.innerWidth - w - margin));
+
+    el.style.top = `${Math.round(top)}px`;
+    el.style.left = `${Math.round(left)}px`;
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onDown = (event: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      // The panel is portalled out of `wrap`, so both have to be consulted.
+      if (wrap.current?.contains(target) || panel.current?.contains(target)) return;
+      setOpen(false);
     };
     const onKey = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") close(); };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [open, close]);
+    // Capture, so a scroll inside the deck's card re-places it too.
+    window.addEventListener("scroll", place, { passive: true, capture: true });
+    window.addEventListener("resize", place);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", place, { capture: true } as EventListenerOptions);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, close, place]);
 
-  // Keep the panel on screen: flip above the date when there is no room below,
-  // and slide it horizontally rather than letting it run off an edge. Measured
-  // after a frame, once the panel has been laid out at its default position.
   useLayoutEffect(() => {
     if (!open) return;
-    let settle = 0;
-    const frame = requestAnimationFrame(() => {
-      const el = panel.current;
-      const anchor = wrap.current;
-      if (!el || !anchor) return;
-      el.style.left = "0px";
-      el.dataset.place = "below";
-      const margin = 8;
-      const box = el.getBoundingClientRect();
-      const room = window.innerHeight - anchor.getBoundingClientRect().bottom;
-      if (room < box.height + margin && anchor.getBoundingClientRect().top > box.height + margin) {
-        el.dataset.place = "above";
-      }
-      const after = el.getBoundingClientRect();
-      const overflowRight = after.right - (window.innerWidth - margin);
-      const overflowLeft = margin - after.left;
-      if (overflowRight > 0) el.style.left = `${-overflowRight}px`;
-      else if (overflowLeft > 0) el.style.left = `${overflowLeft}px`;
-
-      // The sticky toolbar paints above this panel and cannot be out-stacked:
-      // .grad-document sets `isolation: isolate`, so every z-index inside it is
-      // trapped below the toolbar's. A date sitting just under the bar would
-      // therefore open a panel whose tabs are hidden behind it. Nudge the page
-      // instead: the root's scroll-padding-top already states how much room the
-      // sticky chrome needs, and scrolling up moves the anchor — and this panel
-      // with it — down by the same amount.
-      //
-      // Twice, because the row may still be running its entrance transform when
-      // the first measurement is taken, which offsets the rect it reports. The
-      // second pass runs once that has settled; both are no-ops when the panel
-      // is already clear.
-      const clearToolbar = () => {
-        if (!panel.current) return;
-        const safeTop = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-        const hidden = safeTop - panel.current.getBoundingClientRect().top;
-        if (hidden > 1) window.scrollBy({ top: -hidden, behavior: "auto" });
-      };
-      clearToolbar();
-      settle = window.setTimeout(clearToolbar, 450);
-    });
-    return () => { cancelAnimationFrame(frame); window.clearTimeout(settle); };
-  }, [open]);
+    place();
+    // Re-place once the grid has painted, when its real height is known.
+    const frame = requestAnimationFrame(place);
+    return () => cancelAnimationFrame(frame);
+  }, [open, field, place]);
 
   const label = `${monthLabel(start)} — ${current ? "Nay" : monthLabel(end)}`;
   const target = field === "start" ? start : end;
@@ -358,8 +363,8 @@ export function InlinePeriod({ id, start, end, current, onChange, disabled, allo
         {label}
       </button>
 
-      {open && (
-        <div className="cv-cal-panel" ref={panel} role="dialog" aria-label="Chọn thời gian" data-place="below">
+      {open && createPortal(
+        <div className="cv-cal-panel" ref={panel} role="dialog" aria-label="Chọn thời gian">
           <div className="cv-cal-tabs" role="tablist" aria-label="Mốc thời gian">
             <button
               type="button" role="tab" className="cv-cal-tab" aria-selected={field === "start"}
@@ -384,7 +389,18 @@ export function InlinePeriod({ id, start, end, current, onChange, disabled, allo
             value={target}
             min={field === "end" ? start : undefined}
             ariaLabel={field === "start" ? "Tháng bắt đầu" : "Tháng kết thúc"}
-            onPick={(value) => onChange(field === "start" ? { start: value } : { end: value })}
+            // One pass through the range: the start month hands over to the end
+            // tab, and the end month is the last thing there is to choose, so it
+            // dismisses the picker rather than leaving it open over the CV.
+            onPick={(value) => {
+              if (field === "start") {
+                onChange({ start: value });
+                if (!current) setField("end");
+              } else {
+                onChange({ end: value });
+                close();
+              }
+            }}
           />
 
           {allowCurrent && (
@@ -400,7 +416,8 @@ export function InlinePeriod({ id, start, end, current, onChange, disabled, allo
               Đến nay
             </label>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </span>
   );

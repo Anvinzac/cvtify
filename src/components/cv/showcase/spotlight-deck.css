@@ -1,0 +1,305 @@
+/* ==================================================================
+ * spotlight-deck.css — the scroll-driven experience conveyor.
+ *
+ * In-app only: this file is NOT inlined into the exported CV (that is
+ * media-document.css via ?inline), so the download is unaffected by
+ * everything here.
+ * ================================================================== */
+
+/* How much scrolling each entry gets in the spotlight. The one tunable for
+   how long the whole section feels — 6 entries × 70svh + a viewport of stage. */
+/* Specificity 0,2,0 so it beats `.grad-section`'s reveal regardless of which
+   stylesheet the bundler emits first. The deck opts out of that reveal the way
+   the hero does: its stage is sticky for the section's whole length, and a
+   transform on the ancestor would drag the stage around as it animates in. In
+   edit mode it matters more than cosmetically — nothing there ever sets
+   data-visible, so the section would simply stay at opacity 0 forever. */
+.grad-section.grad-deck,
+.grad-section.grad-deck-static {
+  opacity: 1;
+  transform: none;
+}
+
+.grad-deck {
+  --deck-step: 70svh;
+
+  position: relative;
+  min-height: calc(var(--deck-count, 1) * var(--deck-step) + 100svh - var(--deck-offset, 0px));
+  padding-block: 0;
+}
+
+.grad-deck-stage {
+  position: sticky;
+  /* Below the sticky toolbar, not under it. --deck-offset is measured from the
+     root's scroll-padding-top, which already states how much room the sticky
+     chrome needs, so this tracks the toolbar wrapping to two rows on phones. */
+  top: var(--deck-offset, 0px);
+  height: calc(100svh - var(--deck-offset, 0px));
+  display: grid;
+  /* head · dock · spotlight · queue. The queue is the bottom half. */
+  /* The queue takes only what it needs, capped at the bottom half; the
+     spotlight gets everything left over rather than the leftovers of a fixed
+     split.
+
+     fit-content(), not minmax(): a minmax max of 50% makes the track GROW to
+     50%, which squeezed the spotlight whenever the queue was short. And the cap
+     belongs on the track, not the item — a percentage max-height on a grid item
+     resolves against its own grid area, so `max-height: 50%` on the queue sized
+     the track to its content and then clipped the item to half of that. */
+  grid-template-rows: auto auto minmax(0, 1fr) fit-content(50%);
+  gap: 0.5rem;
+  padding-block: 1rem 1.25rem;
+  overflow: hidden;
+}
+
+.grad-deck-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.grad-deck-head .grad-section-header {
+  margin-bottom: 0;
+}
+
+.grad-deck-head .grad-heading::after {
+  display: none;
+}
+
+.grad-deck-count {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted-foreground);
+}
+
+/* ── Dock: everything already passed ──
+   Horizontal by design. Stacking these vertically would eat the phone screen
+   the spotlight needs, so the bar stays one row tall and scrolls sideways. */
+.grad-deck-dock {
+  display: flex;
+  gap: 0.5rem;
+  min-height: 46px;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.grad-deck-dock[data-empty] {
+  border-bottom-color: transparent;
+}
+
+.grad-deck-dock::-webkit-scrollbar {
+  height: 3px;
+}
+
+.grad-deck-dock::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 40%, transparent);
+  border-radius: 3px;
+}
+
+.grad-deck-chip {
+  flex: 0 0 auto;
+  scroll-snap-align: end;
+  max-width: 190px;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+  padding: 6px 11px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.grad-deck-chip:hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.grad-deck-chip-kicker {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.grad-deck-chip-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Spotlight ── */
+.grad-deck-spot {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: deck-spot-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  /* A long entry scrolls inside the spotlight. Fading the last few pixels says
+     so — without it the card just stops mid-sentence and reads as broken. */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+}
+
+@keyframes deck-spot-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+.grad-deck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.grad-deck-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.grad-deck-kicker {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.grad-deck-card[data-spotlight] .grad-entry-title {
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+}
+
+.grad-deck-card .grad-entry-lead {
+  /* The spotlight is where the detail lives, so nothing is clamped here. */
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+
+.grad-deck-card-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 45%, transparent);
+}
+
+/* ── Queue: the bottom half ── */
+.grad-deck-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+.grad-deck-queue-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  padding: 9px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.grad-deck-queue-row:hover {
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+}
+
+.grad-deck-queue-kicker {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  opacity: 0.8;
+}
+
+.grad-deck-queue-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grad-deck-queue-period {
+  font-family: var(--font-metadata, var(--font-body));
+  font-size: 0.72rem;
+  color: var(--muted-foreground);
+}
+
+.grad-deck-queue-row.is-add {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+  margin-top: 4px;
+}
+
+/* ── Desktop: more room for the spotlight, the queue keeps its half ── */
+@media (min-width: 641px) {
+  .grad-deck-stage {
+    grid-template-rows: auto auto minmax(0, 1fr) fit-content(45%);
+    gap: 0.75rem;
+    padding-block: 1.5rem 2rem;
+  }
+
+  .grad-deck-chip {
+    max-width: 240px;
+  }
+
+  .grad-deck-card[data-spotlight] .grad-entry-title {
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+  }
+}
+
+/* Photos only where there is height to show them. */
+@media (max-width: 1023px) {
+  .grad-deck .grad-deck-card-detail .grad-entry-photos {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grad-deck-spot {
+    animation: none;
+  }
+}
