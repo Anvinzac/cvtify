@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
-import { isAIEnabled } from "@/lib/aiSuggestions";
+import { useAuth } from "@/context/AuthContext";
 import { AISuggestionModal } from "./AISuggestionModal";
 
 interface AIAssistButtonProps {
@@ -12,14 +12,12 @@ interface AIAssistButtonProps {
   disabled?: boolean;
 }
 
-/**
- * Small sparkle button that opens the AI suggestion modal.
- * Hidden when disabled (Preview mode) or when AI is not configured.
- */
+/** Sparkle button: asks to sign in first (AI costs credits), then opens the suggestion modal. */
 export function AIAssistButton({ context, currentValue, role, organization, onApply, disabled }: AIAssistButtonProps) {
   const [open, setOpen] = useState(false);
+  const { requireSignIn } = useAuth();
 
-  if (disabled || !isAIEnabled()) return null;
+  if (disabled) return null;
 
   return (
     <>
@@ -27,7 +25,7 @@ export function AIAssistButton({ context, currentValue, role, organization, onAp
         type="button"
         className="cv-ai-assist-btn"
         aria-label="AI assist"
-        onClick={() => setOpen(true)}
+        onClick={async () => { if (await requireSignIn("Viết lại bằng AI cần tài khoản.")) setOpen(true); }}
       >
         <Sparkles size={12} />
       </button>

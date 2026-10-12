@@ -4,6 +4,7 @@ import {
   MonitorPlay, MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Upload, Users,
 } from "lucide-react";
 import { useMediaProject } from "@/context/MediaProjectContext";
+import { CreditChip } from "@/components/auth/CreditChip";
 import { EditableGradCV } from "@/components/cv/editable/EditableMediaCV";
 import { GradCVDocument } from "@/components/cv/MediaCVDocument";
 import { SpotlightDeck } from "@/components/cv/showcase/spotlight-deck";
@@ -342,6 +343,7 @@ export default function LiveCV() {
           </div>
 
           <div className="studio-header-actions">
+            <CreditChip />
             <div className="live-seg" role="group" aria-label="Chế độ chỉnh sửa">
               <button type="button" aria-label="Sửa" aria-pressed={mode === "edit"} onClick={() => setMode("edit")}><Pencil size={14} /><span className="studio-btn-label">Sửa</span></button>
               <button type="button" aria-label="Xem trước" aria-pressed={mode === "preview"} onClick={() => setMode("preview")}><Eye size={14} /><span className="studio-btn-label">Xem trước</span></button>
