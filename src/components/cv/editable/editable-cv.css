@@ -1086,13 +1086,13 @@
      theme tokens are bare HSL triplets, so hsl() must wrap them — passing
      `var(--background)` straight to color-mix produces an invalid color and
      the whole background declaration is dropped. */
-  background: color-mix(
-    in srgb,
-    hsl(var(--background, 230 25% 7%)) 94%,
-    transparent
-  );
-  backdrop-filter: blur(24px) saturate(1.4);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  /* Opaque, with no backdrop-filter.
+     The bar was already 94% opaque, so the 24px blur behind it was invisible
+     (measured: 0.46% RMSE between the two renderings) — but a full-width
+     backdrop-filter re-rasterizes on every scrolled frame, and removing it
+     doubled the frame rate through the spotlight deck. The cost is in having a
+     backdrop-filter at all, not in its radius: 10px measured identically. */
+  background: hsl(var(--background, 230 25% 7%));
   border-bottom: 1px solid color-mix(in srgb, var(--border, hsl(var(--border))) 40%, transparent);
   box-shadow:
     0 1px 0 color-mix(in srgb, var(--border, hsl(var(--border))) 30%, transparent),

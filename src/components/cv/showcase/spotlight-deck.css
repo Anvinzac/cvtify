@@ -144,20 +144,51 @@
 }
 
 /* ── Spotlight ── */
+/* ── Spotlight ──
+   Three cards are stacked here at once — leaving, spotlit, arriving — each
+   absolutely positioned so they can cross without disturbing each other's
+   layout. Their transforms are written per frame by the deck's frame callback;
+   nothing in this block animates on a timeline. */
 .grad-deck-spot {
+  position: relative;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  animation: deck-spot-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-  /* A long entry scrolls inside the spotlight. Fading the last few pixels says
-     so — without it the card just stops mid-sentence and reads as broken. */
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent);
+  /* Cards travel well past the frame during a handover; without this they would
+     slide over the dock and the queue. */
+  overflow: hidden;
 }
 
-@keyframes deck-spot-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+.grad-deck-slot {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Transform and opacity only: the conveyor never touches layout, so every
+     frame is compositor work. */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  /* A long entry scrolls inside its card. Fading the last few pixels says so —
+     without it the card just stops mid-sentence and reads as broken. */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 20px), transparent);
+}
+
+/* The slowest layer: a large numeral drifting behind the cards. Depth comes
+   from the rate difference, not from the mark itself. */
+.grad-deck-ghost {
+  position: absolute;
+  right: 0;
+  top: -0.15em;
+  z-index: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(7rem, 22vw, 15rem);
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  color: var(--primary);
+  opacity: 0.07;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity;
 }
 
 .grad-deck-card {
@@ -165,6 +196,32 @@
   flex-direction: column;
   gap: 0.3rem;
   min-width: 0;
+}
+
+/* ── Staged reveal ──
+   One custom property per card, `--reveal` (0→1 as you scroll through its
+   dwell), windowed per element. `--from` is where this part starts in that
+   span and `--span` how long it takes, so the lead, then the location, then
+   each bullet, then the photos land one after another.
+
+   CSS does the interpolation. The alternative — JavaScript writing a style per
+   part per frame — would be dozens of writes a frame for the same result. */
+.deck-part {
+  --t: clamp(0, calc((var(--reveal, 1) - var(--from, 0)) / var(--span, 0.3)), 1);
+  opacity: var(--t);
+  transform: translate3d(0, calc((1 - var(--t)) * 18px), 0);
+  /* Cheap depth on arrival without a blur: parts come in very slightly small. */
+  will-change: transform, opacity;
+}
+
+.grad-entry-highlights .deck-part {
+  transform: translate3d(calc((1 - var(--t)) * 12px), 0, 0);
+}
+
+@supports (scale: 1) {
+  .deck-part {
+    scale: calc(0.985 + var(--t) * 0.015);
+  }
 }
 
 .grad-deck-card-head {

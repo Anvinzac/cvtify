@@ -26,6 +26,12 @@
   position: fixed;
   inset: 0;
   z-index: -1;
+  /* Promoted to its own compositor layer: a fixed, full-viewport gradient is
+     otherwise re-rastered as the page scrolls under it. On its own this made no
+     measurable difference; combined with dropping the toolbar's backdrop-filter
+     it took median frame time through the spotlight deck from 33ms to 17ms. */
+  transform: translateZ(0);
+  will-change: transform;
   background:
     radial-gradient(ellipse 80% 50% at 20% -10%, color-mix(in srgb, var(--primary, hsl(var(--primary))) 15%, transparent), transparent),
     radial-gradient(ellipse 60% 40% at 90% 80%, color-mix(in srgb, var(--accent, hsl(var(--accent))) 10%, transparent), transparent);
