@@ -55,8 +55,28 @@ const OPACITY_TO = 0.6;
 /** Depth cue: layers behind the cards move at a fraction of their rate. */
 const GHOST_RATE = 0.38;
 const QUEUE_RATE = 0.12;
+/**
+ * Gap between consecutive queue rows in the entrance cascade, in `enter` units.
+ *
+ * Compressed for long lists: at a fixed gap, a CV with a dozen entries would
+ * push the last rows' windows past the end of the signal and they would never
+ * finish revealing. QUEUE_STAGGER_BUDGET caps where the final row may start, so
+ * every row completes however many there are.
+ */
+const QUEUE_STAGGER = 0.08;
+const QUEUE_STAGGER_BUDGET = 0.6;
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n);
+
+/**
+ * Declares the window of a `--reveal` signal that an element occupies.
+ *
+ * `--from` is where it starts and `--span` how long it takes; CSS interpolates.
+ * Used for both the spotlight card's detail (windowed against its own dwell)
+ * and the queue's rows (windowed against the section's entrance).
+ */
+const part = (from: number, span = 0.3): CSSProperties =>
+  ({ "--from": from, "--span": span }) as CSSProperties;
 /** Hermite ease, mirrored so a larger input means a smaller output. */
 const falloff = (value: number) => {
   const t = clamp01((value - OPACITY_TO) / (OPACITY_FROM - OPACITY_TO));
@@ -134,6 +154,9 @@ export function SpotlightDeck({
     }
     if (queueRef.current) {
       queueRef.current.style.transform = `translate3d(0, ${(f.u * travel * QUEUE_RATE).toFixed(2)}px, 0)`;
+      // The rows window off this, each with its own offset, so they cascade in
+      // as the section rises into view rather than all appearing together.
+      queueRef.current.style.setProperty("--reveal", f.enter.toFixed(3));
     }
   }, []);
 
@@ -243,6 +266,7 @@ export function SpotlightDeck({
 
   const passed = items.slice(0, active);
   const upcoming = items.slice(active + 1);
+  const stagger = Math.min(QUEUE_STAGGER, QUEUE_STAGGER_BUDGET / Math.max(1, upcoming.length));
   // Leaving, spotlit, arriving. Mounting only these three keeps the heavy
   // editable subtrees (photo tracks, inline lists) to a workable number while
   // still giving every transition both of its cards.
@@ -328,7 +352,11 @@ export function SpotlightDeck({
                 exit={{ opacity: 0, y: -12, height: 0 }}
                 transition={{ type: "spring", stiffness: 380, damping: 36, mass: 0.7 }}
               >
-                <button type="button" className="grad-deck-queue-row" onClick={() => jumpTo(active + 1 + index)}>
+                <button
+                  type="button" className="grad-deck-queue-row deck-part"
+                  style={part(index * stagger, 0.34)}
+                  onClick={() => jumpTo(active + 1 + index)}
+                >
                   <span className="grad-deck-queue-kicker">{item.bucketLabel}</span>
                   <span className="grad-deck-queue-title">{item.entry.title || "Chưa đặt tên"}</span>
                   <span className="grad-deck-queue-period">
@@ -340,7 +368,13 @@ export function SpotlightDeck({
           </AnimatePresence>
           {editable && (
             <li>
-              <button type="button" className="grad-deck-queue-row is-add" onClick={add}>+ Thêm mục</button>
+              <button
+                type="button" className="grad-deck-queue-row is-add deck-part"
+                style={part(upcoming.length * stagger, 0.34)}
+                onClick={add}
+              >
+                + Thêm mục
+              </button>
             </li>
           )}
         </ol>
@@ -367,9 +401,6 @@ interface CardProps {
  * window of `--reveal` it occupies; CSS does the interpolation, so adding a
  * part is a one-line change and costs no JavaScript.
  */
-const part = (from: number, span = 0.3): CSSProperties =>
-  ({ "--from": from, "--span": span }) as CSSProperties;
-
 function Card({ item, editable, samples, budget, spotlight, onPatch, onRemove, onFreeze }: CardProps) {
   const { entry, bucket, bucketLabel, indexInBucket } = item;
   const sample = samples?.[bucket]?.[indexInBucket];

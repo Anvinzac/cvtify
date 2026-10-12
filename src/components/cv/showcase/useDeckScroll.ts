@@ -43,6 +43,15 @@ export interface DeckFrame {
   reveal: number;
   /** 0→1 across the whole section, for section-wide parallax. */
   progress: number;
+  /**
+   * 0→1 as the section travels up into the viewport, before its stage sticks.
+   *
+   * Separate from `progress`, which is still 0 for the whole of that approach.
+   * This is what the queue staggers its rows against: a mount-time entrance
+   * would be useless here, because the section is in the DOM from page load and
+   * the cascade would play off-screen long before anyone scrolled to it.
+   */
+  enter: number;
 }
 
 /**
@@ -71,6 +80,9 @@ export function useDeckScroll(count: number, enabled: boolean, onFrame?: (frame:
   /** Recompute and paint immediately — used when the mounted cards change. */
   const refresh = useRef(() => {});
 
+  /** How far the section has risen into the viewport, 0→1, before it sticks. */
+  const enter = useRef(0);
+
   /** Raw, unsmoothed target derived from the section's position in the viewport. */
   const targetScaled = useCallback(() => {
     const section = sectionRef.current;
@@ -78,6 +90,7 @@ export function useDeckScroll(count: number, enabled: boolean, onFrame?: (frame:
     const offset = offsetTop();
     section.style.setProperty("--deck-offset", `${offset}px`);
     const rect = section.getBoundingClientRect();
+    enter.current = clamp01(1 - (rect.top - offset) / Math.max(1, window.innerHeight - offset));
     const total = rect.height - (window.innerHeight - offset);
     if (total <= 0) return null;
     const travelled = Math.min(Math.max(offset - rect.top, 0), total);
@@ -94,6 +107,7 @@ export function useDeckScroll(count: number, enabled: boolean, onFrame?: (frame:
       u,
       reveal: smoothstep(REVEAL_FROM, REVEAL_TO, u),
       progress: clamp01(value / Math.max(count, 1)),
+      enter: enter.current,
     });
     setActive((current) => (current === index ? current : index));
   }, [count]);
