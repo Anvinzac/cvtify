@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Sparkles, X, Loader2 } from "lucide-react";
-import { generateSuggestions, type AISuggestion } from "@/lib/aiSuggestions";
+import { generateSuggestions, AI_COST, type AISuggestion } from "@/lib/aiSuggestions";
+import { useAuth } from "@/context/AuthContext";
 
 interface AISuggestionModalProps {
   context: "summary" | "duties" | "highlights" | "learning";
@@ -21,14 +22,16 @@ export function AISuggestionModal({ context, roughNotes, role, organization, onA
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const { credits, setCredits } = useAuth();
 
   async function handleGenerate() {
     if (!input.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const results = await generateSuggestions(context, input, role, organization);
-      setSuggestions(results);
+      const r = await generateSuggestions(context, input, role, organization);
+      setSuggestions(r.suggestions);
+      setCredits(r.balance);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate suggestions");
     } finally {
@@ -80,7 +83,7 @@ export function AISuggestionModal({ context, roughNotes, role, organization, onA
             type="button"
             className="cv-ai-generate"
             onClick={handleGenerate}
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || credits === 0}
           >
             {loading ? (
               <>
@@ -88,11 +91,12 @@ export function AISuggestionModal({ context, roughNotes, role, organization, onA
               </>
             ) : (
               <>
-                <Sparkles size={14} /> Generate 3 versions
+                <Sparkles size={14} /> Generate 3 versions · {AI_COST} credit
               </>
             )}
           </button>
 
+          <p className="cv-ai-input-label" style={{ margin: 0 }}>Còn lại: <b>{credits ?? "…"}</b> credit</p>
           {error && <p className="cv-ai-error">{error}</p>}
 
           {suggestions.length > 0 && (
