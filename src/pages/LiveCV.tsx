@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import {
   Award, Briefcase, Check, ChevronsDownUp, ChevronsUpDown, Download, Eye, Film, Layers, Loader2,
-  MonitorPlay, MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Target, Upload, Users,
+  FileDown, MonitorPlay, MoreHorizontal, Palette, Pencil, Plus, SlidersHorizontal, Sparkles, Target, Upload, Users,
 } from "lucide-react";
 import { useMediaProject } from "@/context/MediaProjectContext";
 import { CreditChip } from "@/components/auth/CreditChip";
