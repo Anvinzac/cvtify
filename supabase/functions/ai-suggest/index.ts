@@ -7,6 +7,7 @@ const PROMPTS: Record<string, string> = {
   duties: "Write a professional description of responsibilities and what was accomplished in this role.",
   highlights: "Write 3 bullet points highlighting key results and achievements. Each bullet should be concise and impactful.",
   learning: "Write a reflective insight about what was learned or discovered during this experience.",
+  skills: "Suggest a refined skill list for a CV based on the candidate's current skills. Keep real skills they already have, group or rename them professionally, and only add closely related skills that the existing ones clearly imply. Never invent unrelated expertise.",
 };
 
 const json = (body: unknown, status = 200) =>

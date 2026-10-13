@@ -2,7 +2,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AISuggestion { id: number; text: string; }
-type SuggestionContext = "summary" | "duties" | "highlights" | "learning";
+type SuggestionContext = "summary" | "duties" | "highlights" | "learning" | "skills";
 
 export const AI_COST = 1;
 
