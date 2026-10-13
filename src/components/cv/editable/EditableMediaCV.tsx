@@ -214,7 +214,7 @@ export function EditableGradCV({ project, samples, onChange, expanded = false, f
                 multiline maxLength={500}
               />
               <AIAssistButton context="summary" label="Gợi ý cho mục này" currentValue={profile.objective}
-                role={profile.major} onApply={(objective) => updateProfile("objective", objective)} />
+                role={education.major} onApply={(objective) => updateProfile("objective", objective)} />
               <div className="grad-hero-meta">
                 <InlineText as="span" className="grad-hero-location" id="profile-address" value={profile.address} onChange={(v) => updateProfile("address", v)}
                   sample={samples.profile.address} placeholder="Địa chỉ" ariaLabel="Địa chỉ" maxLength={300} />
@@ -379,7 +379,7 @@ export function EditableGradCV({ project, samples, onChange, expanded = false, f
                 id="skills" sample={samples.skills} ariaLabel="Kỹ năng" maxLength={1000}
               />
               <AIAssistButton context="skills" label="Gợi ý cho mục này" currentValue={skills.join(", ")}
-                role={profile.major} onApply={(text) => onChange((draft) => ({ ...draft, skills: text.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean) }))} />
+                role={education.major} onApply={(text) => onChange((draft) => ({ ...draft, skills: text.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean) }))} />
             </div>
             <div className="grad-skill-group">
               <h3 className="grad-skill-category">Sở Thích</h3>
