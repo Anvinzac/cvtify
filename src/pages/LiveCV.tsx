@@ -266,6 +266,28 @@ export default function LiveCV() {
     }
   }
 
+  async function exportDoc(kind: "pdf" | "docx") {
+    setMenu(null);
+    if (exporting || !workspace) return;
+    if (blocking.length) {
+      setMenu("checklist");
+      setNotice("Hãy hoàn thiện các mục bắt buộc bên dưới, sau đó tải CV của bạn.");
+      return;
+    }
+    setExporting(true);
+    setNotice("");
+    try {
+      const { createDocx, createPdf, downloadBlob } = await import("@/lib/cvDocExport");
+      const blob = kind === "pdf" ? await createPdf(workspace) : await createDocx(workspace);
+      downloadBlob(blob, `${filenameFor(workspace.profile.name)}-cv.${kind}`);
+      setNotice(kind === "pdf" ? "Đã tải CV dạng PDF, sẵn sàng để nộp hồ sơ." : "Đã tải CV dạng Word — bạn có thể mở để chỉnh thêm trước khi nộp.");
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : "Không tạo được file. Hãy thử lại.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   function backup() {
     try {
       downloadFile(JSON.stringify(workspace, null, 2), `${filenameFor(workspace.profile.name)}.cvtify.json`, "application/json");
@@ -519,6 +541,9 @@ export default function LiveCV() {
                 <>
                   <div className="live-backdrop" onClick={() => setMenu(null)} />
                   <div className="live-menu" role="menu" aria-label="Thêm thao tác">
+                    <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={() => void exportDoc("pdf")}><FileDown size={16} /> Tải CV dạng PDF</button>
+                    <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={() => void exportDoc("docx")}><FileDown size={16} /> Tải CV dạng Word</button>
+                    <div className="live-menu-sep" />
                     <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={() => { setMenu(null); setTailorOpen(true); }}><Target size={16} /> Chỉnh CV theo công việc (AI)</button>
                     <div className="live-menu-sep" />
                     <button type="button" className="live-menu-item" role="menuitem" disabled={busy} onClick={loadDemo}><Sparkles size={16} /> Tải CV mẫu</button>
