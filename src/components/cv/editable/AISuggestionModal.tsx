@@ -4,7 +4,7 @@ import { generateSuggestions, AI_COST, type AISuggestion } from "@/lib/aiSuggest
 import { useAuth } from "@/context/AuthContext";
 
 interface AISuggestionModalProps {
-  context: "summary" | "duties" | "highlights" | "learning";
+  context: "summary" | "duties" | "highlights" | "learning" | "skills";
   roughNotes: string;
   role?: string;
   organization?: string;
@@ -51,6 +51,7 @@ export function AISuggestionModal({ context, roughNotes, role, organization, onA
     duties: "responsibilities",
     highlights: "highlights",
     learning: "reflection",
+    skills: "kỹ năng",
   }[context];
 
   return (

@@ -4,16 +4,18 @@ import { useAuth } from "@/context/AuthContext";
 import { AISuggestionModal } from "./AISuggestionModal";
 
 interface AIAssistButtonProps {
-  context: "summary" | "duties" | "highlights" | "learning";
+  context: "summary" | "duties" | "highlights" | "learning" | "skills";
   currentValue: string;
   role?: string;
   organization?: string;
   onApply: (text: string) => void;
   disabled?: boolean;
+  /** Visible label — turns the icon into a labeled "Gợi ý cho mục này" pill. */
+  label?: string;
 }
 
 /** Sparkle button: asks to sign in first (AI costs credits), then opens the suggestion modal. */
-export function AIAssistButton({ context, currentValue, role, organization, onApply, disabled }: AIAssistButtonProps) {
+export function AIAssistButton({ context, currentValue, role, organization, onApply, disabled, label }: AIAssistButtonProps) {
   const [open, setOpen] = useState(false);
   const { requireSignIn } = useAuth();
 
@@ -23,11 +25,12 @@ export function AIAssistButton({ context, currentValue, role, organization, onAp
     <>
       <button
         type="button"
-        className="cv-ai-assist-btn"
-        aria-label="AI assist"
+        className={label ? "cv-ai-assist-btn cv-ai-assist-btn--labeled" : "cv-ai-assist-btn"}
+        aria-label={label ?? "AI assist"}
         onClick={async () => { if (await requireSignIn("Viết lại bằng AI cần tài khoản.")) setOpen(true); }}
       >
         <Sparkles size={12} />
+        {label && <span>{label}</span>}
       </button>
       {open && (
         <AISuggestionModal

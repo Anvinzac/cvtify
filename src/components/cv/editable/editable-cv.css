@@ -1600,6 +1600,20 @@ html {
   transition: all 0.15s;
 }
 
+.cv-ai-assist-btn--labeled {
+  width: auto;
+  height: auto;
+  border-radius: 999px;
+  padding: 4px 10px;
+  gap: 5px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-left: 0;
+  margin-top: 6px;
+}
+
 .cv-ai-assist-btn:hover {
   border-color: hsl(var(--primary));
   color: hsl(var(--primary));

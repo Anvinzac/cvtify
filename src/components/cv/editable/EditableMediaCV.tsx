@@ -6,6 +6,7 @@ import { budgetFor, CoverControls, PhotoTrack, type MediaBudget } from "./inline
 import type { GradProject, MediaPhoto } from "@/lib/mediaProject";
 import { detailSummary, emptyCertificate, themeStyle } from "@/lib/mediaProject";
 import { SpotlightDeck } from "../showcase/spotlight-deck";
+import { AIAssistButton } from "./AIAssistButton";
 import "./editable-cv.css";
 
 /** Cubic-bezier easing shared by every reveal (typed tuple keeps framer-motion happy). */
@@ -212,6 +213,8 @@ export function EditableGradCV({ project, samples, onChange, expanded = false, f
                 sample={samples.profile.objective} placeholder="Mục tiêu nghề nghiệp..." ariaLabel="Mục tiêu nghề nghiệp"
                 multiline maxLength={500}
               />
+              <AIAssistButton context="summary" label="Gợi ý cho mục này" currentValue={profile.objective}
+                role={education.major} onApply={(objective) => updateProfile("objective", objective)} />
               <div className="grad-hero-meta">
                 <InlineText as="span" className="grad-hero-location" id="profile-address" value={profile.address} onChange={(v) => updateProfile("address", v)}
                   sample={samples.profile.address} placeholder="Địa chỉ" ariaLabel="Địa chỉ" maxLength={300} />
@@ -375,6 +378,8 @@ export function EditableGradCV({ project, samples, onChange, expanded = false, f
                 suggestions={SKILL_SUGGESTIONS} pickerTitle="Chọn kỹ năng"
                 id="skills" sample={samples.skills} ariaLabel="Kỹ năng" maxLength={1000}
               />
+              <AIAssistButton context="skills" label="Gợi ý cho mục này" currentValue={skills}
+                role={education.major} onApply={(text) => onChange((draft) => ({ ...draft, skills: text }))} />
             </div>
             <div className="grad-skill-group">
               <h3 className="grad-skill-category">Sở Thích</h3>
