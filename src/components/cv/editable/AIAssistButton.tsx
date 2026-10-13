@@ -25,11 +25,12 @@ export function AIAssistButton({ context, currentValue, role, organization, onAp
     <>
       <button
         type="button"
-        className="cv-ai-assist-btn"
-        aria-label="AI assist"
+        className={label ? "cv-ai-assist-btn cv-ai-assist-btn--labeled" : "cv-ai-assist-btn"}
+        aria-label={label ?? "AI assist"}
         onClick={async () => { if (await requireSignIn("Viết lại bằng AI cần tài khoản.")) setOpen(true); }}
       >
         <Sparkles size={12} />
+        {label && <span>{label}</span>}
       </button>
       {open && (
         <AISuggestionModal
