@@ -10,19 +10,37 @@ const json = (body: unknown, status = 200) =>
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["fit", "edits"],
+  required: ["fit", "score", "requirements", "edits"],
   properties: {
     fit: { type: "string" },
+    score: { type: "integer" },
+    requirements: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["requirement", "kind", "status", "evidence"],
+        properties: {
+          requirement: { type: "string" },
+          kind: { type: "string", enum: ["skill", "experience"] },
+          status: { type: "string", enum: ["matched", "partial", "missing"] },
+          evidence: { type: "string" },
+        },
+      },
+    },
     edits: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["field", "entryId", "suggested", "reason"],
+        required: ["field", "entryId", "action", "find", "replace", "requirement", "reason"],
         properties: {
           field: { type: "string", enum: ["objective", "skills", "description", "highlights"] },
           entryId: { type: "string" },
-          suggested: { type: "string" },
+          action: { type: "string", enum: ["replace", "add_line", "add_skill"] },
+          find: { type: "string" },
+          replace: { type: "string" },
+          requirement: { type: "string" },
           reason: { type: "string" },
         },
       },
@@ -30,15 +48,18 @@ const SCHEMA = {
   },
 };
 
-const INSTRUCTIONS = `You are a CV coach for Vietnamese fresh graduates. Given a job description and the candidate's CV (JSON), propose concrete edits that make the CV fit the job better.
-Rules:
-- Only rephrase, reorder or emphasize what is already in the CV. Never invent experience, numbers, employers or skills the candidate does not show.
-- field "objective": rewrite the career objective (entryId ""). Max 500 characters.
-- field "skills": full comma-separated skills list, reordered to put job-relevant skills first; you may add only skills clearly evidenced in the CV (entryId "").
-- field "description" or "highlights": rewrite one experience entry; entryId must be that entry's id. Highlights are newline-separated bullets without bullet symbols.
-- Give 2 to 6 of the most valuable edits. "reason" is one short sentence linking the edit to the job.
-- "fit" is 1-2 sentences on how well the CV matches and what is missing.
-- Write in the same language as the CV (usually Vietnamese).`;
+const INSTRUCTIONS = `You are a recruiter screening a Vietnamese fresh graduate's CV (JSON) against a real job description.
+Step 1 - Extract the 4 to 8 most important requirements from the job description (hard skills, tools, soft skills, types of experience). For each, find evidence in the CV:
+- "matched": clearly shown; "partial": related or implied but not stated in the job's terms; "missing": no evidence.
+- "evidence": quote the exact short phrase from the CV and the entry it came from, or "" if missing.
+Step 2 - Propose 2 to 6 SMALL, targeted edits that close "partial" gaps by surfacing existing evidence in the job's vocabulary. Do NOT rewrite whole sections.
+- action "replace": "find" must be an exact substring copied from the current field text (a phrase or one line, as short as possible); "replace" is its improved version.
+- action "add_line": add one new bullet to an entry's "highlights" only when the entry's description already supports it; "find" is "".
+- action "add_skill": add one skill to "skills" only if the CV shows evidence of it; "find" is "", "replace" is the skill name.
+- entryId is the entry's id for description/highlights, otherwise "".
+- Never invent experience, employers, numbers or skills. Missing requirements get no edit; mention them in "fit" as things to learn or gain.
+- "requirement" names the requirement the edit targets; "reason" is one short sentence.
+"score" is 0-100 overall match. "fit" is 1-2 sentences. Write in the CV's language (usually Vietnamese).`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -112,15 +133,16 @@ Deno.serve(async (req) => {
         } catch { /* ignore partial */ }
       }
     }
-    let parsed: { fit: string; edits: { field: string; entryId: string; suggested: string; reason: string }[] };
-    try { parsed = JSON.parse(text); } catch { failed = true; parsed = { fit: "", edits: [] }; }
-    const edits = (parsed.edits ?? []).filter((e) => e && typeof e.suggested === "string" && e.suggested.trim()).slice(0, 8);
-    if (failed || !edits.length) {
+    let parsed: { fit: string; score: number; requirements: unknown[]; edits: { action: string; replace: string }[] };
+    try { parsed = JSON.parse(text); } catch { failed = true; parsed = { fit: "", score: 0, requirements: [], edits: [] }; }
+    const edits = (parsed.edits ?? []).filter((e) => e && typeof e.replace === "string" && e.replace.trim()).slice(0, 8);
+    const requirements = (parsed.requirements ?? []).slice(0, 10);
+    if (failed || !requirements.length) {
       await refund();
       console.error("AI empty/failed", text.slice(0, 500));
       return json({ error: "ai_failed" }, 502);
     }
-    return json({ fit: parsed.fit ?? "", edits, balance });
+    return json({ fit: parsed.fit ?? "", score: Math.max(0, Math.min(100, Math.round(parsed.score ?? 0))), requirements, edits, balance });
   } catch (e) {
     console.error(e);
     await refund();
