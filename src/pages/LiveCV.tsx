@@ -279,7 +279,8 @@ export default function LiveCV() {
     try {
       const { createDocx, createPdf, downloadBlob } = await import("@/lib/cvDocExport");
       const blob = kind === "pdf" ? await createPdf(workspace) : await createDocx(workspace);
-      downloadBlob(blob, `${filenameFor(workspace.profile.name)}-cv.${kind}`);
+      const ascii = workspace.profile.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+      downloadBlob(blob, `${filenameFor(ascii)}-cv.${kind}`);
       setNotice(kind === "pdf" ? "Đã tải CV dạng PDF, sẵn sàng để nộp hồ sơ." : "Đã tải CV dạng Word — bạn có thể mở để chỉnh thêm trước khi nộp.");
     } catch (cause) {
       setNotice(cause instanceof Error ? cause.message : "Không tạo được file. Hãy thử lại.");
