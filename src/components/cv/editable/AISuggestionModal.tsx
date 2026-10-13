@@ -51,6 +51,7 @@ export function AISuggestionModal({ context, roughNotes, role, organization, onA
     duties: "responsibilities",
     highlights: "highlights",
     learning: "reflection",
+    skills: "kỹ năng",
   }[context];
 
   return (
