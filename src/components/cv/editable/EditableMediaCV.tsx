@@ -378,8 +378,8 @@ export function EditableGradCV({ project, samples, onChange, expanded = false, f
                 suggestions={SKILL_SUGGESTIONS} pickerTitle="Chọn kỹ năng"
                 id="skills" sample={samples.skills} ariaLabel="Kỹ năng" maxLength={1000}
               />
-              <AIAssistButton context="skills" label="Gợi ý cho mục này" currentValue={skills.join(", ")}
-                role={education.major} onApply={(text) => onChange((draft) => ({ ...draft, skills: text.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean) }))} />
+              <AIAssistButton context="skills" label="Gợi ý cho mục này" currentValue={skills}
+                role={education.major} onApply={(text) => onChange((draft) => ({ ...draft, skills: text }))} />
             </div>
             <div className="grad-skill-group">
               <h3 className="grad-skill-category">Sở Thích</h3>
